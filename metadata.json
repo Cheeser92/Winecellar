@@ -1,0 +1,7 @@
+{
+  "name": "Ma Cave à Vin",
+  "description": "Gestion complète de cave à vin : suivi des bouteilles, étagères, historiques et consommation.",
+  "requestFramePermissions": [
+    "camera"
+  ]
+}
