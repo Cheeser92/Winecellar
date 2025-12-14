@@ -102,14 +102,20 @@ export const StatsView: React.FC<StatsViewProps> = ({ wines, history, language, 
   const getAvgRatingByRegion = (color: string) => {
       const grouped = history
         .filter(h => h.color === color)
-        .reduce((acc: Record<string, { sum: number; count: number }>, h) => {
+        .reduce<Record<string, { sum: number; count: number }>>((acc, h) => {
             const region = h.region || 'Inconnu';
-            if (!acc[region]) acc[region] = { sum: 0, count: 0 };
+            if (!acc[region]) {
+              acc[region] = { sum: 0, count: 0 };
+            }
             const qty = Number(h.quantity);
-            acc[region].sum += h.consumptionRating * qty;
-            acc[region].count += qty;
+            // We ensure access is safe for TS
+            const entry = acc[region];
+            if (entry) {
+              entry.sum += h.consumptionRating * qty;
+              entry.count += qty;
+            }
             return acc;
-        }, {} as Record<string, { sum: number; count: number }>);
+        }, {});
       
       return Object.entries(grouped).map(([name, val]) => ({
           name,

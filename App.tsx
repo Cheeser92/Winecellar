@@ -22,9 +22,6 @@ function App() {
   const [view, setView] = useState<View>('list');
   const [selectedWine, setSelectedWine] = useState<Wine | HistoryEntry | null>(null);
   
-  // Splash Screen State
-  const [showSplash, setShowSplash] = useState(true);
-  
   // Settings & Modals
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
@@ -47,14 +44,6 @@ function App() {
 
   // Translation Helper
   const t = (key: any) => getTranslation(settings.language, key);
-
-  // Splash Screen Timer
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setShowSplash(false);
-    }, 2000);
-    return () => clearTimeout(timer);
-  }, []);
 
   // Persistence
   useEffect(() => {
@@ -483,30 +472,6 @@ function App() {
 
   return (
     <>
-      {/* SPLASH SCREEN */}
-      <div className={`fixed inset-0 z-[100] bg-black flex flex-col items-center justify-center transition-opacity duration-1000 ease-in-out ${showSplash ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
-          {/* Background Image */}
-          <div className="absolute inset-0">
-            <img
-              src="https://images.unsplash.com/photo-1506377247377-2a5b3b417ebb?q=80&w=2070&auto=format&fit=crop"
-              alt="Wine Cellar"
-              className="w-full h-full object-cover opacity-60"
-            />
-            <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-black/40"></div>
-          </div>
-
-          {/* Content */}
-          <div className="relative z-10 flex flex-col items-center justify-end h-full pb-16 space-y-2">
-            <h1 className="text-4xl md:text-5xl font-serif font-bold text-white tracking-wider drop-shadow-lg text-center px-4">
-              {t('app_title')}
-            </h1>
-            <div className="flex flex-col items-center text-stone-300 text-sm font-light tracking-widest mt-4">
-              <span>2025</span>
-              <span className="text-xs opacity-70">- Cheeser92 -</span>
-            </div>
-          </div>
-      </div>
-
       {/* Global Theme Wrapper */}
       <div className={settings.theme === 'dark' ? 'dark' : ''}>
           <div className="bg-stone-50 dark:bg-black min-h-screen font-sans transition-colors duration-300">
