@@ -1,13 +1,13 @@
 import React, { useState } from 'react';
-import { ArrowLeft, Check, Calendar, Clock, Tag, Info, Trash2, Star, Pencil } from 'lucide-react';
+import { ArrowLeft, Check, Calendar, Clock, Tag, Trash2, Star, Pencil } from 'lucide-react';
 import { Wine, ConsumptionStatus, HistoryEntry, Language } from '../types';
-import { RATINGS } from '../constants';
+import { RATINGS, STRENGTHS } from '../constants';
 import { getTranslation } from '../translations';
 
 interface WineDetailProps {
   wine: Wine | HistoryEntry;
   onBack: () => void;
-  onConsume?: (wine: Wine, rating: number) => void;
+  onConsume?: (wine: Wine, rating: number, strength: number) => void;
   onDelete: (id: string) => void;
   onEdit?: () => void;
   isHistory?: boolean;
@@ -18,6 +18,7 @@ export const WineDetail: React.FC<WineDetailProps> = ({ wine, onBack, onConsume,
   const [showConsumeModal, setShowConsumeModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [rating, setRating] = useState<number>(5);
+  const [selectedStrength, setSelectedStrength] = useState<number>(wine.strength);
 
   const t = (key: any) => getTranslation(language, key);
 
@@ -30,9 +31,11 @@ export const WineDetail: React.FC<WineDetailProps> = ({ wine, onBack, onConsume,
 
   // Calculations
   const endDate = historyEntry ? new Date(historyEntry.consumedDate) : currentDate;
-  const monthsInCellar = Math.max(0, (endDate.getTime() - purchaseDate.getTime()) / (1000 * 60 * 60 * 24 * 30.44)).toFixed(1);
+  // Calculate years with 1 decimal
+  const yearsInCellar = Math.max(0, (endDate.getTime() - purchaseDate.getTime()) / (1000 * 60 * 60 * 24 * 365.25)).toFixed(1);
   
   const age = currentYear - wine.year;
+  const totalCost = wine.price * wine.quantity;
 
   let consumptionStatus: ConsumptionStatus = ConsumptionStatus.GREEN;
   if (currentYear > wine.recommendedYear) consumptionStatus = ConsumptionStatus.RED;
@@ -52,6 +55,8 @@ export const WineDetail: React.FC<WineDetailProps> = ({ wine, onBack, onConsume,
 
   const handleConsumeClick = (e: React.MouseEvent) => {
     e.stopPropagation();
+    // Reset strength to current wine strength when opening modal
+    setSelectedStrength(wine.strength);
     setShowConsumeModal(true);
   };
 
@@ -62,7 +67,7 @@ export const WineDetail: React.FC<WineDetailProps> = ({ wine, onBack, onConsume,
 
   const confirmConsume = () => {
     if (onConsume) {
-        onConsume(wine as Wine, rating);
+        onConsume(wine as Wine, rating, selectedStrength);
         setShowConsumeModal(false);
     }
   };
@@ -70,12 +75,12 @@ export const WineDetail: React.FC<WineDetailProps> = ({ wine, onBack, onConsume,
   const hasImage = !!wine.image;
 
   return (
-    <div className={`min-h-screen relative ${hasImage ? 'bg-stone-900' : 'bg-stone-50 dark:bg-black'} transition-colors duration-300`}>
+    <div className={`min-h-full relative ${hasImage ? 'bg-stone-900' : 'bg-stone-50 dark:bg-black'} transition-colors duration-300`}>
       
       {/* Background Image Layer */}
       {hasImage && (
         <div 
-          className="fixed inset-0 z-0 bg-cover bg-center"
+          className="absolute inset-0 z-0 bg-cover bg-center"
           style={{ backgroundImage: `url(${wine.image})` }}
         >
           {/* Dark Overlay for contrast */}
@@ -83,8 +88,8 @@ export const WineDetail: React.FC<WineDetailProps> = ({ wine, onBack, onConsume,
         </div>
       )}
 
-      {/* Header Actions */}
-      <div className="fixed top-0 left-0 right-0 z-20 p-4 flex justify-between items-start pointer-events-none">
+      {/* Header Actions - Sticky to stay within app frame */}
+      <div className="sticky top-0 left-0 right-0 z-20 p-4 flex justify-between items-start pointer-events-none">
         <button 
           onClick={onBack} 
           className="pointer-events-auto bg-white/90 dark:bg-black/50 backdrop-blur text-stone-800 dark:text-stone-200 p-2.5 rounded-full shadow-lg hover:bg-white dark:hover:bg-stone-900 transition"
@@ -110,7 +115,7 @@ export const WineDetail: React.FC<WineDetailProps> = ({ wine, onBack, onConsume,
       {/* Header Placeholder if no image (Standard Layout) */}
       {!hasImage && (
         <div className="relative h-64 bg-stone-200 dark:bg-stone-900 flex items-center justify-center text-stone-400 dark:text-stone-700 transition-colors">
-           <Info size={64} className="opacity-50"/>
+           {/* 'i' symbol removed per request */}
         </div>
       )}
 
@@ -132,7 +137,7 @@ export const WineDetail: React.FC<WineDetailProps> = ({ wine, onBack, onConsume,
                 )}
             </div>
             
-            <p className="text-gray-600 dark:text-gray-300 font-medium text-lg mt-1">{wine.appellation} - {wine.year}</p>
+            <p className="text-gray-600 dark:text-gray-300 font-medium text-lg mt-1">{wine.appellation} - {wine.year} <span className="text-sm text-gray-400">({age} {t('years_old')})</span></p>
             <div className="flex items-center gap-2 mt-3">
               <span className={`inline-block w-3 h-3 rounded-full shadow-sm ring-1 ring-offset-1 ring-gray-200 dark:ring-stone-700 ${wine.color === 'Rouge' ? 'bg-red-800' : wine.color === 'Blanc' ? 'bg-yellow-200' : 'bg-pink-300'}`}></span>
               <span className="text-sm text-gray-500 dark:text-gray-400 uppercase tracking-wide font-semibold">{wine.region}, {wine.country}</span>
@@ -142,16 +147,16 @@ export const WineDetail: React.FC<WineDetailProps> = ({ wine, onBack, onConsume,
           {/* Key Stats */}
           <div className="grid grid-cols-3 gap-2 bg-stone-50/50 dark:bg-stone-800/50 p-4 rounded-2xl border border-stone-200/60 dark:border-stone-800">
             <div className="text-center">
-              <p className="text-[10px] text-stone-500 dark:text-stone-400 uppercase font-bold tracking-wider">Age</p>
-              <p className="font-bold text-xl text-stone-800 dark:text-stone-100">{age} <span className="text-xs font-normal text-stone-500 dark:text-stone-400">{t('years_old')}</span></p>
-            </div>
-            <div className="text-center border-l border-stone-200 dark:border-stone-700">
               <p className="text-[10px] text-stone-500 dark:text-stone-400 uppercase font-bold tracking-wider">{isHistory ? t('consumed') : t('quantity')}</p>
               <p className="font-bold text-xl text-stone-800 dark:text-stone-100">{wine.quantity}</p>
             </div>
             <div className="text-center border-l border-stone-200 dark:border-stone-700">
               <p className="text-[10px] text-stone-500 dark:text-stone-400 uppercase font-bold tracking-wider">{t('price')}</p>
-              <p className="font-bold text-xl text-stone-800 dark:text-stone-100">{wine.price.toFixed(0)}€</p>
+              <p className="font-bold text-xl text-stone-800 dark:text-stone-100">{wine.price.toLocaleString(language, { style: 'currency', currency: 'EUR' })}</p>
+            </div>
+            <div className="text-center border-l border-stone-200 dark:border-stone-700 bg-rose-50 dark:bg-rose-900/20 rounded-r-lg -my-4 py-4 flex flex-col justify-center">
+              <p className="text-[10px] text-rose-800 dark:text-rose-300 uppercase font-bold tracking-wider">{t('total_cost')}</p>
+              <p className="font-bold text-xl text-rose-700 dark:text-rose-400">{totalCost.toLocaleString(language, { style: 'currency', currency: 'EUR' })}</p>
             </div>
           </div>
 
@@ -163,11 +168,11 @@ export const WineDetail: React.FC<WineDetailProps> = ({ wine, onBack, onConsume,
                    <Clock size={18} />
                 </div>
                 <div>
-                  <p className="text-sm font-bold text-stone-800 dark:text-stone-200">{isHistory ? t('aging') : t('time_in_cellar')}</p>
+                  <p className="text-sm font-bold text-stone-800 dark:text-stone-200">{t('time_in_cellar')}</p>
                   <p className="text-[10px] text-stone-500 dark:text-stone-400">{t('purchase_date')}: {new Date(wine.purchaseDate).toLocaleDateString()}</p>
                 </div>
               </div>
-              <span className="font-bold text-blue-900 dark:text-blue-200">{monthsInCellar} {t('months')}</span>
+              <span className="font-bold text-blue-900 dark:text-blue-200">{yearsInCellar} {t('years_old')}</span>
             </div>
             
             {isHistory && historyEntry ? (
@@ -221,10 +226,15 @@ export const WineDetail: React.FC<WineDetailProps> = ({ wine, onBack, onConsume,
                     <span className="text-xs font-bold text-rose-900 dark:text-rose-400">{wine.strength}%</span>
                   </div>
               </div>
-               <div>
-                  <p className="text-stone-400 dark:text-stone-500 text-xs font-bold uppercase mb-1">{t('aging')}</p>
-                  <p className="text-stone-800 dark:text-stone-200 font-medium">{wine.agingPotential}</p>
-              </div>
+               
+               {/* Hide Aging Potential if history */}
+               {!isHistory && (
+                 <div>
+                    <p className="text-stone-400 dark:text-stone-500 text-xs font-bold uppercase mb-1">{t('aging')}</p>
+                    <p className="text-stone-800 dark:text-stone-200 font-medium">{wine.agingPotential}</p>
+                 </div>
+               )}
+
               <div className="col-span-2">
                   <p className="text-stone-400 dark:text-stone-500 text-xs font-bold uppercase mb-2 flex items-center gap-1"><Tag size={12}/> {t('tag')}</p>
                   <div className="flex flex-wrap gap-2">
@@ -273,26 +283,44 @@ export const WineDetail: React.FC<WineDetailProps> = ({ wine, onBack, onConsume,
            />
            
            {/* Content */}
-           <div className="relative bg-white dark:bg-stone-900 rounded-2xl w-full max-w-sm p-6 shadow-2xl transition-colors">
+           <div className="relative bg-white dark:bg-stone-900 rounded-2xl w-full max-w-sm p-6 shadow-2xl transition-colors max-h-[90vh] overflow-y-auto">
             <h3 className="text-xl font-bold text-stone-900 dark:text-white mb-2">{t('rate_wine')}</h3>
             <p className="text-sm text-stone-500 dark:text-stone-400 mb-6">
               {wine.quantity === 1 
                 ? t('consume_msg_single')
                 : t('consume_msg_multi')}
               <br/>
-              Attribuez une note avant de confirmer.
+              Attribuez une note et ajustez l'intensité si nécessaire.
             </p>
             
-            <div className="flex justify-between mb-8 px-2">
-               {RATINGS.map(r => (
-                 <button
-                    key={r}
-                    onClick={() => setRating(r)}
-                    className={`w-12 h-12 rounded-xl flex items-center justify-center text-lg font-bold transition-all duration-200 ${rating === r ? 'bg-rose-900 dark:bg-rose-700 text-white scale-110 shadow-lg shadow-rose-900/30' : 'bg-stone-100 dark:bg-stone-800 text-stone-400 dark:text-stone-500 hover:bg-stone-200 dark:hover:bg-stone-700'}`}
-                 >
-                   {r}
-                 </button>
-               ))}
+            <div className="mb-6">
+                <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-3">Note</label>
+                <div className="flex justify-between px-2">
+                {RATINGS.map(r => (
+                    <button
+                        key={r}
+                        onClick={() => setRating(r)}
+                        className={`w-10 h-10 sm:w-12 sm:h-12 rounded-xl flex items-center justify-center text-lg font-bold transition-all duration-200 ${rating === r ? 'bg-rose-900 dark:bg-rose-700 text-white scale-110 shadow-lg shadow-rose-900/30' : 'bg-stone-100 dark:bg-stone-800 text-stone-400 dark:text-stone-500 hover:bg-stone-200 dark:hover:bg-stone-700'}`}
+                    >
+                    {r}
+                    </button>
+                ))}
+                </div>
+            </div>
+
+            <div className="mb-8">
+                <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-3">{t('strength')}</label>
+                <div className="flex justify-between gap-1 px-1">
+                 {[...STRENGTHS].reverse().map(s => (
+                     <button
+                        key={s}
+                        onClick={() => setSelectedStrength(s)}
+                        className={`flex-1 py-2 rounded-lg text-sm font-bold transition-all ${selectedStrength === s ? 'bg-rose-900 dark:bg-rose-700 text-white shadow-md' : 'bg-stone-100 dark:bg-stone-800 text-stone-400 dark:text-stone-500'}`}
+                     >
+                         {s}%
+                     </button>
+                 ))}
+                </div>
             </div>
 
             <div className="flex gap-3">

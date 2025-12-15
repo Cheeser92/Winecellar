@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { X, Moon, Sun, Languages, Library, Check, Download, Upload, Database, AlertTriangle } from 'lucide-react';
-import { AppSettings, Language, Theme, BackupData } from '../types';
+import { X, Moon, Sun, Languages, Library, Check, Download, Upload, Database, AlertTriangle, Type } from 'lucide-react';
+import { AppSettings, Language, Theme, BackupData, AppFontSize } from '../types';
 import { getTranslation } from '../translations';
 
 interface SettingsModalProps {
@@ -76,6 +76,10 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, s
     }
   };
 
+  const setFontSize = (size: AppFontSize) => {
+    setLocalSettings(prev => ({ ...prev, fontSize: size }));
+  };
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
@@ -122,6 +126,36 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, s
                 <option value="fr">Français</option>
                 <option value="en">English</option>
             </select>
+          </div>
+
+          {/* Font Size Selector */}
+          <div className="space-y-3">
+             <div className="flex items-center gap-3">
+                <div className="p-2.5 rounded-full bg-purple-50 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400">
+                    <Type size={20}/>
+                </div>
+                <span className="font-bold text-stone-800 dark:text-stone-200">{t('font_size')}</span>
+            </div>
+            <div className="flex gap-2 p-1 bg-stone-50 dark:bg-stone-800/50 rounded-xl border border-stone-100 dark:border-stone-800">
+                <button 
+                  onClick={() => setFontSize('small')}
+                  className={`flex-1 py-2 text-xs font-semibold rounded-lg transition-all ${localSettings.fontSize === 'small' ? 'bg-white dark:bg-stone-700 shadow-sm text-rose-900 dark:text-white' : 'text-stone-500 dark:text-stone-400 hover:bg-white/50 dark:hover:bg-stone-700/50'}`}
+                >
+                  {t('font_small')}
+                </button>
+                <button 
+                  onClick={() => setFontSize('medium')}
+                  className={`flex-1 py-2 text-sm font-semibold rounded-lg transition-all ${(!localSettings.fontSize || localSettings.fontSize === 'medium') ? 'bg-white dark:bg-stone-700 shadow-sm text-rose-900 dark:text-white' : 'text-stone-500 dark:text-stone-400 hover:bg-white/50 dark:hover:bg-stone-700/50'}`}
+                >
+                  {t('font_medium')}
+                </button>
+                <button 
+                  onClick={() => setFontSize('large')}
+                  className={`flex-1 py-2 text-base font-semibold rounded-lg transition-all ${localSettings.fontSize === 'large' ? 'bg-white dark:bg-stone-700 shadow-sm text-rose-900 dark:text-white' : 'text-stone-500 dark:text-stone-400 hover:bg-white/50 dark:hover:bg-stone-700/50'}`}
+                >
+                  {t('font_large')}
+                </button>
+            </div>
           </div>
 
           {/* Shelf Counter */}

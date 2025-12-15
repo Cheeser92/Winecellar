@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, LayoutGrid, History, Wine as WineIcon, Search, XCircle, ChevronDown, ChevronRight, Calculator, Coins, Hash, PieChart, Settings as SettingsIcon } from 'lucide-react';
-import { Wine, HistoryEntry, WineColor, SearchFilters, AppSettings, LOCATION_HORS_CAVE, StorageLocation, BackupData } from './types';
+import { Plus, LayoutGrid, History, Wine as WineIcon, Search, XCircle, ChevronDown, ChevronRight, Calculator, Coins, Hash, PieChart, Settings as SettingsIcon, Info } from 'lucide-react';
+import { Wine, HistoryEntry, WineColor, SearchFilters, AppSettings, LOCATION_HORS_CAVE, BackupData, AppFontSize } from './types';
 import { WineForm } from './components/WineForm';
 import { WineDetail } from './components/WineDetail';
 import { SearchModal } from './components/SearchModal';
@@ -14,8 +14,12 @@ type Tab = 'cellar' | 'stats' | 'history';
 const DEFAULT_SETTINGS: AppSettings = {
   language: 'fr',
   theme: 'light',
-  shelfCount: 4
+  shelfCount: 4,
+  fontSize: 'medium'
 };
+
+// URL de l'image pour le Splash Screen (Image de cave à vin générique)
+const SPLASH_IMAGE_URL = "https://images.unsplash.com/photo-1585553616435-2dc0a54e271d?q=80&w=2574&auto=format&fit=crop";
 
 function App() {
   const [activeTab, setActiveTab] = useState<Tab>('cellar');
@@ -25,11 +29,16 @@ function App() {
   // Settings & Modals
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [isInfoOpen, setIsInfoOpen] = useState(false);
   const [searchFilters, setSearchFilters] = useState<SearchFilters>({});
   const [settings, setSettings] = useState<AppSettings>(() => {
     const saved = localStorage.getItem('my-wine-cellar-settings');
-    return saved ? JSON.parse(saved) : DEFAULT_SETTINGS;
+    return saved ? { ...DEFAULT_SETTINGS, ...JSON.parse(saved) } : DEFAULT_SETTINGS;
   });
+
+  // Splash Screen State
+  const [showSplash, setShowSplash] = useState(true);
+  const [splashFading, setSplashFading] = useState(false);
 
   // Data
   const [expandedShelves, setExpandedShelves] = useState<Record<string, boolean>>({});
@@ -44,6 +53,24 @@ function App() {
 
   // Translation Helper
   const t = (key: any) => getTranslation(settings.language, key);
+
+  // Splash Screen Effect
+  useEffect(() => {
+    // Commence le fondu après 3 secondes (pour durer 1s et finir à 4s)
+    const fadeTimer = setTimeout(() => {
+        setSplashFading(true);
+    }, 3000);
+
+    // Supprime complètement l'écran après 4 secondes
+    const removeTimer = setTimeout(() => {
+        setShowSplash(false);
+    }, 4000);
+
+    return () => {
+        clearTimeout(fadeTimer);
+        clearTimeout(removeTimer);
+    };
+  }, []);
 
   // Persistence
   useEffect(() => {
@@ -62,11 +89,7 @@ function App() {
   const handleUpdateSettings = (newSettings: AppSettings) => {
     // If shelf count decreased, move wines from deleted shelves to "Hors Cave"
     if (newSettings.shelfCount < settings.shelfCount) {
-        const shelfPrefix = settings.language === 'fr' ? 'Etagère' : 'Shelf'; // Detect based on previous setting could be tricky, assume consistent formatting
-        
-        // Better strategy: Check if location string contains a number > newSettings.shelfCount
         const updatedWines = wines.map(wine => {
-             // Simple regex to extract number from "Etagère N" or "Shelf N"
              const match = wine.location.match(/(\d+)/);
              if (match) {
                  const shelfNum = parseInt(match[0]);
@@ -119,6 +142,42 @@ function App() {
   };
 
   const availableLocations = getAvailableLocations();
+
+  // Helper for font sizes
+  const getFontSizeClasses = (size: AppFontSize) => {
+    switch(size) {
+      case 'small':
+        return {
+          title: 'text-sm',
+          sub: 'text-[10px]',
+          badgeLabel: 'text-[9px]',
+          badgeValue: 'text-xs',
+          shelfTitle: 'text-base',
+          shelfCount: 'text-xs'
+        };
+      case 'large':
+        return {
+          title: 'text-lg',
+          sub: 'text-sm',
+          badgeLabel: 'text-[11px]',
+          badgeValue: 'text-base',
+          shelfTitle: 'text-xl',
+          shelfCount: 'text-sm'
+        };
+      case 'medium':
+      default:
+        return {
+          title: 'text-base',
+          sub: 'text-xs',
+          badgeLabel: 'text-[10px]',
+          badgeValue: 'text-sm',
+          shelfTitle: 'text-lg',
+          shelfCount: 'text-xs'
+        };
+    }
+  };
+
+  const fontClasses = getFontSizeClasses(settings.fontSize || 'medium');
 
   // Filtering Logic
   const filterList = <T extends Wine>(list: T[]): T[] => {
@@ -174,20 +233,24 @@ function App() {
     setView('list');
   };
 
-  const handleConsumeWine = (wine: Wine, rating: number) => {
+  const handleConsumeWine = (wine: Wine, rating: number, strength: number) => {
     const existingHistoryIndex = history.findIndex(h => h.name === wine.name && h.year === wine.year && h.appellation === wine.appellation);
     let newHistory;
+    
+    // Create history entry logic with updated strength
     if (existingHistoryIndex >= 0) {
         newHistory = [...history];
         newHistory[existingHistoryIndex] = {
             ...newHistory[existingHistoryIndex],
             quantity: newHistory[existingHistoryIndex].quantity + 1,
             consumptionRating: rating,
+            strength: strength, // Update strength if changed
             consumedDate: new Date().toISOString()
         };
     } else {
         const historyEntry: HistoryEntry = {
           ...wine,
+          strength: strength, // Use the strength from modal
           consumedDate: new Date().toISOString(),
           consumptionRating: rating,
           quantity: 1
@@ -195,6 +258,8 @@ function App() {
         newHistory = [...history, historyEntry];
     }
     setHistory(newHistory);
+    
+    // Decrease quantity or remove from wines
     if (wine.quantity > 1) {
       setWines(prev => prev.map(w => w.id === wine.id ? { ...w, quantity: w.quantity - 1 } : w));
       setView('list');
@@ -211,14 +276,21 @@ function App() {
   const getColorTheme = (color: WineColor) => {
     switch (color) {
       case WineColor.ROUGE:
-        return 'border-l-rose-800 bg-red-50/40 hover:bg-red-50/80 dark:bg-red-900/20 dark:hover:bg-red-900/30';
+        return 'border-l-rose-700 bg-rose-100 hover:bg-rose-200 dark:bg-rose-900/40 dark:hover:bg-rose-900/60 dark:border-l-rose-600';
       case WineColor.BLANC:
-        return 'border-l-yellow-400 bg-yellow-50/40 hover:bg-yellow-50/80 dark:bg-yellow-900/20 dark:hover:bg-yellow-900/30';
+        return 'border-l-yellow-500 bg-yellow-100 hover:bg-yellow-200 dark:bg-yellow-900/40 dark:hover:bg-yellow-900/60 dark:border-l-yellow-400';
       case WineColor.ROSE:
-        return 'border-l-pink-400 bg-pink-50/40 hover:bg-pink-50/80 dark:bg-pink-900/20 dark:hover:bg-pink-900/30';
+        return 'border-l-pink-500 bg-pink-100 hover:bg-pink-200 dark:bg-pink-900/40 dark:hover:bg-pink-900/60 dark:border-l-pink-400';
       default:
         return 'border-l-gray-300 bg-white dark:bg-stone-800';
     }
+  };
+
+  const getConsumptionStatusColor = (wine: Wine) => {
+      const currentYear = new Date().getFullYear();
+      if (currentYear > wine.recommendedYear) return 'bg-red-500';
+      if (currentYear === wine.recommendedYear) return 'bg-orange-500';
+      return 'bg-green-500';
   };
 
   const renderStatsBar = (items: Wine[]) => {
@@ -297,6 +369,12 @@ function App() {
                       {isFiltering ? <div className="relative"><Search size={24} /><div className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-rose-600 rounded-full border border-white"></div></div> : <Search size={24} />}
                     </button>
                     <button 
+                      onClick={() => setIsInfoOpen(true)}
+                      className="p-2 rounded-full bg-white dark:bg-stone-800 text-stone-400 dark:text-stone-500 hover:text-stone-600 dark:hover:text-stone-300 shadow-sm transition-all"
+                    >
+                      <Info size={24} />
+                    </button>
+                    <button 
                       onClick={() => setIsSettingsOpen(true)}
                       className="p-2 rounded-full bg-white dark:bg-stone-800 text-stone-400 dark:text-stone-500 hover:text-stone-600 dark:hover:text-stone-300 shadow-sm transition-all"
                     >
@@ -354,11 +432,11 @@ function App() {
                               <div className="text-stone-400 dark:text-stone-500">
                                 {isExpanded ? <ChevronDown size={20} /> : <ChevronRight size={20} />}
                               </div>
-                              <h2 className="text-lg font-bold text-gray-800 dark:text-gray-100">
+                              <h2 className={`font-bold text-gray-800 dark:text-gray-100 ${fontClasses.shelfTitle}`}>
                                   {shelfName}
                               </h2>
                             </div>
-                            <span className="text-xs bg-gray-100 dark:bg-stone-800 text-gray-500 dark:text-stone-400 font-semibold px-2.5 py-1 rounded-full border border-gray-200 dark:border-stone-700">
+                            <span className={`bg-gray-100 dark:bg-stone-800 text-gray-500 dark:text-stone-400 font-semibold px-2.5 py-1 rounded-full border border-gray-200 dark:border-stone-700 ${fontClasses.shelfCount}`}>
                                 {shelfWines.reduce((acc, w) => acc + w.quantity, 0)}
                             </span>
                         </button>
@@ -369,18 +447,21 @@ function App() {
                                   <div 
                                       key={wine.id} 
                                       onClick={() => { setSelectedWine(wine); setView('detail'); }}
-                                      className={`flex gap-4 items-center p-3 rounded-xl cursor-pointer transition-all border border-stone-100/50 dark:border-stone-800 shadow-sm border-l-4 ${getColorTheme(wine.color)}`}
+                                      className={`flex gap-4 items-center p-3 rounded-xl cursor-pointer transition-all shadow-sm border-l-4 ${getColorTheme(wine.color)}`}
                                   >
-                                      <div className="w-14 h-14 rounded-full bg-white dark:bg-stone-800 flex-shrink-0 overflow-hidden border-2 border-white dark:border-stone-700 shadow-sm">
+                                      <div className="w-14 h-14 rounded-full bg-white dark:bg-stone-800 flex-shrink-0 overflow-hidden border-2 border-white dark:border-stone-700 shadow-sm relative">
                                           {wine.image ? <img src={wine.image} className="w-full h-full object-cover" alt="" /> : <WineIcon className="w-6 h-6 m-auto mt-3.5 text-stone-300 dark:text-stone-600"/>}
                                       </div>
                                       <div className="flex-1 min-w-0">
-                                          <p className="font-bold text-gray-800 dark:text-gray-100 truncate text-base">{wine.name}</p>
-                                          <p className="text-xs text-gray-500 dark:text-gray-400 truncate mt-0.5">{wine.region} - {wine.year}</p>
+                                          <p className={`font-bold text-gray-800 dark:text-gray-100 truncate ${fontClasses.title}`}>{wine.name}</p>
+                                          <div className={`flex items-center gap-2 mt-0.5`}>
+                                            <p className={`text-gray-500 dark:text-gray-400 truncate ${fontClasses.sub}`}>{wine.region} - {wine.year}</p>
+                                            <div className={`w-2 h-2 rounded-full ${getConsumptionStatusColor(wine)} flex-shrink-0`}></div>
+                                          </div>
                                       </div>
-                                      <div className={`flex flex-col items-center justify-center w-10 h-10 rounded-lg ${wine.quantity < 2 ? 'bg-red-100 dark:bg-red-900/40 text-red-700 dark:text-red-200' : 'bg-white dark:bg-stone-800 text-gray-600 dark:text-gray-300 border border-gray-100 dark:border-stone-700'}`}>
-                                          <span className="text-[10px] uppercase font-bold text-gray-400 dark:text-gray-500 leading-none">Qté</span>
-                                          <span className="text-sm font-bold leading-none mt-0.5">{wine.quantity}</span>
+                                      <div className={`flex flex-col items-center justify-center w-10 h-10 rounded-lg ${wine.quantity < 2 ? 'bg-red-500/10 text-red-700 dark:text-red-200 border border-red-500/20' : 'bg-white dark:bg-stone-800 text-gray-600 dark:text-gray-300 border border-gray-200 dark:border-stone-700'}`}>
+                                          <span className={`uppercase font-bold text-gray-400 dark:text-gray-500 leading-none ${fontClasses.badgeLabel}`}>Qté</span>
+                                          <span className={`font-bold leading-none mt-0.5 ${fontClasses.badgeValue}`}>{wine.quantity}</span>
                                       </div>
                                   </div>
                               ))}
@@ -406,6 +487,12 @@ function App() {
                     className={`p-2 rounded-full transition-all ${isFiltering ? 'bg-rose-100 dark:bg-rose-900 text-rose-900 dark:text-rose-100 shadow-sm' : 'bg-white dark:bg-stone-800 text-stone-400 dark:text-stone-500 hover:text-stone-600 dark:hover:text-stone-300 shadow-sm'}`}
                     >
                     {isFiltering ? <div className="relative"><Search size={24} /><div className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-rose-600 rounded-full border border-white"></div></div> : <Search size={24} />}
+                    </button>
+                    <button 
+                      onClick={() => setIsInfoOpen(true)}
+                      className="p-2 rounded-full bg-white dark:bg-stone-800 text-stone-400 dark:text-stone-500 hover:text-stone-600 dark:hover:text-stone-300 shadow-sm transition-all"
+                    >
+                      <Info size={24} />
                     </button>
                     <button 
                       onClick={() => setIsSettingsOpen(true)}
@@ -435,28 +522,28 @@ function App() {
                     <p>{isFiltering ? t('no_results') : t('empty_history')}</p>
                 </div>
              ) : (
-                <div className="bg-white dark:bg-stone-900 rounded-2xl shadow-sm border border-stone-100 dark:border-stone-800 divide-y divide-stone-100 dark:divide-stone-800 overflow-hidden transition-colors">
+                <div className="space-y-3">
                     {displayedHistory.map((entry, idx) => (
                         <div 
                             key={idx} 
                             onClick={() => { setSelectedWine(entry); setView('detail'); }}
-                            className="p-4 flex gap-4 hover:bg-stone-50 dark:hover:bg-stone-800 transition cursor-pointer"
+                            className={`flex gap-4 p-3 rounded-xl cursor-pointer transition-all shadow-sm border-l-4 ${getColorTheme(entry.color)}`}
                         >
-                            <div className="w-16 h-16 rounded-xl bg-stone-100 dark:bg-stone-800 flex-shrink-0 overflow-hidden border border-stone-200 dark:border-stone-700">
+                            <div className="w-16 h-16 rounded-xl bg-white dark:bg-stone-800 flex-shrink-0 overflow-hidden border border-stone-200 dark:border-stone-700">
                                 {entry.image ? <img src={entry.image} className="w-full h-full object-cover" alt="" /> : <div className="w-full h-full flex items-center justify-center text-stone-300 dark:text-stone-600"><WineIcon/></div>}
                             </div>
                             <div className="flex-1">
                                 <div className="flex justify-between items-start">
-                                    <h3 className="font-bold text-stone-800 dark:text-stone-100">{entry.name}</h3>
-                                    <div className="flex items-center gap-0.5 text-amber-400 bg-amber-50 dark:bg-amber-900/20 px-1.5 py-0.5 rounded-md border border-amber-100 dark:border-amber-900/30">
-                                        <span className="text-sm font-bold text-amber-500 dark:text-amber-400">{entry.consumptionRating}</span>
-                                        <span className="text-[10px]">★</span>
+                                    <h3 className={`font-bold text-stone-800 dark:text-stone-100 ${fontClasses.title}`}>{entry.name}</h3>
+                                    <div className="flex items-center gap-0.5 text-amber-400 bg-amber-50 dark:bg-amber-900/20 px-1.5 py-0.5 rounded-md border border-amber-100 dark:border-amber-900/30 shadow-sm">
+                                        <span className={`font-bold text-amber-600 dark:text-amber-400 ${fontClasses.badgeValue}`}>{entry.consumptionRating}</span>
+                                        <span className={`${fontClasses.badgeLabel} text-amber-500`}>★</span>
                                     </div>
                                 </div>
-                                <p className="text-xs text-stone-500 dark:text-stone-400 font-medium">{entry.appellation} - {entry.year}</p>
+                                <p className={`text-stone-600 dark:text-stone-400 font-medium ${fontClasses.sub}`}>{entry.appellation} - {entry.year}</p>
                                 <div className="flex items-center justify-between mt-2">
-                                  <p className="text-[11px] text-stone-400 dark:text-stone-500">{t('consumed_on')} {new Date(entry.consumedDate).toLocaleDateString()}</p>
-                                  <div className="text-[10px] bg-stone-100 dark:bg-stone-800 px-2 py-0.5 rounded text-stone-500 dark:text-stone-400 font-semibold border border-stone-200 dark:border-stone-700">
+                                  <p className={`text-stone-400 dark:text-stone-500 ${fontClasses.sub}`}>{t('consumed_on')} {new Date(entry.consumedDate).toLocaleDateString()}</p>
+                                  <div className={`bg-white/50 dark:bg-stone-800 px-2 py-0.5 rounded text-stone-600 dark:text-stone-400 font-semibold border border-stone-200/50 dark:border-stone-700 ${fontClasses.badgeLabel}`}>
                                       {t('total_drunk')}: {entry.quantity}
                                   </div>
                                 </div>
@@ -472,26 +559,50 @@ function App() {
 
   return (
     <>
-      {/* Global Theme Wrapper */}
       <div className={settings.theme === 'dark' ? 'dark' : ''}>
-          <div className="bg-stone-50 dark:bg-black min-h-screen font-sans transition-colors duration-300">
-          {/* Main Content Area */}
-          <main className="max-w-md mx-auto min-h-screen bg-stone-50 dark:bg-black shadow-2xl overflow-y-auto relative transition-colors duration-300">
-              {renderContent()}
+          {/* Global Container - Center on Desktop, Full on Mobile */}
+          <div className="bg-stone-200 dark:bg-stone-950 h-screen w-full flex justify-center overflow-hidden">
+          
+          {/* Splash Screen */}
+          {showSplash && (
+            <div className={`absolute inset-0 z-[100] flex flex-col items-center justify-start pt-24 bg-black transition-opacity duration-1000 ease-in-out ${splashFading ? 'opacity-0' : 'opacity-100'}`}>
+                {/* Image de fond */}
+                <div className="absolute inset-0 z-0">
+                    <img 
+                        src={SPLASH_IMAGE_URL} 
+                        alt="Splash Screen" 
+                        className="w-full h-full object-cover opacity-60"
+                    />
+                    <div className="absolute inset-0 bg-black/50" />
+                </div>
+                {/* Texte */}
+                <h1 className="relative z-10 text-5xl md:text-6xl font-serif font-bold text-red-600 text-center drop-shadow-2xl px-4 tracking-wider">
+                    Ma Cave à Vin
+                </h1>
+            </div>
+          )}
 
-              {/* Floating Add Button (Only on List) */}
+          {/* Main App Frame */}
+          <main className="w-full max-w-md h-full bg-stone-50 dark:bg-black shadow-2xl relative flex flex-col transition-colors duration-300">
+              
+              {/* Scrollable Content Area */}
+              <div className="flex-1 overflow-y-auto no-scrollbar relative">
+                {renderContent()}
+              </div>
+
+              {/* Floating Add Button - Absolute to Frame */}
               {view === 'list' && activeTab === 'cellar' && (
               <button
                   onClick={() => setView('add')}
-                  className="fixed bottom-24 right-6 bg-rose-900 dark:bg-rose-700 text-white p-4 rounded-full shadow-lg shadow-rose-900/30 dark:shadow-rose-900/50 hover:bg-rose-800 dark:hover:bg-rose-600 transition-transform hover:scale-105 active:scale-95 z-30"
+                  className="absolute bottom-24 right-6 bg-rose-900 dark:bg-rose-700 text-white p-4 rounded-full shadow-lg shadow-rose-900/30 dark:shadow-rose-900/50 hover:bg-rose-800 dark:hover:bg-rose-600 transition-transform hover:scale-105 active:scale-95 z-30"
               >
                   <Plus size={28} />
               </button>
               )}
 
-              {/* Bottom Navigation */}
+              {/* Bottom Navigation - Absolute to Frame */}
               {view === 'list' && (
-              <div className="fixed bottom-0 left-0 right-0 bg-white/90 dark:bg-stone-900/90 backdrop-blur-md border-t border-stone-200 dark:border-stone-800 z-40 max-w-md mx-auto safe-area-bottom transition-colors duration-300">
+              <div className="absolute bottom-0 left-0 right-0 bg-white/90 dark:bg-stone-900/90 backdrop-blur-md border-t border-stone-200 dark:border-stone-800 z-40 safe-area-bottom transition-colors duration-300">
                   <div className="flex justify-around items-center h-20 pb-2">
                   <button
                       onClick={() => { setActiveTab('cellar'); setView('list'); }}
@@ -544,6 +655,44 @@ function App() {
               onExport={handleExport}
               onImport={handleImport}
           />
+
+          {/* Info Modal */}
+          {isInfoOpen && (
+            <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
+                <div 
+                    className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+                    onClick={() => setIsInfoOpen(false)}
+                />
+                <div className="relative bg-white dark:bg-stone-900 rounded-2xl w-full max-w-xs p-6 shadow-2xl transition-colors border border-stone-100 dark:border-stone-800 text-center animate-in zoom-in-95 duration-200">
+                    <div className="w-12 h-12 bg-stone-100 dark:bg-stone-800 text-stone-600 dark:text-stone-400 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <Info size={24} />
+                    </div>
+                    
+                    <div className="space-y-3 mb-6">
+                        <p className="text-stone-800 dark:text-stone-200 font-medium">
+                            Application développée par <strong>Cheeser92</strong>
+                        </p>
+                        <p className="text-stone-500 dark:text-stone-400 text-sm">
+                            Tous droits réservés.
+                        </p>
+                        <div className="w-8 h-1 bg-rose-900/10 dark:bg-rose-500/20 rounded-full mx-auto my-3"></div>
+                        <p className="text-stone-400 dark:text-stone-500 text-xs font-mono uppercase tracking-widest">
+                            Version 1.0
+                        </p>
+                        <p className="text-stone-400 dark:text-stone-500 text-xs">
+                            2025
+                        </p>
+                    </div>
+
+                    <button 
+                        onClick={() => setIsInfoOpen(false)}
+                        className="w-full py-2.5 rounded-xl bg-stone-50 dark:bg-stone-800 text-stone-600 dark:text-stone-300 font-bold text-sm hover:bg-stone-100 dark:hover:bg-stone-700 transition-colors"
+                    >
+                        Fermer
+                    </button>
+                </div>
+            </div>
+          )}
           </div>
       </div>
     </>

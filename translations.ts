@@ -1,3 +1,4 @@
+
 import { Language } from './types';
 
 export const translations = {
@@ -23,7 +24,7 @@ export const translations = {
     consume_bottle: "Vin consommé",
     consume_msg_multi: "Une bouteille sera retirée de votre stock.",
     consume_msg_single: "C'est la dernière bouteille. Elle sera déplacée vers l'historique.",
-    rate_wine: "Noter ce vin",
+    rate_wine: "Notation & Détails",
     
     // Form Labels
     name: "Nom du vin",
@@ -37,8 +38,8 @@ export const translations = {
     purchase_place: "Lieu d'achat",
     quantity: "Quantité",
     recommended_year: "Conso. Recommandée",
-    price: "Prix (€)",
-    strength: "Force (%)",
+    price: "Prix unitaire",
+    strength: "Intensité (%)",
     aging: "Durée de garde",
     tag: "Tag",
     note: "Note (Description)",
@@ -79,6 +80,10 @@ export const translations = {
     import_warning: "L'importation remplacera toutes les données actuelles. Continuer ?",
     import_success: "Données importées avec succès !",
     import_error: "Erreur : Format de fichier invalide.",
+    font_size: "Taille de police",
+    font_small: "Petit",
+    font_medium: "Moyen",
+    font_large: "Grand",
     
     // Misc
     shelf_prefix: "Etagère",
@@ -117,7 +122,7 @@ export const translations = {
     consume_bottle: "Drink Wine",
     consume_msg_multi: "One bottle will be removed from your stock.",
     consume_msg_single: "This is the last bottle. It will be moved to history.",
-    rate_wine: "Rate this wine",
+    rate_wine: "Rate & Details",
 
     // Form Labels
     name: "Wine Name",
@@ -131,8 +136,8 @@ export const translations = {
     purchase_place: "Purchase Place",
     quantity: "Quantity",
     recommended_year: "Drink By (Year)",
-    price: "Price (€)",
-    strength: "Strength (%)",
+    price: "Unit Price",
+    strength: "Intensity (%)",
     aging: "Aging Potential",
     tag: "Tags",
     note: "Note (Description)",
@@ -173,6 +178,10 @@ export const translations = {
     import_warning: "Importing will overwrite all current data. Continue?",
     import_success: "Data imported successfully!",
     import_error: "Error: Invalid file format.",
+    font_size: "Font Size",
+    font_small: "Small",
+    font_medium: "Medium",
+    font_large: "Large",
 
     // Misc
     shelf_prefix: "Shelf",

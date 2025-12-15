@@ -1,3 +1,4 @@
+
 export enum Region {
   BORDEAUX = 'Bordeaux',
   SUD_OUEST = 'Sud-Ouest',
@@ -80,11 +81,13 @@ export interface SearchFilters {
 
 export type Language = 'fr' | 'en';
 export type Theme = 'light' | 'dark';
+export type AppFontSize = 'small' | 'medium' | 'large';
 
 export interface AppSettings {
   language: Language;
   theme: Theme;
   shelfCount: number;
+  fontSize: AppFontSize;
 }
 
 export interface BackupData {

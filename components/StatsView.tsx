@@ -102,7 +102,7 @@ export const StatsView: React.FC<StatsViewProps> = ({ wines, history, language, 
   const getAvgRatingByRegion = (color: string) => {
       const grouped = history
         .filter(h => h.color === color)
-        .reduce<Record<string, { sum: number; count: number }>>((acc, h) => {
+        .reduce((acc: Record<string, { sum: number; count: number }>, h) => {
             const region = h.region || 'Inconnu';
             if (!acc[region]) {
               acc[region] = { sum: 0, count: 0 };
@@ -115,12 +115,15 @@ export const StatsView: React.FC<StatsViewProps> = ({ wines, history, language, 
               entry.count += qty;
             }
             return acc;
-        }, {});
+        }, {} as Record<string, { sum: number; count: number }>);
       
-      return Object.entries(grouped).map(([name, val]) => ({
-          name,
-          rating: val.count > 0 ? Number((val.sum / val.count).toFixed(1)) : 0
-      }));
+      return Object.entries(grouped).map(([name, val]) => {
+          const stats = val as { sum: number, count: number };
+          return {
+            name,
+            rating: stats.count > 0 ? Number((stats.sum / stats.count).toFixed(1)) : 0
+          };
+      });
   };
 
   const histAvgRatingRed = getAvgRatingByRegion(WineColor.ROUGE);
