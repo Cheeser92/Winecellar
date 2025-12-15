@@ -112,16 +112,9 @@ export const WineDetail: React.FC<WineDetailProps> = ({ wine, onBack, onConsume,
         </div>
       </div>
 
-      {/* Header Placeholder if no image (Standard Layout) */}
-      {!hasImage && (
-        <div className="relative h-64 bg-stone-200 dark:bg-stone-900 flex items-center justify-center text-stone-400 dark:text-stone-700 transition-colors">
-           {/* 'i' symbol removed per request */}
-        </div>
-      )}
-
       {/* Content Layer */}
-      <div className={`relative z-10 pb-20 px-4 transition-all duration-500 ${hasImage ? 'pt-48' : '-mt-6'}`}>
-        <div className={`rounded-3xl p-6 shadow-2xl space-y-6 ${hasImage ? 'bg-white/90 dark:bg-stone-900/90 backdrop-blur-xl border border-white/40 dark:border-stone-800' : 'bg-white dark:bg-stone-900'} transition-colors duration-300`}>
+      <div className={`relative z-10 pb-20 px-4 transition-all duration-500 ${hasImage ? 'pt-48' : ''}`}>
+        <div className={`rounded-3xl p-6 shadow-2xl space-y-6 ${hasImage ? 'bg-white/90 dark:bg-stone-900/90 backdrop-blur-xl border border-white/40 dark:border-stone-800' : 'bg-white dark:bg-stone-900 border border-stone-100 dark:border-stone-800'} transition-colors duration-300`}>
           
           {/* Title Section */}
           <div>

@@ -286,6 +286,19 @@ function App() {
     }
   };
 
+  const getQuantityBadgeStyle = (color: WineColor) => {
+    switch (color) {
+        case WineColor.ROUGE:
+            return 'bg-rose-100 dark:bg-rose-900/40 text-rose-900 dark:text-rose-100 border border-rose-200 dark:border-rose-800';
+        case WineColor.BLANC:
+            return 'bg-yellow-100 dark:bg-yellow-900/40 text-yellow-900 dark:text-yellow-100 border border-yellow-200 dark:border-yellow-800';
+        case WineColor.ROSE:
+            return 'bg-pink-100 dark:bg-pink-900/40 text-pink-900 dark:text-pink-100 border border-pink-200 dark:border-pink-800';
+        default:
+            return 'bg-stone-100 dark:bg-stone-800 text-stone-600 dark:text-stone-300 border border-stone-200 dark:border-stone-700';
+    }
+  };
+
   const getConsumptionStatusColor = (wine: Wine) => {
       const currentYear = new Date().getFullYear();
       if (currentYear > wine.recommendedYear) return 'bg-red-500';
@@ -459,8 +472,8 @@ function App() {
                                             <div className={`w-2 h-2 rounded-full ${getConsumptionStatusColor(wine)} flex-shrink-0`}></div>
                                           </div>
                                       </div>
-                                      <div className={`flex flex-col items-center justify-center w-10 h-10 rounded-lg ${wine.quantity < 2 ? 'bg-red-500/10 text-red-700 dark:text-red-200 border border-red-500/20' : 'bg-white dark:bg-stone-800 text-gray-600 dark:text-gray-300 border border-gray-200 dark:border-stone-700'}`}>
-                                          <span className={`uppercase font-bold text-gray-400 dark:text-gray-500 leading-none ${fontClasses.badgeLabel}`}>Qté</span>
+                                      <div className={`flex flex-col items-center justify-center w-10 h-10 rounded-lg shadow-sm ${getQuantityBadgeStyle(wine.color)}`}>
+                                          <span className={`uppercase font-bold opacity-60 leading-none ${fontClasses.badgeLabel}`}>Qté</span>
                                           <span className={`font-bold leading-none mt-0.5 ${fontClasses.badgeValue}`}>{wine.quantity}</span>
                                       </div>
                                   </div>
