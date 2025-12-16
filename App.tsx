@@ -18,9 +18,6 @@ const DEFAULT_SETTINGS: AppSettings = {
   fontSize: 'medium'
 };
 
-// URL de l'image pour le Splash Screen (Image de cave à vin générique)
-const SPLASH_IMAGE_URL = "https://images.unsplash.com/photo-1585553616435-2dc0a54e271d?q=80&w=2574&auto=format&fit=crop";
-
 function App() {
   const [activeTab, setActiveTab] = useState<Tab>('cellar');
   const [view, setView] = useState<View>('list');
@@ -36,10 +33,6 @@ function App() {
     return saved ? { ...DEFAULT_SETTINGS, ...JSON.parse(saved) } : DEFAULT_SETTINGS;
   });
 
-  // Splash Screen State
-  const [showSplash, setShowSplash] = useState(true);
-  const [splashFading, setSplashFading] = useState(false);
-
   // Data
   const [expandedShelves, setExpandedShelves] = useState<Record<string, boolean>>({});
   const [wines, setWines] = useState<Wine[]>(() => {
@@ -53,24 +46,6 @@ function App() {
 
   // Translation Helper
   const t = (key: any) => getTranslation(settings.language, key);
-
-  // Splash Screen Effect
-  useEffect(() => {
-    // Commence le fondu après 3 secondes (pour durer 1s et finir à 4s)
-    const fadeTimer = setTimeout(() => {
-        setSplashFading(true);
-    }, 3000);
-
-    // Supprime complètement l'écran après 4 secondes
-    const removeTimer = setTimeout(() => {
-        setShowSplash(false);
-    }, 4000);
-
-    return () => {
-        clearTimeout(fadeTimer);
-        clearTimeout(removeTimer);
-    };
-  }, []);
 
   // Persistence
   useEffect(() => {
@@ -223,6 +198,29 @@ function App() {
     }
   };
 
+  const handleDuplicateWine = (sourceWine: Wine, quantity: number, location: string) => {
+      // Remove specific history properties if duplicating from history
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      const { id, ...wineProps } = sourceWine;
+      
+      const newWine: Wine = {
+        ...wineProps as Wine, // Type assertion since we might be duplicating from HistoryEntry
+        id: Date.now().toString(),
+        quantity: quantity,
+        location: location,
+        // Ensure standard wine properties exist if coming from history
+        purchaseDate: sourceWine.purchaseDate || new Date().toISOString(),
+      };
+      
+      // Remove history-specific fields if they exist on the source object
+      if ('consumedDate' in newWine) delete (newWine as any).consumedDate;
+      if ('consumptionRating' in newWine) delete (newWine as any).consumptionRating;
+
+      setWines(prev => [...prev, newWine]);
+      setActiveTab('cellar');
+      setView('list');
+  };
+
   const handleDeleteWine = (id: string) => {
     setWines(prev => prev.filter(w => w.id !== id));
     setView('list');
@@ -356,6 +354,8 @@ function App() {
           onConsume={isHistoryItem ? undefined : handleConsumeWine}
           onDelete={isHistoryItem ? handleDeleteHistory : handleDeleteWine}
           onEdit={isHistoryItem ? undefined : () => setView('edit')}
+          onDuplicate={handleDuplicateWine}
+          availableLocations={availableLocations}
           isHistory={isHistoryItem}
           language={settings.language}
         />
@@ -576,25 +576,6 @@ function App() {
           {/* Global Container - Center on Desktop, Full on Mobile */}
           <div className="bg-stone-200 dark:bg-stone-950 h-screen w-full flex justify-center overflow-hidden">
           
-          {/* Splash Screen */}
-          {showSplash && (
-            <div className={`absolute inset-0 z-[100] flex flex-col items-center justify-start pt-24 bg-black transition-opacity duration-1000 ease-in-out ${splashFading ? 'opacity-0' : 'opacity-100'}`}>
-                {/* Image de fond */}
-                <div className="absolute inset-0 z-0">
-                    <img 
-                        src={SPLASH_IMAGE_URL} 
-                        alt="Splash Screen" 
-                        className="w-full h-full object-cover opacity-60"
-                    />
-                    <div className="absolute inset-0 bg-black/50" />
-                </div>
-                {/* Texte */}
-                <h1 className="relative z-10 text-5xl md:text-6xl font-serif font-bold text-red-600 text-center drop-shadow-2xl px-4 tracking-wider">
-                    Ma Cave à Vin
-                </h1>
-            </div>
-          )}
-
           {/* Main App Frame */}
           <main className="w-full max-w-md h-full bg-stone-50 dark:bg-black shadow-2xl relative flex flex-col transition-colors duration-300">
               

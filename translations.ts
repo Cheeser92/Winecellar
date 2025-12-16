@@ -25,6 +25,10 @@ export const translations = {
     consume_msg_multi: "Une bouteille sera retirée de votre stock.",
     consume_msg_single: "C'est la dernière bouteille. Elle sera déplacée vers l'historique.",
     rate_wine: "Notation & Détails",
+    duplicate: "Dupliquer",
+    duplicate_bottle: "Copier la bouteille",
+    target_location: "Vers l'étagère",
+    copy_quantity: "Quantité à copier",
     
     // Form Labels
     name: "Nom du vin",
@@ -123,6 +127,10 @@ export const translations = {
     consume_msg_multi: "One bottle will be removed from your stock.",
     consume_msg_single: "This is the last bottle. It will be moved to history.",
     rate_wine: "Rate & Details",
+    duplicate: "Duplicate",
+    duplicate_bottle: "Duplicate Bottle",
+    target_location: "To Shelf",
+    copy_quantity: "Quantity to copy",
 
     // Form Labels
     name: "Wine Name",

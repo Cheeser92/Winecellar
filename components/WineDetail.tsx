@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ArrowLeft, Check, Calendar, Clock, Tag, Trash2, Star, Pencil } from 'lucide-react';
+import { ArrowLeft, Check, Calendar, Clock, Tag, Trash2, Star, Pencil, Copy } from 'lucide-react';
 import { Wine, ConsumptionStatus, HistoryEntry, Language } from '../types';
 import { RATINGS, STRENGTHS } from '../constants';
 import { getTranslation } from '../translations';
@@ -10,15 +10,23 @@ interface WineDetailProps {
   onConsume?: (wine: Wine, rating: number, strength: number) => void;
   onDelete: (id: string) => void;
   onEdit?: () => void;
+  onDuplicate?: (wine: Wine, quantity: number, location: string) => void;
+  availableLocations: string[];
   isHistory?: boolean;
   language: Language;
 }
 
-export const WineDetail: React.FC<WineDetailProps> = ({ wine, onBack, onConsume, onDelete, onEdit, isHistory = false, language }) => {
+export const WineDetail: React.FC<WineDetailProps> = ({ wine, onBack, onConsume, onDelete, onEdit, onDuplicate, availableLocations, isHistory = false, language }) => {
   const [showConsumeModal, setShowConsumeModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [showDuplicateModal, setShowDuplicateModal] = useState(false);
+  
   const [rating, setRating] = useState<number>(5);
   const [selectedStrength, setSelectedStrength] = useState<number>(wine.strength);
+
+  // Duplicate state
+  const [copyQuantity, setCopyQuantity] = useState<number>(1);
+  const [copyLocation, setCopyLocation] = useState<string>(isHistory ? availableLocations[0] : wine.location);
 
   const t = (key: any) => getTranslation(language, key);
 
@@ -65,12 +73,27 @@ export const WineDetail: React.FC<WineDetailProps> = ({ wine, onBack, onConsume,
     setShowDeleteModal(true);
   };
 
+  const handleDuplicateClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setCopyQuantity(1);
+    // If it's a history item, default to first available, else current location
+    setCopyLocation(isHistory ? availableLocations[0] : wine.location);
+    setShowDuplicateModal(true);
+  }
+
   const confirmConsume = () => {
     if (onConsume) {
         onConsume(wine as Wine, rating, selectedStrength);
         setShowConsumeModal(false);
     }
   };
+
+  const confirmDuplicate = () => {
+      if (onDuplicate) {
+          onDuplicate(wine as Wine, copyQuantity, copyLocation);
+          setShowDuplicateModal(false);
+      }
+  }
 
   const hasImage = !!wine.image;
 
@@ -251,6 +274,14 @@ export const WineDetail: React.FC<WineDetailProps> = ({ wine, onBack, onConsume,
               >
                  <Trash2 size={20} />
               </button>
+
+              <button
+                type="button"
+                onClick={handleDuplicateClick}
+                className="flex-none p-4 rounded-xl border border-indigo-200 dark:border-indigo-900/50 text-indigo-500 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-900/10 hover:bg-indigo-100 dark:hover:bg-indigo-900/20 transition cursor-pointer"
+              >
+                 <Copy size={20} />
+              </button>
               
               {!isHistory && (
                 <button
@@ -332,6 +363,60 @@ export const WineDetail: React.FC<WineDetailProps> = ({ wine, onBack, onConsume,
             </div>
           </div>
         </div>
+      )}
+
+      {/* Duplicate Modal */}
+      {showDuplicateModal && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+             <div 
+               className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+               onClick={() => setShowDuplicateModal(false)}
+             />
+             <div className="relative bg-white dark:bg-stone-900 rounded-2xl w-full max-w-sm p-6 shadow-2xl transition-colors max-h-[90vh] overflow-y-auto">
+              <h3 className="text-xl font-bold text-stone-900 dark:text-white mb-4">{t('duplicate_bottle')}</h3>
+              
+              <div className="space-y-4 mb-6">
+                <div>
+                  <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-2">{t('target_location')}</label>
+                  <select 
+                    value={copyLocation} 
+                    onChange={(e) => setCopyLocation(e.target.value)}
+                    className="w-full rounded-xl border border-gray-300 dark:border-stone-700 bg-stone-50 dark:bg-stone-800 text-gray-900 dark:text-white p-3 shadow-sm focus:border-rose-500 focus:ring-rose-500"
+                  >
+                    {availableLocations.map(l => (
+                        <option key={l} value={l}>{l}</option>
+                    ))}
+                  </select>
+                </div>
+                
+                <div>
+                   <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-2">{t('copy_quantity')}</label>
+                   <input 
+                      type="number" 
+                      min="1" 
+                      value={copyQuantity} 
+                      onChange={(e) => setCopyQuantity(Math.max(1, parseInt(e.target.value)))}
+                      className="w-full rounded-xl border border-gray-300 dark:border-stone-700 bg-stone-50 dark:bg-stone-800 text-gray-900 dark:text-white p-3 shadow-sm focus:border-rose-500 focus:ring-rose-500"
+                   />
+                </div>
+              </div>
+  
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setShowDuplicateModal(false)}
+                  className="flex-1 py-3 rounded-xl border border-stone-200 dark:border-stone-700 text-stone-600 dark:text-stone-300 font-medium hover:bg-stone-50 dark:hover:bg-stone-800 cursor-pointer"
+                >
+                  {t('cancel')}
+                </button>
+                <button
+                  onClick={confirmDuplicate}
+                  className="flex-1 py-3 rounded-xl bg-indigo-600 dark:bg-indigo-700 text-white font-bold hover:bg-indigo-700 dark:hover:bg-indigo-600 shadow-lg shadow-indigo-600/20 cursor-pointer"
+                >
+                  {t('confirm')}
+                </button>
+              </div>
+            </div>
+          </div>
       )}
 
       {/* Delete Confirmation Modal */}
