@@ -5,7 +5,7 @@ export const translations = {
   fr: {
     app_title: "Ma Cave à Vin",
     cellar: "Cave",
-    stats: "Statistique",
+    stats: "Statistiques",
     history: "Historique",
     search: "Recherche",
     search_placeholder: "Rechercher un vin...",

@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer, CartesianGrid, LabelList } from 'recharts';
 import { Wine, WineColor, Language, Theme, HistoryEntry } from '../types';
@@ -108,7 +109,6 @@ export const StatsView: React.FC<StatsViewProps> = ({ wines, history, language, 
               acc[region] = { sum: 0, count: 0 };
             }
             const qty = Number(h.quantity);
-            // We ensure access is safe for TS
             const entry = acc[region];
             if (entry) {
               entry.sum += h.consumptionRating * qty;
@@ -161,7 +161,7 @@ export const StatsView: React.FC<StatsViewProps> = ({ wines, history, language, 
 
   return (
     <div className="pb-24 p-4">
-        <h1 className="text-3xl font-serif font-bold text-rose-950 dark:text-rose-100 mb-6 px-2 pt-2">{t('stats')}</h1>
+        <h1 className="text-2xl font-serif font-bold text-rose-950 dark:text-rose-100 mb-6 px-2 pt-2">{t('stats')}</h1>
 
         {/* CELLAR STATS SECTION */}
         {renderSectionHeader(t('section_cellar_stats'), showCellarStats, () => setShowCellarStats(!showCellarStats))}

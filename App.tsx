@@ -326,27 +326,27 @@ function App() {
     const totalCost = items.reduce((acc, item) => acc + (item.price * item.quantity), 0);
     const avgPrice = totalBottles > 0 ? totalCost / totalBottles : 0;
     return (
-      <div className="grid grid-cols-3 gap-2 mb-4">
-        <div className="bg-white dark:bg-stone-800 p-2.5 rounded-xl shadow-sm border border-stone-100 dark:border-stone-700 flex flex-col items-center justify-center transition-colors">
+      <div className="grid grid-cols-3 gap-1.5 mb-4">
+        <div className="bg-white dark:bg-stone-800 p-2 rounded-xl shadow-sm border border-stone-100 dark:border-stone-700 flex flex-col items-center justify-center transition-colors">
             <div className="flex items-center gap-1 text-stone-400 dark:text-stone-500 mb-0.5">
-               <Hash size={12}/>
-               <span className="text-[10px] uppercase font-bold tracking-wide">{t('bottles')}</span>
+               <Hash size={10}/>
+               <span className="text-[9px] uppercase font-bold tracking-wide">{t('bottles')}</span>
             </div>
-            <p className="text-lg font-bold text-stone-800 dark:text-stone-100 leading-tight">{totalBottles}</p>
+            <p className="text-base font-bold text-stone-800 dark:text-stone-100 leading-tight">{totalBottles}</p>
         </div>
-        <div className="bg-white dark:bg-stone-800 p-2.5 rounded-xl shadow-sm border border-stone-100 dark:border-stone-700 flex flex-col items-center justify-center transition-colors">
+        <div className="bg-white dark:bg-stone-800 p-2 rounded-xl shadow-sm border border-stone-100 dark:border-stone-700 flex flex-col items-center justify-center transition-colors">
              <div className="flex items-center gap-1 text-stone-400 dark:text-stone-500 mb-0.5">
-               <Coins size={12}/>
-               <span className="text-[10px] uppercase font-bold tracking-wide">{t('total_cost')}</span>
+               <Coins size={10}/>
+               <span className="text-[9px] uppercase font-bold tracking-wide">{t('total_cost')}</span>
             </div>
-            <p className="text-lg font-bold text-stone-800 dark:text-stone-100 leading-tight">{totalCost.toLocaleString(settings.language, { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 })}</p>
+            <p className="text-base font-bold text-stone-800 dark:text-stone-100 leading-tight">{totalCost.toLocaleString(settings.language, { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 })}</p>
         </div>
-        <div className="bg-white dark:bg-stone-800 p-2.5 rounded-xl shadow-sm border border-stone-100 dark:border-stone-700 flex flex-col items-center justify-center transition-colors">
+        <div className="bg-white dark:bg-stone-800 p-2 rounded-xl shadow-sm border border-stone-100 dark:border-stone-700 flex flex-col items-center justify-center transition-colors">
             <div className="flex items-center gap-1 text-stone-400 dark:text-stone-500 mb-0.5">
-               <Calculator size={12}/>
-               <span className="text-[10px] uppercase font-bold tracking-wide">{t('avg_price')}</span>
+               <Calculator size={10}/>
+               <span className="text-[9px] uppercase font-bold tracking-wide">{t('avg_price')}</span>
             </div>
-            <p className="text-lg font-bold text-stone-800 dark:text-stone-100 leading-tight">{avgPrice.toLocaleString(settings.language, { style: 'currency', currency: 'EUR', maximumFractionDigits: 1 })}</p>
+            <p className="text-base font-bold text-stone-800 dark:text-stone-100 leading-tight">{avgPrice.toLocaleString(settings.language, { style: 'currency', currency: 'EUR', maximumFractionDigits: 1 })}</p>
         </div>
       </div>
     );
@@ -360,12 +360,12 @@ function App() {
 
     if (activeTab === 'cellar') {
       return (
-        <div className="pb-24 px-4 py-4 space-y-4">
-            <div className="flex justify-between items-center mb-2 px-1">
-                <h1 className="text-3xl font-serif font-bold text-rose-950 dark:text-rose-100">{t('app_title')}</h1>
+        <div className="pb-24 px-2 py-4 space-y-3">
+            <div className="flex justify-between items-center mb-1 px-1">
+                <h1 className="text-2xl font-serif font-bold text-rose-950 dark:text-rose-100">{t('app_title')}</h1>
                 <div className="flex gap-2">
-                    <button onClick={() => setIsSearchOpen(true)} className={`p-2 rounded-full transition-all ${isFiltering ? 'bg-rose-100 dark:bg-rose-900 text-rose-900 dark:text-rose-100 shadow-sm' : 'bg-white dark:bg-stone-800 text-stone-400 dark:text-stone-500 hover:text-stone-600 dark:hover:text-stone-300 shadow-sm'}`}><Search size={24} /></button>
-                    <button onClick={() => setIsSettingsOpen(true)} className="p-2 rounded-full bg-white dark:bg-stone-800 text-stone-400 dark:text-stone-500 shadow-sm"><SettingsIcon size={24} /></button>
+                    <button onClick={() => setIsSearchOpen(true)} className={`p-2 rounded-full transition-all ${isFiltering ? 'bg-rose-100 dark:bg-rose-900 text-rose-900 dark:text-rose-100 shadow-sm' : 'bg-white dark:bg-stone-800 text-stone-400 dark:text-stone-500 hover:text-stone-600 dark:hover:text-stone-300 shadow-sm'}`}><Search size={22} /></button>
+                    <button onClick={() => setIsSettingsOpen(true)} className="p-2 rounded-full bg-white dark:bg-stone-800 text-stone-400 dark:text-stone-500 shadow-sm"><SettingsIcon size={22} /></button>
                 </div>
             </div>
             {renderStatsBar(filteredWines)}
@@ -375,14 +375,14 @@ function App() {
                 if (shelfWines.length === 0) return null;
                 const isExpanded = expandedShelves[shelfName] || false;
                 return (
-                    <div key={shelfName} className="bg-white dark:bg-stone-900 rounded-2xl shadow-sm border border-stone-100/80 dark:border-stone-800 overflow-hidden">
-                        <button onClick={() => toggleShelf(shelfName)} className={`w-full p-5 flex justify-between items-center ${isExpanded ? 'bg-stone-50 dark:bg-stone-800 border-b border-stone-100 dark:border-stone-800' : ''}`}><div className="flex items-center gap-3"><div className="text-stone-400">{isExpanded ? <ChevronDown size={20} /> : <ChevronRight size={20} />}</div><h2 className={`font-bold text-gray-800 dark:text-gray-100 ${fontClasses.shelfTitle}`}>{shelfName}</h2></div><span className={`bg-gray-100 dark:bg-stone-800 text-gray-500 dark:text-stone-400 font-semibold px-2.5 py-1 rounded-full border border-gray-200 dark:border-stone-700 ${fontClasses.shelfCount}`}>{shelfWines.reduce((acc, w) => acc + w.quantity, 0)}</span></button>
-                        {isExpanded && <div className="p-4 space-y-3">
+                    <div key={shelfName} className="bg-white dark:bg-stone-900 rounded-xl shadow-sm border border-stone-100/80 dark:border-stone-800 overflow-hidden">
+                        <button onClick={() => toggleShelf(shelfName)} className={`w-full p-4 flex justify-between items-center ${isExpanded ? 'bg-stone-50 dark:bg-stone-800 border-b border-stone-100 dark:border-stone-800' : ''}`}><div className="flex items-center gap-2.5"><div className="text-stone-400">{isExpanded ? <ChevronDown size={18} /> : <ChevronRight size={18} />}</div><h2 className={`font-bold text-gray-800 dark:text-gray-100 ${fontClasses.shelfTitle}`}>{shelfName}</h2></div><span className={`bg-gray-100 dark:bg-stone-800 text-gray-500 dark:text-stone-400 font-semibold px-2 py-0.5 rounded-full border border-gray-200 dark:border-stone-700 ${fontClasses.shelfCount}`}>{shelfWines.reduce((acc, w) => acc + w.quantity, 0)}</span></button>
+                        {isExpanded && <div className="p-2 space-y-2">
                               {shelfWines.map(wine => (
-                                  <div key={wine.id} onClick={() => { setSelectedWine(wine); setView('detail'); }} className={`flex gap-4 items-center p-3 rounded-xl cursor-pointer transition-all shadow-sm border-l-4 ${getColorTheme(wine.color)}`}>
-                                      <div className="w-14 h-14 rounded-full bg-white dark:bg-stone-800 flex-shrink-0 overflow-hidden border-2 border-white dark:border-stone-700 shadow-sm relative">{wine.image ? <img src={wine.image} className="w-full h-full object-cover" alt="" /> : <WineIcon className="w-6 h-6 m-auto mt-3.5 text-stone-300 dark:text-stone-600"/>}</div>
-                                      <div className="flex-1 min-w-0"><p className={`font-bold text-gray-800 dark:text-gray-100 truncate ${fontClasses.title} leading-tight`}>{wine.name}</p><div className="flex items-center gap-2 mt-0.5"><p className={`text-gray-500 dark:text-gray-400 truncate ${fontClasses.sub}`}>{wine.region} - {wine.year}</p><div className={`w-2 h-2 rounded-full ${getConsumptionStatusColor(wine)} flex-shrink-0`}></div></div></div>
-                                      <div className={`flex flex-col items-center justify-center w-10 h-10 rounded-lg shadow-sm ${getQuantityBadgeStyle(wine.color)}`}><span className={`uppercase font-bold opacity-60 leading-none ${fontClasses.badgeLabel}`}>Qté</span><span className={`font-bold leading-none mt-0.5 ${fontClasses.badgeValue}`}>{wine.quantity}</span></div>
+                                  <div key={wine.id} onClick={() => { setSelectedWine(wine); setView('detail'); }} className={`flex gap-2.5 items-center p-2 rounded-lg cursor-pointer transition-all shadow-sm border-l-4 ${getColorTheme(wine.color)}`}>
+                                      <div className="w-12 h-12 rounded-full bg-white dark:bg-stone-800 flex-shrink-0 overflow-hidden border border-white dark:border-stone-700 shadow-sm relative">{wine.image ? <img src={wine.image} className="w-full h-full object-cover" alt="" /> : <WineIcon className="w-5 h-5 m-auto mt-3.5 text-stone-300 dark:text-stone-600"/>}</div>
+                                      <div className="flex-1 min-w-0"><p className={`font-bold text-gray-800 dark:text-gray-100 truncate ${fontClasses.title} leading-tight`}>{wine.name}</p><div className="flex items-center gap-1.5 mt-0.5"><p className={`text-gray-500 dark:text-gray-400 truncate ${fontClasses.sub}`}>{wine.region} - {wine.year}</p><div className={`w-1.5 h-1.5 rounded-full ${getConsumptionStatusColor(wine)} flex-shrink-0`}></div></div></div>
+                                      <div className={`flex flex-col items-center justify-center w-9 h-9 rounded shadow-sm ${getQuantityBadgeStyle(wine.color)} flex-shrink-0`}><span className={`uppercase font-bold opacity-60 leading-none ${fontClasses.badgeLabel}`}>Qté</span><span className={`font-bold leading-none mt-0.5 ${fontClasses.badgeValue}`}>{wine.quantity}</span></div>
                                   </div>
                               ))}
                           </div>}
@@ -395,15 +395,15 @@ function App() {
 
     if (activeTab === 'history') {
       return (
-        <div className="pb-24 px-4 py-4">
-             <div className="flex justify-between items-center mb-6 px-1"><h1 className="text-3xl font-serif font-bold text-stone-800 dark:text-stone-100">{t('history')}</h1></div>
+        <div className="pb-24 px-2 py-4">
+             <div className="flex justify-between items-center mb-4 px-1"><h1 className="text-2xl font-serif font-bold text-stone-800 dark:text-stone-100">{t('history')}</h1></div>
              {renderStatsBar(filteredHistory)}
              {filteredHistory.length === 0 ? <div className="text-center py-20 text-stone-400 flex flex-col items-center"><History size={40} className="opacity-40 mb-4"/><p>{t('empty_history')}</p></div> : (
                 <div className="space-y-3">
                     {filteredHistory.map((entry, idx) => (
-                        <div key={idx} onClick={() => { setSelectedWine(entry); setView('detail'); }} className={`flex gap-4 p-3 rounded-xl cursor-pointer shadow-sm border-l-4 ${getColorTheme(entry.color)}`}>
-                            <div className="w-16 h-16 rounded-xl bg-white dark:bg-stone-800 flex-shrink-0 overflow-hidden border border-stone-200 dark:border-stone-700">{entry.image ? <img src={entry.image} className="w-full h-full object-cover" alt="" /> : <WineIcon className="w-full h-full p-4 text-stone-300"/>}</div>
-                            <div className="flex-1 min-w-0"><div className="flex justify-between items-start"><h3 className={`font-bold text-stone-800 dark:text-stone-100 truncate pr-2 ${fontClasses.title}`}>{entry.name}</h3><div className="flex items-center gap-0.5 text-amber-400 bg-amber-50 dark:bg-amber-900/20 px-1.5 py-0.5 rounded-md border border-amber-100 dark:border-amber-900/30 shadow-sm flex-shrink-0"><span className={`font-bold text-amber-600 dark:text-amber-400 ${fontClasses.badgeValue}`}>{entry.consumptionRating}</span><span className="text-amber-500 text-[10px]">★</span></div></div><p className={`text-stone-600 dark:text-stone-400 font-medium ${fontClasses.sub}`}>{entry.appellation} - {entry.year}</p><div className="flex items-center justify-between mt-2"><p className={`text-stone-400 dark:text-stone-500 ${fontClasses.sub}`}>{t('consumed_on')} {new Date(entry.consumedDate).toLocaleDateString()}</p><div className={`bg-white/50 dark:bg-stone-800 px-2 py-0.5 rounded text-stone-600 dark:text-stone-400 font-semibold border border-stone-200/50 dark:border-stone-700 ${fontClasses.badgeLabel}`}>{t('total_drunk')}: {entry.quantity}</div></div></div>
+                        <div key={idx} onClick={() => { setSelectedWine(entry); setView('detail'); }} className={`flex gap-3 p-2.5 rounded-xl cursor-pointer shadow-sm border-l-4 ${getColorTheme(entry.color)}`}>
+                            <div className="w-12 h-12 rounded-lg bg-white dark:bg-stone-800 flex-shrink-0 overflow-hidden border border-stone-200 dark:border-stone-700">{entry.image ? <img src={entry.image} className="w-full h-full object-cover" alt="" /> : <WineIcon className="w-full h-full p-3 text-stone-300"/>}</div>
+                            <div className="flex-1 min-w-0"><div className="flex justify-between items-start"><h3 className={`font-bold text-stone-800 dark:text-stone-100 truncate pr-2 ${fontClasses.title} leading-tight`}>{entry.name}</h3><div className="flex items-center gap-0.5 text-amber-400 bg-amber-50 dark:bg-amber-900/20 px-1 py-0.5 rounded border border-amber-100 dark:border-amber-900/30 shadow-sm flex-shrink-0"><span className={`font-bold text-amber-600 dark:text-amber-400 ${fontClasses.badgeValue}`}>{entry.consumptionRating}</span><span className="text-amber-500 text-[9px]">★</span></div></div><p className={`text-stone-600 dark:text-stone-400 font-medium ${fontClasses.sub} truncate`}>{entry.appellation} - {entry.year}</p><div className="flex items-center justify-between mt-1"><p className={`text-stone-400 dark:text-stone-500 ${fontClasses.sub}`}>{t('consumed_on')} {new Date(entry.consumedDate).toLocaleDateString()}</p><div className={`bg-white/50 dark:bg-stone-800 px-1.5 py-0.5 rounded text-stone-600 dark:text-stone-400 font-semibold border border-stone-200/50 dark:border-stone-700 ${fontClasses.badgeLabel}`}>{t('total_drunk')}: {entry.quantity}</div></div></div>
                         </div>
                     ))}
                 </div>
