@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Plus, LayoutGrid, History, Wine as WineIcon, Search, XCircle, ChevronDown, ChevronRight, Calculator, Coins, Hash, PieChart, Settings as SettingsIcon, Info } from 'lucide-react';
 import { Wine, HistoryEntry, WineColor, SearchFilters, AppSettings, LOCATION_HORS_CAVE, BackupData, AppFontSize } from './types';
@@ -79,8 +80,8 @@ function App() {
     setSettings(newSettings);
   };
 
-  // Export Data Logic
-  const handleExport = () => {
+  // Improved Export Logic supporting Capacitor Android
+  const handleExport = async () => {
     const backup: BackupData = {
       wines,
       history,
@@ -88,13 +89,53 @@ function App() {
       timestamp: new Date().toISOString()
     };
     
-    const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(backup));
+    const dataStr = JSON.stringify(backup, null, 2);
+    const fileName = `wine_cellar_backup_${new Date().toISOString().split('T')[0]}.json`;
+
+    // Check for Capacitor native environment
+    const isNative = (window as any).Capacitor && (window as any).Capacitor.getPlatform() !== 'web';
+
+    if (isNative) {
+      try {
+        // We import plugins only when needed
+        const { Filesystem, Directory, Encoding } = await import('@capacitor/filesystem');
+        const { Share } = await import('@capacitor/share');
+
+        // Write the backup to a temporary file in the Cache directory
+        const result = await Filesystem.writeFile({
+          path: fileName,
+          data: dataStr,
+          directory: Directory.Cache,
+          encoding: Encoding.UTF8
+        });
+
+        // Open the native share dialog
+        await Share.share({
+          title: 'Ma Cave à Vin - Sauvegarde',
+          text: 'Export de ma cave à vin au format JSON.',
+          url: result.uri,
+          dialogTitle: 'Exporter les données',
+        });
+      } catch (err) {
+        console.error('Capacitor export error:', err);
+        alert('Erreur lors de l\'exportation native. Tentative via navigateur...');
+        downloadWeb(dataStr, fileName);
+      }
+    } else {
+      downloadWeb(dataStr, fileName);
+    }
+  };
+
+  const downloadWeb = (data: string, name: string) => {
+    const blob = new Blob([data], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
     const downloadAnchorNode = document.createElement('a');
-    downloadAnchorNode.setAttribute("href", dataStr);
-    downloadAnchorNode.setAttribute("download", `wine_cellar_backup_${new Date().toISOString().split('T')[0]}.json`);
+    downloadAnchorNode.setAttribute("href", url);
+    downloadAnchorNode.setAttribute("download", name);
     document.body.appendChild(downloadAnchorNode);
     downloadAnchorNode.click();
     downloadAnchorNode.remove();
+    URL.revokeObjectURL(url);
   };
 
   // Import Data Logic
@@ -310,27 +351,27 @@ function App() {
     const avgPrice = totalBottles > 0 ? totalCost / totalBottles : 0;
     
     return (
-      <div className="grid grid-cols-3 gap-2 mb-4">
-        <div className="bg-white dark:bg-stone-800 p-2.5 rounded-xl shadow-sm border border-stone-100 dark:border-stone-700 flex flex-col items-center justify-center transition-colors">
+      <div className="grid grid-cols-3 gap-1.5 mb-4">
+        <div className="bg-white dark:bg-stone-800 p-2 rounded-xl shadow-sm border border-stone-100 dark:border-stone-700 flex flex-col items-center justify-center transition-colors">
             <div className="flex items-center gap-1 text-stone-400 dark:text-stone-500 mb-0.5">
-               <Hash size={12}/>
-               <span className="text-[10px] uppercase font-bold tracking-wide">{t('bottles')}</span>
+               <Hash size={11}/>
+               <span className="text-[9px] uppercase font-bold tracking-wide">{t('bottles')}</span>
             </div>
-            <p className="text-lg font-bold text-stone-800 dark:text-stone-100">{totalBottles}</p>
+            <p className="text-base font-bold text-stone-800 dark:text-stone-100 leading-tight">{totalBottles}</p>
         </div>
-        <div className="bg-white dark:bg-stone-800 p-2.5 rounded-xl shadow-sm border border-stone-100 dark:border-stone-700 flex flex-col items-center justify-center transition-colors">
+        <div className="bg-white dark:bg-stone-800 p-2 rounded-xl shadow-sm border border-stone-100 dark:border-stone-700 flex flex-col items-center justify-center transition-colors">
              <div className="flex items-center gap-1 text-stone-400 dark:text-stone-500 mb-0.5">
-               <Coins size={12}/>
-               <span className="text-[10px] uppercase font-bold tracking-wide">{t('total_cost')}</span>
+               <Coins size={11}/>
+               <span className="text-[9px] uppercase font-bold tracking-wide">{t('total_cost')}</span>
             </div>
-            <p className="text-lg font-bold text-stone-800 dark:text-stone-100">{totalCost.toLocaleString(settings.language, { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 })}</p>
+            <p className="text-base font-bold text-stone-800 dark:text-stone-100 leading-tight">{totalCost.toLocaleString(settings.language, { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 })}</p>
         </div>
-        <div className="bg-white dark:bg-stone-800 p-2.5 rounded-xl shadow-sm border border-stone-100 dark:border-stone-700 flex flex-col items-center justify-center transition-colors">
+        <div className="bg-white dark:bg-stone-800 p-2 rounded-xl shadow-sm border border-stone-100 dark:border-stone-700 flex flex-col items-center justify-center transition-colors">
             <div className="flex items-center gap-1 text-stone-400 dark:text-stone-500 mb-0.5">
-               <Calculator size={12}/>
-               <span className="text-[10px] uppercase font-bold tracking-wide">{t('avg_price')}</span>
+               <Calculator size={11}/>
+               <span className="text-[9px] uppercase font-bold tracking-wide">{t('avg_price')}</span>
             </div>
-            <p className="text-lg font-bold text-stone-800 dark:text-stone-100">{avgPrice.toLocaleString(settings.language, { style: 'currency', currency: 'EUR', maximumFractionDigits: 1 })}</p>
+            <p className="text-base font-bold text-stone-800 dark:text-stone-100 leading-tight">{avgPrice.toLocaleString(settings.language, { style: 'currency', currency: 'EUR', maximumFractionDigits: 1 })}</p>
         </div>
       </div>
     );
@@ -371,27 +412,27 @@ function App() {
       const shelvesToRender = availableLocations; 
 
       return (
-        <div className="pb-24 p-4 space-y-4">
-            <div className="flex justify-between items-center mb-2 px-2 pt-2">
-                <h1 className="text-3xl font-serif font-bold text-rose-950 dark:text-rose-100">{t('app_title')}</h1>
-                <div className="flex gap-2">
+        <div className="pb-24 px-2 sm:px-4 py-4 space-y-3">
+            <div className="flex justify-between items-center mb-1 px-1">
+                <h1 className="text-2xl sm:text-3xl font-serif font-bold text-rose-950 dark:text-rose-100">{t('app_title')}</h1>
+                <div className="flex gap-1.5">
                     <button 
                       onClick={() => setIsSearchOpen(true)}
                       className={`p-2 rounded-full transition-all ${isFiltering ? 'bg-rose-100 dark:bg-rose-900 text-rose-900 dark:text-rose-100 shadow-sm' : 'bg-white dark:bg-stone-800 text-stone-400 dark:text-stone-500 hover:text-stone-600 dark:hover:text-stone-300 shadow-sm'}`}
                     >
-                      {isFiltering ? <div className="relative"><Search size={24} /><div className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-rose-600 rounded-full border border-white"></div></div> : <Search size={24} />}
+                      {isFiltering ? <div className="relative"><Search size={22} /><div className="absolute -top-1 -right-1 w-2 h-2 bg-rose-600 rounded-full border border-white"></div></div> : <Search size={22} />}
                     </button>
                     <button 
                       onClick={() => setIsInfoOpen(true)}
                       className="p-2 rounded-full bg-white dark:bg-stone-800 text-stone-400 dark:text-stone-500 hover:text-stone-600 dark:hover:text-stone-300 shadow-sm transition-all"
                     >
-                      <Info size={24} />
+                      <Info size={22} />
                     </button>
                     <button 
                       onClick={() => setIsSettingsOpen(true)}
                       className="p-2 rounded-full bg-white dark:bg-stone-800 text-stone-400 dark:text-stone-500 hover:text-stone-600 dark:hover:text-stone-300 shadow-sm transition-all"
                     >
-                      <SettingsIcon size={24} />
+                      <SettingsIcon size={22} />
                     </button>
                 </div>
             </div>
@@ -399,21 +440,21 @@ function App() {
             {renderStatsBar(filteredWines)}
 
             {isFiltering && (
-              <div className="bg-rose-50 dark:bg-rose-900/30 border border-rose-100 dark:border-rose-900/50 rounded-lg p-3 flex justify-between items-center text-sm text-rose-800 dark:text-rose-200">
+              <div className="bg-rose-50 dark:bg-rose-900/30 border border-rose-100 dark:border-rose-900/50 rounded-lg p-2.5 flex justify-between items-center text-xs sm:text-sm text-rose-800 dark:text-rose-200">
                 <span>{t('active_filters')} ({filteredWines.length})</span>
-                <button onClick={() => setSearchFilters({})} className="flex items-center gap-1 font-semibold text-xs bg-white dark:bg-stone-800 px-2 py-1 rounded shadow-sm border border-rose-100 dark:border-rose-900/50 hover:bg-rose-50 dark:hover:bg-stone-700">
-                  <XCircle size={14}/> Effacer
+                <button onClick={() => setSearchFilters({})} className="flex items-center gap-1 font-semibold text-[10px] sm:text-xs bg-white dark:bg-stone-800 px-2 py-1 rounded shadow-sm border border-rose-100 dark:border-rose-900/50 hover:bg-rose-50 dark:hover:bg-stone-700">
+                  <XCircle size={13}/> Effacer
                 </button>
               </div>
             )}
 
             {filteredWines.length === 0 && (
                 <div className="text-center py-20 text-stone-400 dark:text-stone-600 flex flex-col items-center">
-                    <div className="w-20 h-20 bg-stone-100 dark:bg-stone-800 rounded-full flex items-center justify-center mb-4">
-                      {isFiltering ? <Search size={40} className="opacity-40"/> : <WineIcon size={40} className="opacity-40"/>}
+                    <div className="w-16 h-16 bg-stone-100 dark:bg-stone-800 rounded-full flex items-center justify-center mb-4">
+                      {isFiltering ? <Search size={32} className="opacity-40"/> : <WineIcon size={32} className="opacity-40"/>}
                     </div>
                     <p className="font-medium">{isFiltering ? t('no_results') : t('empty_cellar')}</p>
-                    {!isFiltering && <p className="text-sm mt-2 max-w-[200px]">{t('empty_cellar_sub')}</p>}
+                    {!isFiltering && <p className="text-xs mt-2 max-w-[180px]">{t('empty_cellar_sub')}</p>}
                 </div>
             )}
             
@@ -436,43 +477,43 @@ function App() {
                 const isExpanded = expandedShelves[shelfName] || false;
 
                 return (
-                    <div key={shelfName} className="bg-white dark:bg-stone-900 rounded-2xl shadow-sm border border-stone-100/80 dark:border-stone-800 overflow-hidden transition-colors">
+                    <div key={shelfName} className="bg-white dark:bg-stone-900 rounded-xl shadow-sm border border-stone-100/80 dark:border-stone-800 overflow-hidden transition-colors">
                         <button 
                           onClick={() => toggleShelf(shelfName)}
-                          className={`w-full p-5 flex justify-between items-center transition-colors ${isExpanded ? 'bg-stone-50 dark:bg-stone-800 border-b border-stone-100 dark:border-stone-800' : 'bg-white dark:bg-stone-900 hover:bg-stone-50 dark:hover:bg-stone-800'}`}
+                          className={`w-full p-4 flex justify-between items-center transition-colors ${isExpanded ? 'bg-stone-50 dark:bg-stone-800 border-b border-stone-100 dark:border-stone-800' : 'bg-white dark:bg-stone-900 hover:bg-stone-50 dark:hover:bg-stone-800'}`}
                         >
-                            <div className="flex items-center gap-3">
+                            <div className="flex items-center gap-2">
                               <div className="text-stone-400 dark:text-stone-500">
-                                {isExpanded ? <ChevronDown size={20} /> : <ChevronRight size={20} />}
+                                {isExpanded ? <ChevronDown size={18} /> : <ChevronRight size={18} />}
                               </div>
                               <h2 className={`font-bold text-gray-800 dark:text-gray-100 ${fontClasses.shelfTitle}`}>
                                   {shelfName}
                               </h2>
                             </div>
-                            <span className={`bg-gray-100 dark:bg-stone-800 text-gray-500 dark:text-stone-400 font-semibold px-2.5 py-1 rounded-full border border-gray-200 dark:border-stone-700 ${fontClasses.shelfCount}`}>
+                            <span className={`bg-gray-100 dark:bg-stone-800 text-gray-500 dark:text-stone-400 font-semibold px-2 py-0.5 rounded-full border border-gray-200 dark:border-stone-700 ${fontClasses.shelfCount}`}>
                                 {shelfWines.reduce((acc, w) => acc + w.quantity, 0)}
                             </span>
                         </button>
                         
                         {isExpanded && (
-                          <div className="p-5 pt-3 space-y-3 animate-in slide-in-from-top-2 fade-in duration-200">
+                          <div className="p-2 sm:p-3 space-y-2 animate-in slide-in-from-top-1 fade-in duration-200">
                               {shelfWines.map(wine => (
                                   <div 
                                       key={wine.id} 
                                       onClick={() => { setSelectedWine(wine); setView('detail'); }}
-                                      className={`flex gap-4 items-center p-3 rounded-xl cursor-pointer transition-all shadow-sm border-l-4 ${getColorTheme(wine.color)}`}
+                                      className={`flex gap-3 items-center p-2 sm:p-2.5 rounded-lg cursor-pointer transition-all shadow-sm border-l-4 ${getColorTheme(wine.color)}`}
                                   >
-                                      <div className="w-14 h-14 rounded-full bg-white dark:bg-stone-800 flex-shrink-0 overflow-hidden border-2 border-white dark:border-stone-700 shadow-sm relative">
-                                          {wine.image ? <img src={wine.image} className="w-full h-full object-cover" alt="" /> : <WineIcon className="w-6 h-6 m-auto mt-3.5 text-stone-300 dark:text-stone-600"/>}
+                                      <div className="w-12 h-12 rounded-full bg-white dark:bg-stone-800 flex-shrink-0 overflow-hidden border border-white dark:border-stone-700 shadow-sm relative">
+                                          {wine.image ? <img src={wine.image} className="w-full h-full object-cover" alt="" /> : <WineIcon className="w-5 h-5 m-auto mt-3 text-stone-300 dark:text-stone-600"/>}
                                       </div>
                                       <div className="flex-1 min-w-0">
-                                          <p className={`font-bold text-gray-800 dark:text-gray-100 truncate ${fontClasses.title}`}>{wine.name}</p>
-                                          <div className={`flex items-center gap-2 mt-0.5`}>
-                                            <p className={`text-gray-500 dark:text-gray-400 truncate ${fontClasses.sub}`}>{wine.region} - {wine.year}</p>
-                                            <div className={`w-2 h-2 rounded-full ${getConsumptionStatusColor(wine)} flex-shrink-0`}></div>
+                                          <p className={`font-bold text-gray-800 dark:text-gray-100 truncate ${fontClasses.title} leading-tight`}>{wine.name}</p>
+                                          <div className={`flex items-center gap-1.5 mt-0.5`}>
+                                            <p className={`text-gray-500 dark:text-gray-400 truncate ${fontClasses.sub} max-w-[85%]`}>{wine.region} - {wine.year}</p>
+                                            <div className={`w-1.5 h-1.5 rounded-full ${getConsumptionStatusColor(wine)} flex-shrink-0`}></div>
                                           </div>
                                       </div>
-                                      <div className={`flex flex-col items-center justify-center w-10 h-10 rounded-lg shadow-sm ${getQuantityBadgeStyle(wine.color)}`}>
+                                      <div className={`flex flex-col items-center justify-center w-9 h-9 rounded shadow-sm ${getQuantityBadgeStyle(wine.color)}`}>
                                           <span className={`uppercase font-bold opacity-60 leading-none ${fontClasses.badgeLabel}`}>Qté</span>
                                           <span className={`font-bold leading-none mt-0.5 ${fontClasses.badgeValue}`}>{wine.quantity}</span>
                                       </div>
@@ -491,27 +532,27 @@ function App() {
       const displayedHistory = filteredHistory;
 
       return (
-        <div className="pb-24 p-4">
-             <div className="flex justify-between items-center mb-6 px-2 pt-2">
-                <h1 className="text-3xl font-serif font-bold text-stone-800 dark:text-stone-100">{t('history')}</h1>
-                <div className="flex gap-2">
+        <div className="pb-24 px-2 sm:px-4 py-4">
+             <div className="flex justify-between items-center mb-4 px-1">
+                <h1 className="text-2xl sm:text-3xl font-serif font-bold text-stone-800 dark:text-stone-100">{t('history')}</h1>
+                <div className="flex gap-1.5">
                     <button 
                     onClick={() => setIsSearchOpen(true)}
                     className={`p-2 rounded-full transition-all ${isFiltering ? 'bg-rose-100 dark:bg-rose-900 text-rose-900 dark:text-rose-100 shadow-sm' : 'bg-white dark:bg-stone-800 text-stone-400 dark:text-stone-500 hover:text-stone-600 dark:hover:text-stone-300 shadow-sm'}`}
                     >
-                    {isFiltering ? <div className="relative"><Search size={24} /><div className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-rose-600 rounded-full border border-white"></div></div> : <Search size={24} />}
+                    {isFiltering ? <div className="relative"><Search size={22} /><div className="absolute -top-1 -right-1 w-2 h-2 bg-rose-600 rounded-full border border-white"></div></div> : <Search size={22} />}
                     </button>
                     <button 
                       onClick={() => setIsInfoOpen(true)}
                       className="p-2 rounded-full bg-white dark:bg-stone-800 text-stone-400 dark:text-stone-500 hover:text-stone-600 dark:hover:text-stone-300 shadow-sm transition-all"
                     >
-                      <Info size={24} />
+                      <Info size={22} />
                     </button>
                     <button 
                       onClick={() => setIsSettingsOpen(true)}
                       className="p-2 rounded-full bg-white dark:bg-stone-800 text-stone-400 dark:text-stone-500 hover:text-stone-600 dark:hover:text-stone-300 shadow-sm transition-all"
                     >
-                      <SettingsIcon size={24} />
+                      <SettingsIcon size={22} />
                     </button>
                 </div>
              </div>
@@ -519,18 +560,18 @@ function App() {
              {renderStatsBar(displayedHistory)}
 
              {isFiltering && (
-              <div className="bg-stone-100 dark:bg-stone-800 border border-stone-200 dark:border-stone-700 rounded-lg p-3 flex justify-between items-center text-sm text-stone-800 dark:text-stone-200 mb-4">
+              <div className="bg-stone-100 dark:bg-stone-800 border border-stone-200 dark:border-stone-700 rounded-lg p-2.5 flex justify-between items-center text-xs sm:text-sm text-stone-800 dark:text-stone-200 mb-3">
                 <span>{t('active_filters')} ({displayedHistory.length})</span>
-                <button onClick={() => setSearchFilters({})} className="flex items-center gap-1 font-semibold text-xs bg-white dark:bg-stone-700 px-2 py-1 rounded shadow-sm border border-stone-200 dark:border-stone-600 text-stone-800 dark:text-stone-100 hover:bg-stone-50 dark:hover:bg-stone-600">
-                  <XCircle size={14}/> Effacer
+                <button onClick={() => setSearchFilters({})} className="flex items-center gap-1 font-semibold text-[10px] sm:text-xs bg-white dark:bg-stone-700 px-2 py-1 rounded shadow-sm border border-stone-200 dark:border-stone-600 text-stone-800 dark:text-stone-100 hover:bg-stone-50 dark:hover:bg-stone-600">
+                  <XCircle size={13}/> Effacer
                 </button>
               </div>
             )}
 
              {displayedHistory.length === 0 ? (
                  <div className="text-center py-20 text-stone-400 dark:text-stone-600 flex flex-col items-center">
-                    <div className="w-20 h-20 bg-stone-100 dark:bg-stone-800 rounded-full flex items-center justify-center mb-4">
-                      {isFiltering ? <Search size={40} className="opacity-40"/> : <History size={40} className="opacity-40"/>}
+                    <div className="w-16 h-16 bg-stone-100 dark:bg-stone-800 rounded-full flex items-center justify-center mb-4">
+                      {isFiltering ? <Search size={32} className="opacity-40"/> : <History size={32} className="opacity-40"/>}
                     </div>
                     <p>{isFiltering ? t('no_results') : t('empty_history')}</p>
                 </div>
@@ -540,23 +581,23 @@ function App() {
                         <div 
                             key={idx} 
                             onClick={() => { setSelectedWine(entry); setView('detail'); }}
-                            className={`flex gap-4 p-3 rounded-xl cursor-pointer transition-all shadow-sm border-l-4 ${getColorTheme(entry.color)}`}
+                            className={`flex gap-3 p-2.5 rounded-lg cursor-pointer transition-all shadow-sm border-l-4 ${getColorTheme(entry.color)}`}
                         >
-                            <div className="w-16 h-16 rounded-xl bg-white dark:bg-stone-800 flex-shrink-0 overflow-hidden border border-stone-200 dark:border-stone-700">
-                                {entry.image ? <img src={entry.image} className="w-full h-full object-cover" alt="" /> : <div className="w-full h-full flex items-center justify-center text-stone-300 dark:text-stone-600"><WineIcon/></div>}
+                            <div className="w-14 h-14 rounded-lg bg-white dark:bg-stone-800 flex-shrink-0 overflow-hidden border border-stone-200 dark:border-stone-700">
+                                {entry.image ? <img src={entry.image} className="w-full h-full object-cover" alt="" /> : <div className="w-full h-full flex items-center justify-center text-stone-300 dark:text-stone-600"><WineIcon size={18}/></div>}
                             </div>
-                            <div className="flex-1">
+                            <div className="flex-1 min-w-0">
                                 <div className="flex justify-between items-start">
-                                    <h3 className={`font-bold text-stone-800 dark:text-stone-100 ${fontClasses.title}`}>{entry.name}</h3>
-                                    <div className="flex items-center gap-0.5 text-amber-400 bg-amber-50 dark:bg-amber-900/20 px-1.5 py-0.5 rounded-md border border-amber-100 dark:border-amber-900/30 shadow-sm">
+                                    <h3 className={`font-bold text-stone-800 dark:text-stone-100 truncate pr-2 ${fontClasses.title}`}>{entry.name}</h3>
+                                    <div className="flex items-center gap-0.5 text-amber-400 bg-amber-50 dark:bg-amber-900/20 px-1 py-0.5 rounded border border-amber-100 dark:border-amber-900/30 shadow-sm flex-shrink-0">
                                         <span className={`font-bold text-amber-600 dark:text-amber-400 ${fontClasses.badgeValue}`}>{entry.consumptionRating}</span>
                                         <span className={`${fontClasses.badgeLabel} text-amber-500`}>★</span>
                                     </div>
                                 </div>
-                                <p className={`text-stone-600 dark:text-stone-400 font-medium ${fontClasses.sub}`}>{entry.appellation} - {entry.year}</p>
-                                <div className="flex items-center justify-between mt-2">
+                                <p className={`text-stone-600 dark:text-stone-400 font-medium truncate ${fontClasses.sub}`}>{entry.appellation} - {entry.year}</p>
+                                <div className="flex items-center justify-between mt-1">
                                   <p className={`text-stone-400 dark:text-stone-500 ${fontClasses.sub}`}>{t('consumed_on')} {new Date(entry.consumedDate).toLocaleDateString()}</p>
-                                  <div className={`bg-white/50 dark:bg-stone-800 px-2 py-0.5 rounded text-stone-600 dark:text-stone-400 font-semibold border border-stone-200/50 dark:border-stone-700 ${fontClasses.badgeLabel}`}>
+                                  <div className={`bg-white/50 dark:bg-stone-800 px-1.5 py-0.5 rounded text-stone-600 dark:text-stone-400 font-semibold border border-stone-200/50 dark:border-stone-700 ${fontClasses.badgeLabel}`}>
                                       {t('total_drunk')}: {entry.quantity}
                                   </div>
                                 </div>
@@ -576,8 +617,8 @@ function App() {
           {/* Global Container - Center on Desktop, Full on Mobile */}
           <div className="bg-stone-200 dark:bg-stone-950 h-screen w-full flex justify-center overflow-hidden">
           
-          {/* Main App Frame */}
-          <main className="w-full max-w-md h-full bg-stone-50 dark:bg-black shadow-2xl relative flex flex-col transition-colors duration-300">
+          {/* Main App Frame - Widened from max-w-md to max-w-screen-sm */}
+          <main className="w-full max-w-screen-sm h-full bg-stone-50 dark:bg-black shadow-2xl relative flex flex-col transition-colors duration-300">
               
               {/* Scrollable Content Area */}
               <div className="flex-1 overflow-y-auto no-scrollbar relative">
@@ -588,44 +629,44 @@ function App() {
               {view === 'list' && activeTab === 'cellar' && (
               <button
                   onClick={() => setView('add')}
-                  className="absolute bottom-24 right-6 bg-rose-900 dark:bg-rose-700 text-white p-4 rounded-full shadow-lg shadow-rose-900/30 dark:shadow-rose-900/50 hover:bg-rose-800 dark:hover:bg-rose-600 transition-transform hover:scale-105 active:scale-95 z-30"
+                  className="absolute bottom-24 right-4 sm:right-6 bg-rose-900 dark:bg-rose-700 text-white p-4 rounded-full shadow-lg shadow-rose-900/30 dark:shadow-rose-900/50 hover:bg-rose-800 dark:hover:bg-rose-600 transition-transform hover:scale-105 active:scale-95 z-30"
               >
-                  <Plus size={28} />
+                  <Plus size={24} />
               </button>
               )}
 
               {/* Bottom Navigation - Absolute to Frame */}
               {view === 'list' && (
-              <div className="absolute bottom-0 left-0 right-0 bg-white/90 dark:bg-stone-900/90 backdrop-blur-md border-t border-stone-200 dark:border-stone-800 z-40 safe-area-bottom transition-colors duration-300">
-                  <div className="flex justify-around items-center h-20 pb-2">
+              <div className="absolute bottom-0 left-0 right-0 bg-white/95 dark:bg-stone-900/95 backdrop-blur-md border-t border-stone-200 dark:border-stone-800 z-40 safe-area-bottom transition-colors duration-300">
+                  <div className="flex justify-around items-center h-16 sm:h-20 pb-2">
                   <button
                       onClick={() => { setActiveTab('cellar'); setView('list'); }}
                       className={`flex flex-col items-center justify-center w-full h-full transition-colors ${activeTab === 'cellar' ? 'text-rose-900 dark:text-rose-400' : 'text-stone-400 dark:text-stone-600 hover:text-stone-600 dark:hover:text-stone-400'}`}
                   >
-                      <div className={`p-1 rounded-xl mb-1 ${activeTab === 'cellar' ? 'bg-rose-50 dark:bg-rose-900/20' : ''}`}>
-                      <LayoutGrid size={24} strokeWidth={activeTab === 'cellar' ? 2.5 : 2} />
+                      <div className={`p-1 rounded-xl mb-0.5 ${activeTab === 'cellar' ? 'bg-rose-50 dark:bg-rose-900/20' : ''}`}>
+                      <LayoutGrid size={22} strokeWidth={activeTab === 'cellar' ? 2.5 : 2} />
                       </div>
-                      <span className="text-xs font-semibold">{t('cellar')}</span>
+                      <span className="text-[10px] sm:text-xs font-semibold">{t('cellar')}</span>
                   </button>
 
                   <button
                       onClick={() => { setActiveTab('stats'); setView('list'); }}
                       className={`flex flex-col items-center justify-center w-full h-full transition-colors ${activeTab === 'stats' ? 'text-rose-900 dark:text-rose-400' : 'text-stone-400 dark:text-stone-600 hover:text-stone-600 dark:hover:text-stone-400'}`}
                   >
-                      <div className={`p-1 rounded-xl mb-1 ${activeTab === 'stats' ? 'bg-rose-50 dark:bg-rose-900/20' : ''}`}>
-                      <PieChart size={24} strokeWidth={activeTab === 'stats' ? 2.5 : 2} />
+                      <div className={`p-1 rounded-xl mb-0.5 ${activeTab === 'stats' ? 'bg-rose-50 dark:bg-rose-900/20' : ''}`}>
+                      <PieChart size={22} strokeWidth={activeTab === 'stats' ? 2.5 : 2} />
                       </div>
-                      <span className="text-xs font-semibold">{t('stats')}</span>
+                      <span className="text-[10px] sm:text-xs font-semibold">{t('stats')}</span>
                   </button>
 
                   <button
                       onClick={() => { setActiveTab('history'); setView('list'); }}
                       className={`flex flex-col items-center justify-center w-full h-full transition-colors ${activeTab === 'history' ? 'text-rose-900 dark:text-rose-400' : 'text-stone-400 dark:text-stone-600 hover:text-stone-600 dark:hover:text-stone-400'}`}
                   >
-                      <div className={`p-1 rounded-xl mb-1 ${activeTab === 'history' ? 'bg-rose-50 dark:bg-rose-900/20' : ''}`}>
-                          <History size={24} strokeWidth={activeTab === 'history' ? 2.5 : 2} />
+                      <div className={`p-1 rounded-xl mb-0.5 ${activeTab === 'history' ? 'bg-rose-50 dark:bg-rose-900/20' : ''}`}>
+                          <History size={22} strokeWidth={activeTab === 'history' ? 2.5 : 2} />
                       </div>
-                      <span className="text-xs font-semibold">{t('history')}</span>
+                      <span className="text-[10px] sm:text-xs font-semibold">{t('history')}</span>
                   </button>
                   </div>
               </div>
