@@ -63,7 +63,6 @@ function App() {
 
   // Handle Shelf Logic when settings change
   const handleUpdateSettings = (newSettings: AppSettings) => {
-    // If shelf count decreased, move wines from deleted shelves to "Hors Cave"
     if (newSettings.shelfCount < settings.shelfCount) {
         const updatedWines = wines.map(wine => {
              const match = wine.location.match(/(\d+)/);
@@ -92,16 +91,13 @@ function App() {
     const dataStr = JSON.stringify(backup, null, 2);
     const fileName = `wine_cellar_backup_${new Date().toISOString().split('T')[0]}.json`;
 
-    // Check for Capacitor native environment
     const isNative = (window as any).Capacitor && (window as any).Capacitor.getPlatform() !== 'web';
 
     if (isNative) {
       try {
-        // We import plugins only when needed
         const { Filesystem, Directory, Encoding } = await import('@capacitor/filesystem');
         const { Share } = await import('@capacitor/share');
 
-        // Write the backup to a temporary file in the Cache directory
         const result = await Filesystem.writeFile({
           path: fileName,
           data: dataStr,
@@ -109,7 +105,6 @@ function App() {
           encoding: Encoding.UTF8
         });
 
-        // Open the native share dialog
         await Share.share({
           title: 'Ma Cave à Vin - Sauvegarde',
           text: 'Export de ma cave à vin au format JSON.',
@@ -138,28 +133,24 @@ function App() {
     URL.revokeObjectURL(url);
   };
 
-  // Import Data Logic
   const handleImport = (data: BackupData) => {
     setWines(data.wines);
     setHistory(data.history);
     setSettings(data.settings);
-    // Refresh view and close modal
     setActiveTab('cellar');
     setView('list');
     setIsSettingsOpen(false);
     alert(t('import_success'));
   };
 
-  // Generate Available Locations based on Settings
   const getAvailableLocations = (): string[] => {
     const prefix = t('shelf_prefix');
     const shelves = Array.from({ length: settings.shelfCount }, (_, i) => `${prefix} ${i + 1}`);
-    return [...shelves, t('off_site')]; // Use translated "Hors cave"
+    return [...shelves, t('off_site')];
   };
 
   const availableLocations = getAvailableLocations();
 
-  // Helper for font sizes
   const getFontSizeClasses = (size: AppFontSize) => {
     switch(size) {
       case 'small':
@@ -195,7 +186,6 @@ function App() {
 
   const fontClasses = getFontSizeClasses(settings.fontSize || 'medium');
 
-  // Filtering Logic
   const filterList = <T extends Wine>(list: T[]): T[] => {
     const hasFilters = Object.keys(searchFilters).length > 0;
     if (!hasFilters) return list;
@@ -219,12 +209,8 @@ function App() {
   const filteredHistory = filterList<HistoryEntry>(history);
   const isFiltering = Object.keys(searchFilters).length > 0;
 
-  // Actions
   const handleAddWine = (wineData: Omit<Wine, 'id'>) => {
-    const newWine: Wine = {
-      ...wineData,
-      id: Date.now().toString(),
-    };
+    const newWine: Wine = { ...wineData, id: Date.now().toString() };
     setWines(prev => [...prev, newWine]);
     setView('list');
     setActiveTab('cellar');
@@ -240,20 +226,14 @@ function App() {
   };
 
   const handleDuplicateWine = (sourceWine: Wine, quantity: number, location: string) => {
-      // Remove specific history properties if duplicating from history
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
       const { id, ...wineProps } = sourceWine;
-      
       const newWine: Wine = {
-        ...wineProps as Wine, // Type assertion since we might be duplicating from HistoryEntry
+        ...wineProps as Wine,
         id: Date.now().toString(),
         quantity: quantity,
         location: location,
-        // Ensure standard wine properties exist if coming from history
         purchaseDate: sourceWine.purchaseDate || new Date().toISOString(),
       };
-      
-      // Remove history-specific fields if they exist on the source object
       if ('consumedDate' in newWine) delete (newWine as any).consumedDate;
       if ('consumptionRating' in newWine) delete (newWine as any).consumptionRating;
 
@@ -275,21 +255,19 @@ function App() {
   const handleConsumeWine = (wine: Wine, rating: number, strength: number) => {
     const existingHistoryIndex = history.findIndex(h => h.name === wine.name && h.year === wine.year && h.appellation === wine.appellation);
     let newHistory;
-    
-    // Create history entry logic with updated strength
     if (existingHistoryIndex >= 0) {
         newHistory = [...history];
         newHistory[existingHistoryIndex] = {
             ...newHistory[existingHistoryIndex],
             quantity: newHistory[existingHistoryIndex].quantity + 1,
             consumptionRating: rating,
-            strength: strength, // Update strength if changed
+            strength: strength,
             consumedDate: new Date().toISOString()
         };
     } else {
         const historyEntry: HistoryEntry = {
           ...wine,
-          strength: strength, // Use the strength from modal
+          strength: strength,
           consumedDate: new Date().toISOString(),
           consumptionRating: rating,
           quantity: 1
@@ -297,8 +275,6 @@ function App() {
         newHistory = [...history, historyEntry];
     }
     setHistory(newHistory);
-    
-    // Decrease quantity or remove from wines
     if (wine.quantity > 1) {
       setWines(prev => prev.map(w => w.id === wine.id ? { ...w, quantity: w.quantity - 1 } : w));
       setView('list');
@@ -315,11 +291,11 @@ function App() {
   const getColorTheme = (color: WineColor) => {
     switch (color) {
       case WineColor.ROUGE:
-        return 'border-l-rose-700 bg-rose-100 hover:bg-rose-200 dark:bg-rose-900/40 dark:hover:bg-rose-900/60 dark:border-l-rose-600';
+        return 'border-l-rose-700 bg-rose-100/50 hover:bg-rose-200/50 dark:bg-rose-900/40 dark:hover:bg-rose-900/60 dark:border-l-rose-600';
       case WineColor.BLANC:
-        return 'border-l-yellow-500 bg-yellow-100 hover:bg-yellow-200 dark:bg-yellow-900/40 dark:hover:bg-yellow-900/60 dark:border-l-yellow-400';
+        return 'border-l-yellow-500 bg-yellow-100/50 hover:bg-yellow-200/50 dark:bg-yellow-900/40 dark:hover:bg-yellow-900/60 dark:border-l-yellow-400';
       case WineColor.ROSE:
-        return 'border-l-pink-500 bg-pink-100 hover:bg-pink-200 dark:bg-pink-900/40 dark:hover:bg-pink-900/60 dark:border-l-pink-400';
+        return 'border-l-pink-500 bg-pink-100/50 hover:bg-pink-200/50 dark:bg-pink-900/40 dark:hover:bg-pink-900/60 dark:border-l-pink-400';
       default:
         return 'border-l-gray-300 bg-white dark:bg-stone-800';
     }
@@ -349,178 +325,67 @@ function App() {
     const totalBottles = items.reduce((acc, item) => acc + item.quantity, 0);
     const totalCost = items.reduce((acc, item) => acc + (item.price * item.quantity), 0);
     const avgPrice = totalBottles > 0 ? totalCost / totalBottles : 0;
-    
     return (
-      <div className="grid grid-cols-3 gap-1.5 mb-4">
-        <div className="bg-white dark:bg-stone-800 p-2 rounded-xl shadow-sm border border-stone-100 dark:border-stone-700 flex flex-col items-center justify-center transition-colors">
+      <div className="grid grid-cols-3 gap-2 mb-4">
+        <div className="bg-white dark:bg-stone-800 p-2.5 rounded-xl shadow-sm border border-stone-100 dark:border-stone-700 flex flex-col items-center justify-center transition-colors">
             <div className="flex items-center gap-1 text-stone-400 dark:text-stone-500 mb-0.5">
-               <Hash size={11}/>
-               <span className="text-[9px] uppercase font-bold tracking-wide">{t('bottles')}</span>
+               <Hash size={12}/>
+               <span className="text-[10px] uppercase font-bold tracking-wide">{t('bottles')}</span>
             </div>
-            <p className="text-base font-bold text-stone-800 dark:text-stone-100 leading-tight">{totalBottles}</p>
+            <p className="text-lg font-bold text-stone-800 dark:text-stone-100 leading-tight">{totalBottles}</p>
         </div>
-        <div className="bg-white dark:bg-stone-800 p-2 rounded-xl shadow-sm border border-stone-100 dark:border-stone-700 flex flex-col items-center justify-center transition-colors">
+        <div className="bg-white dark:bg-stone-800 p-2.5 rounded-xl shadow-sm border border-stone-100 dark:border-stone-700 flex flex-col items-center justify-center transition-colors">
              <div className="flex items-center gap-1 text-stone-400 dark:text-stone-500 mb-0.5">
-               <Coins size={11}/>
-               <span className="text-[9px] uppercase font-bold tracking-wide">{t('total_cost')}</span>
+               <Coins size={12}/>
+               <span className="text-[10px] uppercase font-bold tracking-wide">{t('total_cost')}</span>
             </div>
-            <p className="text-base font-bold text-stone-800 dark:text-stone-100 leading-tight">{totalCost.toLocaleString(settings.language, { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 })}</p>
+            <p className="text-lg font-bold text-stone-800 dark:text-stone-100 leading-tight">{totalCost.toLocaleString(settings.language, { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 })}</p>
         </div>
-        <div className="bg-white dark:bg-stone-800 p-2 rounded-xl shadow-sm border border-stone-100 dark:border-stone-700 flex flex-col items-center justify-center transition-colors">
+        <div className="bg-white dark:bg-stone-800 p-2.5 rounded-xl shadow-sm border border-stone-100 dark:border-stone-700 flex flex-col items-center justify-center transition-colors">
             <div className="flex items-center gap-1 text-stone-400 dark:text-stone-500 mb-0.5">
-               <Calculator size={11}/>
-               <span className="text-[9px] uppercase font-bold tracking-wide">{t('avg_price')}</span>
+               <Calculator size={12}/>
+               <span className="text-[10px] uppercase font-bold tracking-wide">{t('avg_price')}</span>
             </div>
-            <p className="text-base font-bold text-stone-800 dark:text-stone-100 leading-tight">{avgPrice.toLocaleString(settings.language, { style: 'currency', currency: 'EUR', maximumFractionDigits: 1 })}</p>
+            <p className="text-lg font-bold text-stone-800 dark:text-stone-100 leading-tight">{avgPrice.toLocaleString(settings.language, { style: 'currency', currency: 'EUR', maximumFractionDigits: 1 })}</p>
         </div>
       </div>
     );
   };
 
   const renderContent = () => {
-    if (view === 'add') {
-      return <WineForm onSave={handleAddWine} onCancel={() => setView('list')} availableLocations={availableLocations} language={settings.language} />;
-    }
-
-    if (view === 'edit' && selectedWine) {
-      return <WineForm initialData={selectedWine} onSave={handleEditWine} onCancel={() => setView('detail')} availableLocations={availableLocations} language={settings.language} />;
-    }
-
-    if (view === 'detail' && selectedWine) {
-      const isHistoryItem = activeTab === 'history';
-      return (
-        <WineDetail 
-          wine={selectedWine} 
-          onBack={() => setView('list')} 
-          onConsume={isHistoryItem ? undefined : handleConsumeWine}
-          onDelete={isHistoryItem ? handleDeleteHistory : handleDeleteWine}
-          onEdit={isHistoryItem ? undefined : () => setView('edit')}
-          onDuplicate={handleDuplicateWine}
-          availableLocations={availableLocations}
-          isHistory={isHistoryItem}
-          language={settings.language}
-        />
-      );
-    }
-
-    if (activeTab === 'stats') {
-      return <StatsView wines={wines} history={history} language={settings.language} theme={settings.theme} />;
-    }
+    if (view === 'add') return <WineForm onSave={handleAddWine} onCancel={() => setView('list')} availableLocations={availableLocations} language={settings.language} />;
+    if (view === 'edit' && selectedWine) return <WineForm initialData={selectedWine} onSave={handleEditWine} onCancel={() => setView('detail')} availableLocations={availableLocations} language={settings.language} />;
+    if (view === 'detail' && selectedWine) return <WineDetail wine={selectedWine} onBack={() => setView('list')} onConsume={activeTab === 'history' ? undefined : handleConsumeWine} onDelete={activeTab === 'history' ? handleDeleteHistory : handleDeleteWine} onEdit={activeTab === 'history' ? undefined : () => setView('edit')} onDuplicate={handleDuplicateWine} availableLocations={availableLocations} isHistory={activeTab === 'history'} language={settings.language} />;
+    if (activeTab === 'stats') return <StatsView wines={wines} history={history} language={settings.language} theme={settings.theme} />;
 
     if (activeTab === 'cellar') {
-      // Group logic using the dynamic availableLocations
-      const shelvesToRender = availableLocations; 
-
       return (
-        <div className="pb-24 px-2 sm:px-4 py-4 space-y-3">
-            <div className="flex justify-between items-center mb-1 px-1">
-                <h1 className="text-2xl sm:text-3xl font-serif font-bold text-rose-950 dark:text-rose-100">{t('app_title')}</h1>
-                <div className="flex gap-1.5">
-                    <button 
-                      onClick={() => setIsSearchOpen(true)}
-                      className={`p-2 rounded-full transition-all ${isFiltering ? 'bg-rose-100 dark:bg-rose-900 text-rose-900 dark:text-rose-100 shadow-sm' : 'bg-white dark:bg-stone-800 text-stone-400 dark:text-stone-500 hover:text-stone-600 dark:hover:text-stone-300 shadow-sm'}`}
-                    >
-                      {isFiltering ? <div className="relative"><Search size={22} /><div className="absolute -top-1 -right-1 w-2 h-2 bg-rose-600 rounded-full border border-white"></div></div> : <Search size={22} />}
-                    </button>
-                    <button 
-                      onClick={() => setIsInfoOpen(true)}
-                      className="p-2 rounded-full bg-white dark:bg-stone-800 text-stone-400 dark:text-stone-500 hover:text-stone-600 dark:hover:text-stone-300 shadow-sm transition-all"
-                    >
-                      <Info size={22} />
-                    </button>
-                    <button 
-                      onClick={() => setIsSettingsOpen(true)}
-                      className="p-2 rounded-full bg-white dark:bg-stone-800 text-stone-400 dark:text-stone-500 hover:text-stone-600 dark:hover:text-stone-300 shadow-sm transition-all"
-                    >
-                      <SettingsIcon size={22} />
-                    </button>
+        <div className="pb-24 px-4 py-4 space-y-4">
+            <div className="flex justify-between items-center mb-2 px-1">
+                <h1 className="text-3xl font-serif font-bold text-rose-950 dark:text-rose-100">{t('app_title')}</h1>
+                <div className="flex gap-2">
+                    <button onClick={() => setIsSearchOpen(true)} className={`p-2 rounded-full transition-all ${isFiltering ? 'bg-rose-100 dark:bg-rose-900 text-rose-900 dark:text-rose-100 shadow-sm' : 'bg-white dark:bg-stone-800 text-stone-400 dark:text-stone-500 hover:text-stone-600 dark:hover:text-stone-300 shadow-sm'}`}><Search size={24} /></button>
+                    <button onClick={() => setIsSettingsOpen(true)} className="p-2 rounded-full bg-white dark:bg-stone-800 text-stone-400 dark:text-stone-500 shadow-sm"><SettingsIcon size={24} /></button>
                 </div>
             </div>
-
             {renderStatsBar(filteredWines)}
-
-            {isFiltering && (
-              <div className="bg-rose-50 dark:bg-rose-900/30 border border-rose-100 dark:border-rose-900/50 rounded-lg p-2.5 flex justify-between items-center text-xs sm:text-sm text-rose-800 dark:text-rose-200">
-                <span>{t('active_filters')} ({filteredWines.length})</span>
-                <button onClick={() => setSearchFilters({})} className="flex items-center gap-1 font-semibold text-[10px] sm:text-xs bg-white dark:bg-stone-800 px-2 py-1 rounded shadow-sm border border-rose-100 dark:border-rose-900/50 hover:bg-rose-50 dark:hover:bg-stone-700">
-                  <XCircle size={13}/> Effacer
-                </button>
-              </div>
-            )}
-
-            {filteredWines.length === 0 && (
-                <div className="text-center py-20 text-stone-400 dark:text-stone-600 flex flex-col items-center">
-                    <div className="w-16 h-16 bg-stone-100 dark:bg-stone-800 rounded-full flex items-center justify-center mb-4">
-                      {isFiltering ? <Search size={32} className="opacity-40"/> : <WineIcon size={32} className="opacity-40"/>}
-                    </div>
-                    <p className="font-medium">{isFiltering ? t('no_results') : t('empty_cellar')}</p>
-                    {!isFiltering && <p className="text-xs mt-2 max-w-[180px]">{t('empty_cellar_sub')}</p>}
-                </div>
-            )}
-            
-            {shelvesToRender.map(shelfName => {
-                const shelfWines = filteredWines.filter(w => {
-                    if (w.location === shelfName) return true;
-                    // Fallback for translation changes
-                    const wineNum = w.location.match(/(\d+)/)?.[0];
-                    const shelfNum = shelfName.match(/(\d+)/)?.[0];
-                    if (wineNum && shelfNum && wineNum === shelfNum) return true;
-                    // Handle Hors Cave mismatch
-                    if ((w.location === 'Hors cave' || w.location === 'Off-site') && (shelfName === 'Hors cave' || shelfName === 'Off-site')) return true;
-                    
-                    return false;
-                });
-
-                if (shelfWines.length === 0 && shelfName !== 'Hors cave' && shelfName !== 'Off-site') return null;
+            {filteredWines.length === 0 && <div className="text-center py-20 text-stone-400 dark:text-stone-600 flex flex-col items-center"><div className="w-20 h-20 bg-stone-100 dark:bg-stone-800 rounded-full flex items-center justify-center mb-4"><WineIcon size={40} className="opacity-40"/></div><p>{t('empty_cellar')}</p></div>}
+            {availableLocations.map(shelfName => {
+                const shelfWines = filteredWines.filter(w => w.location === shelfName);
                 if (shelfWines.length === 0) return null;
-
                 const isExpanded = expandedShelves[shelfName] || false;
-
                 return (
-                    <div key={shelfName} className="bg-white dark:bg-stone-900 rounded-xl shadow-sm border border-stone-100/80 dark:border-stone-800 overflow-hidden transition-colors">
-                        <button 
-                          onClick={() => toggleShelf(shelfName)}
-                          className={`w-full p-4 flex justify-between items-center transition-colors ${isExpanded ? 'bg-stone-50 dark:bg-stone-800 border-b border-stone-100 dark:border-stone-800' : 'bg-white dark:bg-stone-900 hover:bg-stone-50 dark:hover:bg-stone-800'}`}
-                        >
-                            <div className="flex items-center gap-2">
-                              <div className="text-stone-400 dark:text-stone-500">
-                                {isExpanded ? <ChevronDown size={18} /> : <ChevronRight size={18} />}
-                              </div>
-                              <h2 className={`font-bold text-gray-800 dark:text-gray-100 ${fontClasses.shelfTitle}`}>
-                                  {shelfName}
-                              </h2>
-                            </div>
-                            <span className={`bg-gray-100 dark:bg-stone-800 text-gray-500 dark:text-stone-400 font-semibold px-2 py-0.5 rounded-full border border-gray-200 dark:border-stone-700 ${fontClasses.shelfCount}`}>
-                                {shelfWines.reduce((acc, w) => acc + w.quantity, 0)}
-                            </span>
-                        </button>
-                        
-                        {isExpanded && (
-                          <div className="p-2 sm:p-3 space-y-2 animate-in slide-in-from-top-1 fade-in duration-200">
+                    <div key={shelfName} className="bg-white dark:bg-stone-900 rounded-2xl shadow-sm border border-stone-100/80 dark:border-stone-800 overflow-hidden">
+                        <button onClick={() => toggleShelf(shelfName)} className={`w-full p-5 flex justify-between items-center ${isExpanded ? 'bg-stone-50 dark:bg-stone-800 border-b border-stone-100 dark:border-stone-800' : ''}`}><div className="flex items-center gap-3"><div className="text-stone-400">{isExpanded ? <ChevronDown size={20} /> : <ChevronRight size={20} />}</div><h2 className={`font-bold text-gray-800 dark:text-gray-100 ${fontClasses.shelfTitle}`}>{shelfName}</h2></div><span className={`bg-gray-100 dark:bg-stone-800 text-gray-500 dark:text-stone-400 font-semibold px-2.5 py-1 rounded-full border border-gray-200 dark:border-stone-700 ${fontClasses.shelfCount}`}>{shelfWines.reduce((acc, w) => acc + w.quantity, 0)}</span></button>
+                        {isExpanded && <div className="p-4 space-y-3">
                               {shelfWines.map(wine => (
-                                  <div 
-                                      key={wine.id} 
-                                      onClick={() => { setSelectedWine(wine); setView('detail'); }}
-                                      className={`flex gap-3 items-center p-2 sm:p-2.5 rounded-lg cursor-pointer transition-all shadow-sm border-l-4 ${getColorTheme(wine.color)}`}
-                                  >
-                                      <div className="w-12 h-12 rounded-full bg-white dark:bg-stone-800 flex-shrink-0 overflow-hidden border border-white dark:border-stone-700 shadow-sm relative">
-                                          {wine.image ? <img src={wine.image} className="w-full h-full object-cover" alt="" /> : <WineIcon className="w-5 h-5 m-auto mt-3 text-stone-300 dark:text-stone-600"/>}
-                                      </div>
-                                      <div className="flex-1 min-w-0">
-                                          <p className={`font-bold text-gray-800 dark:text-gray-100 truncate ${fontClasses.title} leading-tight`}>{wine.name}</p>
-                                          <div className={`flex items-center gap-1.5 mt-0.5`}>
-                                            <p className={`text-gray-500 dark:text-gray-400 truncate ${fontClasses.sub} max-w-[85%]`}>{wine.region} - {wine.year}</p>
-                                            <div className={`w-1.5 h-1.5 rounded-full ${getConsumptionStatusColor(wine)} flex-shrink-0`}></div>
-                                          </div>
-                                      </div>
-                                      <div className={`flex flex-col items-center justify-center w-9 h-9 rounded shadow-sm ${getQuantityBadgeStyle(wine.color)}`}>
-                                          <span className={`uppercase font-bold opacity-60 leading-none ${fontClasses.badgeLabel}`}>Qté</span>
-                                          <span className={`font-bold leading-none mt-0.5 ${fontClasses.badgeValue}`}>{wine.quantity}</span>
-                                      </div>
+                                  <div key={wine.id} onClick={() => { setSelectedWine(wine); setView('detail'); }} className={`flex gap-4 items-center p-3 rounded-xl cursor-pointer transition-all shadow-sm border-l-4 ${getColorTheme(wine.color)}`}>
+                                      <div className="w-14 h-14 rounded-full bg-white dark:bg-stone-800 flex-shrink-0 overflow-hidden border-2 border-white dark:border-stone-700 shadow-sm relative">{wine.image ? <img src={wine.image} className="w-full h-full object-cover" alt="" /> : <WineIcon className="w-6 h-6 m-auto mt-3.5 text-stone-300 dark:text-stone-600"/>}</div>
+                                      <div className="flex-1 min-w-0"><p className={`font-bold text-gray-800 dark:text-gray-100 truncate ${fontClasses.title} leading-tight`}>{wine.name}</p><div className="flex items-center gap-2 mt-0.5"><p className={`text-gray-500 dark:text-gray-400 truncate ${fontClasses.sub}`}>{wine.region} - {wine.year}</p><div className={`w-2 h-2 rounded-full ${getConsumptionStatusColor(wine)} flex-shrink-0`}></div></div></div>
+                                      <div className={`flex flex-col items-center justify-center w-10 h-10 rounded-lg shadow-sm ${getQuantityBadgeStyle(wine.color)}`}><span className={`uppercase font-bold opacity-60 leading-none ${fontClasses.badgeLabel}`}>Qté</span><span className={`font-bold leading-none mt-0.5 ${fontClasses.badgeValue}`}>{wine.quantity}</span></div>
                                   </div>
                               ))}
-                          </div>
-                        )}
+                          </div>}
                     </div>
                 );
             })}
@@ -529,79 +394,16 @@ function App() {
     }
 
     if (activeTab === 'history') {
-      const displayedHistory = filteredHistory;
-
       return (
-        <div className="pb-24 px-2 sm:px-4 py-4">
-             <div className="flex justify-between items-center mb-4 px-1">
-                <h1 className="text-2xl sm:text-3xl font-serif font-bold text-stone-800 dark:text-stone-100">{t('history')}</h1>
-                <div className="flex gap-1.5">
-                    <button 
-                    onClick={() => setIsSearchOpen(true)}
-                    className={`p-2 rounded-full transition-all ${isFiltering ? 'bg-rose-100 dark:bg-rose-900 text-rose-900 dark:text-rose-100 shadow-sm' : 'bg-white dark:bg-stone-800 text-stone-400 dark:text-stone-500 hover:text-stone-600 dark:hover:text-stone-300 shadow-sm'}`}
-                    >
-                    {isFiltering ? <div className="relative"><Search size={22} /><div className="absolute -top-1 -right-1 w-2 h-2 bg-rose-600 rounded-full border border-white"></div></div> : <Search size={22} />}
-                    </button>
-                    <button 
-                      onClick={() => setIsInfoOpen(true)}
-                      className="p-2 rounded-full bg-white dark:bg-stone-800 text-stone-400 dark:text-stone-500 hover:text-stone-600 dark:hover:text-stone-300 shadow-sm transition-all"
-                    >
-                      <Info size={22} />
-                    </button>
-                    <button 
-                      onClick={() => setIsSettingsOpen(true)}
-                      className="p-2 rounded-full bg-white dark:bg-stone-800 text-stone-400 dark:text-stone-500 hover:text-stone-600 dark:hover:text-stone-300 shadow-sm transition-all"
-                    >
-                      <SettingsIcon size={22} />
-                    </button>
-                </div>
-             </div>
-
-             {renderStatsBar(displayedHistory)}
-
-             {isFiltering && (
-              <div className="bg-stone-100 dark:bg-stone-800 border border-stone-200 dark:border-stone-700 rounded-lg p-2.5 flex justify-between items-center text-xs sm:text-sm text-stone-800 dark:text-stone-200 mb-3">
-                <span>{t('active_filters')} ({displayedHistory.length})</span>
-                <button onClick={() => setSearchFilters({})} className="flex items-center gap-1 font-semibold text-[10px] sm:text-xs bg-white dark:bg-stone-700 px-2 py-1 rounded shadow-sm border border-stone-200 dark:border-stone-600 text-stone-800 dark:text-stone-100 hover:bg-stone-50 dark:hover:bg-stone-600">
-                  <XCircle size={13}/> Effacer
-                </button>
-              </div>
-            )}
-
-             {displayedHistory.length === 0 ? (
-                 <div className="text-center py-20 text-stone-400 dark:text-stone-600 flex flex-col items-center">
-                    <div className="w-16 h-16 bg-stone-100 dark:bg-stone-800 rounded-full flex items-center justify-center mb-4">
-                      {isFiltering ? <Search size={32} className="opacity-40"/> : <History size={32} className="opacity-40"/>}
-                    </div>
-                    <p>{isFiltering ? t('no_results') : t('empty_history')}</p>
-                </div>
-             ) : (
+        <div className="pb-24 px-4 py-4">
+             <div className="flex justify-between items-center mb-6 px-1"><h1 className="text-3xl font-serif font-bold text-stone-800 dark:text-stone-100">{t('history')}</h1></div>
+             {renderStatsBar(filteredHistory)}
+             {filteredHistory.length === 0 ? <div className="text-center py-20 text-stone-400 flex flex-col items-center"><History size={40} className="opacity-40 mb-4"/><p>{t('empty_history')}</p></div> : (
                 <div className="space-y-3">
-                    {displayedHistory.map((entry, idx) => (
-                        <div 
-                            key={idx} 
-                            onClick={() => { setSelectedWine(entry); setView('detail'); }}
-                            className={`flex gap-3 p-2.5 rounded-lg cursor-pointer transition-all shadow-sm border-l-4 ${getColorTheme(entry.color)}`}
-                        >
-                            <div className="w-14 h-14 rounded-lg bg-white dark:bg-stone-800 flex-shrink-0 overflow-hidden border border-stone-200 dark:border-stone-700">
-                                {entry.image ? <img src={entry.image} className="w-full h-full object-cover" alt="" /> : <div className="w-full h-full flex items-center justify-center text-stone-300 dark:text-stone-600"><WineIcon size={18}/></div>}
-                            </div>
-                            <div className="flex-1 min-w-0">
-                                <div className="flex justify-between items-start">
-                                    <h3 className={`font-bold text-stone-800 dark:text-stone-100 truncate pr-2 ${fontClasses.title}`}>{entry.name}</h3>
-                                    <div className="flex items-center gap-0.5 text-amber-400 bg-amber-50 dark:bg-amber-900/20 px-1 py-0.5 rounded border border-amber-100 dark:border-amber-900/30 shadow-sm flex-shrink-0">
-                                        <span className={`font-bold text-amber-600 dark:text-amber-400 ${fontClasses.badgeValue}`}>{entry.consumptionRating}</span>
-                                        <span className={`${fontClasses.badgeLabel} text-amber-500`}>★</span>
-                                    </div>
-                                </div>
-                                <p className={`text-stone-600 dark:text-stone-400 font-medium truncate ${fontClasses.sub}`}>{entry.appellation} - {entry.year}</p>
-                                <div className="flex items-center justify-between mt-1">
-                                  <p className={`text-stone-400 dark:text-stone-500 ${fontClasses.sub}`}>{t('consumed_on')} {new Date(entry.consumedDate).toLocaleDateString()}</p>
-                                  <div className={`bg-white/50 dark:bg-stone-800 px-1.5 py-0.5 rounded text-stone-600 dark:text-stone-400 font-semibold border border-stone-200/50 dark:border-stone-700 ${fontClasses.badgeLabel}`}>
-                                      {t('total_drunk')}: {entry.quantity}
-                                  </div>
-                                </div>
-                            </div>
+                    {filteredHistory.map((entry, idx) => (
+                        <div key={idx} onClick={() => { setSelectedWine(entry); setView('detail'); }} className={`flex gap-4 p-3 rounded-xl cursor-pointer shadow-sm border-l-4 ${getColorTheme(entry.color)}`}>
+                            <div className="w-16 h-16 rounded-xl bg-white dark:bg-stone-800 flex-shrink-0 overflow-hidden border border-stone-200 dark:border-stone-700">{entry.image ? <img src={entry.image} className="w-full h-full object-cover" alt="" /> : <WineIcon className="w-full h-full p-4 text-stone-300"/>}</div>
+                            <div className="flex-1 min-w-0"><div className="flex justify-between items-start"><h3 className={`font-bold text-stone-800 dark:text-stone-100 truncate pr-2 ${fontClasses.title}`}>{entry.name}</h3><div className="flex items-center gap-0.5 text-amber-400 bg-amber-50 dark:bg-amber-900/20 px-1.5 py-0.5 rounded-md border border-amber-100 dark:border-amber-900/30 shadow-sm flex-shrink-0"><span className={`font-bold text-amber-600 dark:text-amber-400 ${fontClasses.badgeValue}`}>{entry.consumptionRating}</span><span className="text-amber-500 text-[10px]">★</span></div></div><p className={`text-stone-600 dark:text-stone-400 font-medium ${fontClasses.sub}`}>{entry.appellation} - {entry.year}</p><div className="flex items-center justify-between mt-2"><p className={`text-stone-400 dark:text-stone-500 ${fontClasses.sub}`}>{t('consumed_on')} {new Date(entry.consumedDate).toLocaleDateString()}</p><div className={`bg-white/50 dark:bg-stone-800 px-2 py-0.5 rounded text-stone-600 dark:text-stone-400 font-semibold border border-stone-200/50 dark:border-stone-700 ${fontClasses.badgeLabel}`}>{t('total_drunk')}: {entry.quantity}</div></div></div>
                         </div>
                     ))}
                 </div>
@@ -612,125 +414,27 @@ function App() {
   };
 
   return (
-    <>
-      <div className={settings.theme === 'dark' ? 'dark' : ''}>
-          {/* Global Container - Center on Desktop, Full on Mobile */}
-          <div className="bg-stone-200 dark:bg-stone-950 h-screen w-full flex justify-center overflow-hidden">
-          
-          {/* Main App Frame - Widened from max-w-md to max-w-screen-sm */}
-          <main className="w-full max-w-screen-sm h-full bg-stone-50 dark:bg-black shadow-2xl relative flex flex-col transition-colors duration-300">
-              
-              {/* Scrollable Content Area */}
-              <div className="flex-1 overflow-y-auto no-scrollbar relative">
-                {renderContent()}
+    <div className={settings.theme === 'dark' ? 'dark' : ''}>
+      <div className="bg-stone-200 dark:bg-stone-950 h-screen w-full flex justify-center overflow-hidden">
+        <main className="w-full max-w-md h-full bg-stone-50 dark:bg-black shadow-2xl relative flex flex-col transition-colors duration-300">
+          <div className="flex-1 overflow-y-auto no-scrollbar relative">{renderContent()}</div>
+          {view === 'list' && activeTab === 'cellar' && (
+            <button onClick={() => setView('add')} className="absolute bottom-24 right-6 bg-rose-900 dark:bg-rose-700 text-white p-4 rounded-full shadow-lg shadow-rose-900/30 hover:scale-105 active:scale-95 z-30"><Plus size={28} /></button>
+          )}
+          {view === 'list' && (
+            <div className="absolute bottom-0 left-0 right-0 bg-white/95 dark:bg-stone-900/95 backdrop-blur-md border-t border-stone-200 dark:border-stone-800 z-40 safe-area-bottom">
+              <div className="flex justify-around items-center h-20 pb-2">
+                <button onClick={() => { setActiveTab('cellar'); setView('list'); }} className={`flex flex-col items-center justify-center w-full h-full ${activeTab === 'cellar' ? 'text-rose-900 dark:text-rose-400' : 'text-stone-400'}`}><LayoutGrid size={24} /><span className="text-xs font-semibold">{t('cellar')}</span></button>
+                <button onClick={() => { setActiveTab('stats'); setView('list'); }} className={`flex flex-col items-center justify-center w-full h-full ${activeTab === 'stats' ? 'text-rose-900 dark:text-rose-400' : 'text-stone-400'}`}><PieChart size={24} /><span className="text-xs font-semibold">{t('stats')}</span></button>
+                <button onClick={() => { setActiveTab('history'); setView('list'); }} className={`flex flex-col items-center justify-center w-full h-full ${activeTab === 'history' ? 'text-rose-900 dark:text-rose-400' : 'text-stone-400'}`}><History size={24} /><span className="text-xs font-semibold">{t('history')}</span></button>
               </div>
-
-              {/* Floating Add Button - Absolute to Frame */}
-              {view === 'list' && activeTab === 'cellar' && (
-              <button
-                  onClick={() => setView('add')}
-                  className="absolute bottom-24 right-4 sm:right-6 bg-rose-900 dark:bg-rose-700 text-white p-4 rounded-full shadow-lg shadow-rose-900/30 dark:shadow-rose-900/50 hover:bg-rose-800 dark:hover:bg-rose-600 transition-transform hover:scale-105 active:scale-95 z-30"
-              >
-                  <Plus size={24} />
-              </button>
-              )}
-
-              {/* Bottom Navigation - Absolute to Frame */}
-              {view === 'list' && (
-              <div className="absolute bottom-0 left-0 right-0 bg-white/95 dark:bg-stone-900/95 backdrop-blur-md border-t border-stone-200 dark:border-stone-800 z-40 safe-area-bottom transition-colors duration-300">
-                  <div className="flex justify-around items-center h-16 sm:h-20 pb-2">
-                  <button
-                      onClick={() => { setActiveTab('cellar'); setView('list'); }}
-                      className={`flex flex-col items-center justify-center w-full h-full transition-colors ${activeTab === 'cellar' ? 'text-rose-900 dark:text-rose-400' : 'text-stone-400 dark:text-stone-600 hover:text-stone-600 dark:hover:text-stone-400'}`}
-                  >
-                      <div className={`p-1 rounded-xl mb-0.5 ${activeTab === 'cellar' ? 'bg-rose-50 dark:bg-rose-900/20' : ''}`}>
-                      <LayoutGrid size={22} strokeWidth={activeTab === 'cellar' ? 2.5 : 2} />
-                      </div>
-                      <span className="text-[10px] sm:text-xs font-semibold">{t('cellar')}</span>
-                  </button>
-
-                  <button
-                      onClick={() => { setActiveTab('stats'); setView('list'); }}
-                      className={`flex flex-col items-center justify-center w-full h-full transition-colors ${activeTab === 'stats' ? 'text-rose-900 dark:text-rose-400' : 'text-stone-400 dark:text-stone-600 hover:text-stone-600 dark:hover:text-stone-400'}`}
-                  >
-                      <div className={`p-1 rounded-xl mb-0.5 ${activeTab === 'stats' ? 'bg-rose-50 dark:bg-rose-900/20' : ''}`}>
-                      <PieChart size={22} strokeWidth={activeTab === 'stats' ? 2.5 : 2} />
-                      </div>
-                      <span className="text-[10px] sm:text-xs font-semibold">{t('stats')}</span>
-                  </button>
-
-                  <button
-                      onClick={() => { setActiveTab('history'); setView('list'); }}
-                      className={`flex flex-col items-center justify-center w-full h-full transition-colors ${activeTab === 'history' ? 'text-rose-900 dark:text-rose-400' : 'text-stone-400 dark:text-stone-600 hover:text-stone-600 dark:hover:text-stone-400'}`}
-                  >
-                      <div className={`p-1 rounded-xl mb-0.5 ${activeTab === 'history' ? 'bg-rose-50 dark:bg-rose-900/20' : ''}`}>
-                          <History size={22} strokeWidth={activeTab === 'history' ? 2.5 : 2} />
-                      </div>
-                      <span className="text-[10px] sm:text-xs font-semibold">{t('history')}</span>
-                  </button>
-                  </div>
-              </div>
-              )}
-          </main>
-
-          <SearchModal 
-              isOpen={isSearchOpen} 
-              onClose={() => setIsSearchOpen(false)} 
-              onSearch={setSearchFilters}
-              currentFilters={searchFilters}
-              onReset={() => setSearchFilters({})}
-              language={settings.language}
-          />
-
-          <SettingsModal 
-              isOpen={isSettingsOpen} 
-              onClose={() => setIsSettingsOpen(false)}
-              settings={settings}
-              onUpdateSettings={handleUpdateSettings}
-              onExport={handleExport}
-              onImport={handleImport}
-          />
-
-          {/* Info Modal */}
-          {isInfoOpen && (
-            <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
-                <div 
-                    className="absolute inset-0 bg-black/60 backdrop-blur-sm"
-                    onClick={() => setIsInfoOpen(false)}
-                />
-                <div className="relative bg-white dark:bg-stone-900 rounded-2xl w-full max-w-xs p-6 shadow-2xl transition-colors border border-stone-100 dark:border-stone-800 text-center animate-in zoom-in-95 duration-200">
-                    <div className="w-12 h-12 bg-stone-100 dark:bg-stone-800 text-stone-600 dark:text-stone-400 rounded-full flex items-center justify-center mx-auto mb-4">
-                        <Info size={24} />
-                    </div>
-                    
-                    <div className="space-y-3 mb-6">
-                        <p className="text-stone-800 dark:text-stone-200 font-medium">
-                            Application développée par <strong>Cheeser92</strong>
-                        </p>
-                        <p className="text-stone-500 dark:text-stone-400 text-sm">
-                            Tous droits réservés.
-                        </p>
-                        <div className="w-8 h-1 bg-rose-900/10 dark:bg-rose-500/20 rounded-full mx-auto my-3"></div>
-                        <p className="text-stone-400 dark:text-stone-500 text-xs font-mono uppercase tracking-widest">
-                            Version 1.0
-                        </p>
-                        <p className="text-stone-400 dark:text-stone-500 text-xs">
-                            2025
-                        </p>
-                    </div>
-
-                    <button 
-                        onClick={() => setIsInfoOpen(false)}
-                        className="w-full py-2.5 rounded-xl bg-stone-50 dark:bg-stone-800 text-stone-600 dark:text-stone-300 font-bold text-sm hover:bg-stone-100 dark:hover:bg-stone-700 transition-colors"
-                    >
-                        Fermer
-                    </button>
-                </div>
             </div>
           )}
-          </div>
+        </main>
+        <SearchModal isOpen={isSearchOpen} onClose={() => setIsSearchOpen(false)} onSearch={setSearchFilters} currentFilters={searchFilters} onReset={() => setSearchFilters({})} language={settings.language} />
+        <SettingsModal isOpen={isSettingsOpen} onClose={() => setIsSettingsOpen(false)} settings={settings} onUpdateSettings={handleUpdateSettings} onExport={handleExport} onImport={handleImport} />
       </div>
-    </>
+    </div>
   );
 }
 
