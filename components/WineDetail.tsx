@@ -1,6 +1,7 @@
+
 import React, { useState } from 'react';
 import { ArrowLeft, Check, Calendar, Clock, Tag, Trash2, Star, Pencil, Copy } from 'lucide-react';
-import { Wine, ConsumptionStatus, HistoryEntry, Language } from '../types';
+import { Wine, ConsumptionStatus, HistoryEntry, Language, AppFontSize } from '../types';
 import { RATINGS, STRENGTHS } from '../constants';
 import { getTranslation } from '../translations';
 
@@ -14,9 +15,10 @@ interface WineDetailProps {
   availableLocations: string[];
   isHistory?: boolean;
   language: Language;
+  fontSize?: AppFontSize;
 }
 
-export const WineDetail: React.FC<WineDetailProps> = ({ wine, onBack, onConsume, onDelete, onEdit, onDuplicate, availableLocations, isHistory = false, language }) => {
+export const WineDetail: React.FC<WineDetailProps> = ({ wine, onBack, onConsume, onDelete, onEdit, onDuplicate, availableLocations, isHistory = false, language, fontSize = 'medium' }) => {
   const [showConsumeModal, setShowConsumeModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [showDuplicateModal, setShowDuplicateModal] = useState(false);
@@ -90,12 +92,44 @@ export const WineDetail: React.FC<WineDetailProps> = ({ wine, onBack, onConsume,
 
   const confirmDuplicate = () => {
       if (onDuplicate) {
-          onDuplicate(wine as Wine, copyQuantity, copyLocation);
+          // Explicitly cast wine to any to avoid complex union type issues
+          onDuplicate(wine as any, copyQuantity, copyLocation);
           setShowDuplicateModal(false);
       }
   }
 
   const hasImage = !!wine.image;
+
+  // Font size helper for Detail page (aligned with App.tsx)
+  const getFontSizeClasses = (size: AppFontSize) => {
+    switch(size) {
+      case 'small':
+        return {
+          title: 'text-sm',
+          sub: 'text-[10px]',
+          statsLabel: 'text-[8px]',
+          statsValue: 'text-sm'
+        };
+      case 'large':
+        return {
+          title: 'text-2xl',
+          sub: 'text-base',
+          statsLabel: 'text-[10px]',
+          statsValue: 'text-lg'
+        };
+      case 'medium':
+      default:
+        return {
+          title: 'text-xl',
+          sub: 'text-sm',
+          statsLabel: 'text-[9px]',
+          statsValue: 'text-base'
+        };
+    }
+  };
+
+  // Fixed line 130: fontSize might be inferred as string if passed incorrectly, cast to AppFontSize
+  const fontClasses = getFontSizeClasses(fontSize as AppFontSize);
 
   return (
     <div className={`min-h-full relative ${hasImage ? 'bg-stone-900' : 'bg-stone-50 dark:bg-black'} transition-colors duration-300`}>
@@ -121,7 +155,7 @@ export const WineDetail: React.FC<WineDetailProps> = ({ wine, onBack, onConsume,
         </button>
         
         <div className="flex items-center gap-3 pointer-events-auto">
-            {!isHistory && onEdit && (
+            {onEdit && (
                 <button 
                   onClick={onEdit}
                   className="bg-white/90 dark:bg-black/50 backdrop-blur text-stone-800 dark:text-stone-200 p-2.5 rounded-full shadow-lg hover:bg-white dark:hover:bg-stone-900 transition"
@@ -129,9 +163,11 @@ export const WineDetail: React.FC<WineDetailProps> = ({ wine, onBack, onConsume,
                   <Pencil size={20} />
                 </button>
             )}
-            <div className="bg-black/50 backdrop-blur-md text-white px-3 py-1.5 rounded-full text-xs font-bold border border-white/20 shadow-sm">
-              {wine.location}
-            </div>
+            {!isHistory && (
+              <div className="bg-black/50 backdrop-blur-md text-white px-3 py-1.5 rounded-full text-xs font-bold border border-white/20 shadow-sm">
+                {(wine as Wine).location}
+              </div>
+            )}
         </div>
       </div>
 
@@ -153,26 +189,41 @@ export const WineDetail: React.FC<WineDetailProps> = ({ wine, onBack, onConsume,
                 )}
             </div>
             
-            <p className="text-gray-600 dark:text-gray-300 font-medium text-lg mt-1">{wine.appellation} - {wine.year} <span className="text-sm text-gray-400">({age} {t('years_old')})</span></p>
+            <p className="text-gray-600 dark:text-gray-300 font-medium text-lg mt-1">
+              {wine.appellation} - {wine.year} 
+              {!isHistory && <span className="text-sm text-gray-400"> ({age} {t('years_old')})</span>}
+            </p>
             <div className="flex items-center gap-2 mt-3">
               <span className={`inline-block w-3 h-3 rounded-full shadow-sm ring-1 ring-offset-1 ring-gray-200 dark:ring-stone-700 ${wine.color === 'Rouge' ? 'bg-red-800' : wine.color === 'Blanc' ? 'bg-yellow-200' : 'bg-pink-300'}`}></span>
               <span className="text-sm text-gray-500 dark:text-gray-400 uppercase tracking-wide font-semibold">{wine.region}, {wine.country}</span>
             </div>
           </div>
 
-          {/* Key Stats */}
+          {/* Key Stats - Aligned with App.tsx Summary Bar styles */}
           <div className="grid grid-cols-3 gap-2 bg-stone-50/50 dark:bg-stone-800/50 p-4 rounded-2xl border border-stone-200/60 dark:border-stone-800">
             <div className="text-center">
-              <p className="text-[10px] text-stone-500 dark:text-stone-400 uppercase font-bold tracking-wider">{isHistory ? t('consumed') : t('quantity')}</p>
-              <p className="font-bold text-xl text-stone-800 dark:text-stone-100">{wine.quantity}</p>
+              <p className={`text-stone-400 dark:text-stone-500 uppercase font-bold tracking-wide ${fontClasses.statsLabel}`}>
+                {isHistory ? t('consumed') : t('quantity')}
+              </p>
+              <p className={`font-bold text-stone-800 dark:text-stone-100 leading-tight ${fontClasses.statsValue}`}>
+                {wine.quantity}
+              </p>
             </div>
             <div className="text-center border-l border-stone-200 dark:border-stone-700">
-              <p className="text-[10px] text-stone-500 dark:text-stone-400 uppercase font-bold tracking-wider">{t('price')}</p>
-              <p className="font-bold text-xl text-stone-800 dark:text-stone-100">{wine.price.toLocaleString(language, { style: 'currency', currency: 'EUR' })}</p>
+              <p className={`text-stone-400 dark:text-stone-500 uppercase font-bold tracking-wide ${fontClasses.statsLabel}`}>
+                {t('price')}
+              </p>
+              <p className={`font-bold text-stone-800 dark:text-stone-100 leading-tight ${fontClasses.statsValue}`}>
+                {wine.price.toLocaleString(language, { style: 'currency', currency: 'EUR', maximumFractionDigits: 1 })}
+              </p>
             </div>
             <div className="text-center border-l border-stone-200 dark:border-stone-700 bg-rose-50 dark:bg-rose-900/20 rounded-r-lg -my-4 py-4 flex flex-col justify-center">
-              <p className="text-[10px] text-rose-800 dark:text-rose-300 uppercase font-bold tracking-wider">{t('total_cost')}</p>
-              <p className="font-bold text-xl text-rose-700 dark:text-rose-400">{totalCost.toLocaleString(language, { style: 'currency', currency: 'EUR' })}</p>
+              <p className={`text-rose-800 dark:text-rose-300 uppercase font-bold tracking-wide ${fontClasses.statsLabel}`}>
+                {t('total_cost')}
+              </p>
+              <p className={`font-bold text-rose-700 dark:text-rose-400 leading-tight ${fontClasses.statsValue}`}>
+                {totalCost.toLocaleString(language, { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 })}
+              </p>
             </div>
           </div>
 
@@ -270,18 +321,21 @@ export const WineDetail: React.FC<WineDetailProps> = ({ wine, onBack, onConsume,
                <button
                 type="button"
                 onClick={handleDeleteClick}
-                className="flex-none p-4 rounded-xl border border-red-200 dark:border-red-900/50 text-red-500 dark:text-red-400 bg-red-50 dark:bg-red-900/10 hover:bg-red-100 dark:hover:bg-red-900/20 transition cursor-pointer"
+                className={`${isHistory ? 'flex-1' : 'flex-none'} p-4 rounded-xl border border-red-200 dark:border-red-900/50 text-red-500 dark:text-red-400 bg-red-50 dark:bg-red-900/10 hover:bg-red-100 dark:hover:bg-red-900/20 transition cursor-pointer flex items-center justify-center gap-2`}
               >
                  <Trash2 size={20} />
+                 {isHistory && <span className="font-bold">Supprimer</span>}
               </button>
 
-              <button
-                type="button"
-                onClick={handleDuplicateClick}
-                className="flex-none p-4 rounded-xl border border-indigo-200 dark:border-indigo-900/50 text-indigo-500 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-900/10 hover:bg-indigo-100 dark:hover:bg-indigo-900/20 transition cursor-pointer"
-              >
-                 <Copy size={20} />
-              </button>
+              {!isHistory && (
+                <button
+                  type="button"
+                  onClick={handleDuplicateClick}
+                  className="flex-none p-4 rounded-xl border border-indigo-200 dark:border-indigo-900/50 text-indigo-500 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-900/10 hover:bg-indigo-100 dark:hover:bg-indigo-900/20 transition cursor-pointer"
+                >
+                   <Copy size={20} />
+                </button>
+              )}
               
               {!isHistory && (
                 <button

@@ -41,7 +41,7 @@ export const translations = {
     purchase_date: "Date d'achat",
     purchase_place: "Lieu d'achat",
     quantity: "Quantité",
-    recommended_year: "Conso. Recommandée",
+    recommended_year: "À boire en",
     price: "Prix unitaire",
     strength: "Intensité (%)",
     aging: "Durée de garde",
@@ -102,7 +102,8 @@ export const translations = {
     total_drunk: "Total bu",
     personal_note: "Note personnelle",
     no_tag: "Aucun tag",
-    no_note: "Aucune note"
+    no_note: "Aucune note",
+    about: "À propos"
   },
   en: {
     app_title: "My Wine Cellar",
@@ -143,7 +144,7 @@ export const translations = {
     purchase_date: "Purchase Date",
     purchase_place: "Purchase Place",
     quantity: "Quantity",
-    recommended_year: "Drink By (Year)",
+    recommended_year: "Drink In",
     price: "Unit Price",
     strength: "Intensity (%)",
     aging: "Aging Potential",
@@ -204,7 +205,8 @@ export const translations = {
     total_drunk: "Total drunk",
     personal_note: "Personal note",
     no_tag: "No tags",
-    no_note: "No notes"
+    no_note: "No notes",
+    about: "About"
   }
 };
 

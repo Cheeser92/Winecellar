@@ -7,6 +7,7 @@ import { WineDetail } from './components/WineDetail';
 import { SearchModal } from './components/SearchModal';
 import { StatsView } from './components/StatsView';
 import { SettingsModal } from './components/SettingsModal';
+import { InfoModal } from './components/InfoModal';
 import { getTranslation } from './translations';
 
 type View = 'list' | 'history' | 'add' | 'detail' | 'edit';
@@ -79,7 +80,7 @@ function App() {
     setSettings(newSettings);
   };
 
-  // Improved Export Logic supporting Capacitor Android
+  // Improved Export Logic
   const handleExport = async () => {
     const backup: BackupData = {
       wines,
@@ -218,9 +219,16 @@ function App() {
 
   const handleEditWine = (wineData: Omit<Wine, 'id'>) => {
     if (selectedWine && 'id' in selectedWine) {
-        const updatedWine = { ...wineData, id: selectedWine.id } as Wine;
-        setWines(prev => prev.map(w => w.id === selectedWine.id ? updatedWine : w));
-        setSelectedWine(updatedWine);
+        if (activeTab === 'history') {
+            // Update only history
+            setHistory(prev => prev.map(h => h.id === selectedWine.id ? { ...h, note: wineData.note } : h));
+            setSelectedWine(prev => prev ? { ...prev, note: wineData.note } : null);
+        } else {
+            // Update current stock
+            const updatedWine = { ...wineData, id: selectedWine.id } as Wine;
+            setWines(prev => prev.map(w => w.id === selectedWine.id ? updatedWine : w));
+            setSelectedWine(updatedWine);
+        }
         setView('detail');
     }
   };
@@ -354,8 +362,8 @@ function App() {
 
   const renderContent = () => {
     if (view === 'add') return <WineForm onSave={handleAddWine} onCancel={() => setView('list')} availableLocations={availableLocations} language={settings.language} />;
-    if (view === 'edit' && selectedWine) return <WineForm initialData={selectedWine} onSave={handleEditWine} onCancel={() => setView('detail')} availableLocations={availableLocations} language={settings.language} />;
-    if (view === 'detail' && selectedWine) return <WineDetail wine={selectedWine} onBack={() => setView('list')} onConsume={activeTab === 'history' ? undefined : handleConsumeWine} onDelete={activeTab === 'history' ? handleDeleteHistory : handleDeleteWine} onEdit={activeTab === 'history' ? undefined : () => setView('edit')} onDuplicate={handleDuplicateWine} availableLocations={availableLocations} isHistory={activeTab === 'history'} language={settings.language} />;
+    if (view === 'edit' && selectedWine) return <WineForm initialData={selectedWine} onSave={handleEditWine} onCancel={() => setView('detail')} availableLocations={availableLocations} language={settings.language} isHistoryMode={activeTab === 'history'} />;
+    if (view === 'detail' && selectedWine) return <WineDetail wine={selectedWine} onBack={() => setView('list')} onConsume={activeTab === 'history' ? undefined : handleConsumeWine} onDelete={activeTab === 'history' ? handleDeleteHistory : handleDeleteWine} onEdit={() => setView('edit')} onDuplicate={handleDuplicateWine} availableLocations={availableLocations} isHistory={activeTab === 'history'} language={settings.language} fontSize={settings.fontSize} />;
     if (activeTab === 'stats') return <StatsView wines={wines} history={history} language={settings.language} theme={settings.theme} />;
 
     if (activeTab === 'cellar') {
@@ -366,6 +374,7 @@ function App() {
                 <div className="flex gap-2">
                     <button onClick={() => setIsSearchOpen(true)} className={`p-2 rounded-full transition-all ${isFiltering ? 'bg-rose-100 dark:bg-rose-900 text-rose-900 dark:text-rose-100 shadow-sm' : 'bg-white dark:bg-stone-800 text-stone-400 dark:text-stone-500 hover:text-stone-600 dark:hover:text-stone-300 shadow-sm'}`}><Search size={22} /></button>
                     <button onClick={() => setIsSettingsOpen(true)} className="p-2 rounded-full bg-white dark:bg-stone-800 text-stone-400 dark:text-stone-500 shadow-sm"><SettingsIcon size={22} /></button>
+                    <button onClick={() => setIsInfoOpen(true)} className="p-2 rounded-full bg-white dark:bg-stone-800 text-stone-400 dark:text-stone-500 shadow-sm"><Info size={22} /></button>
                 </div>
             </div>
             {renderStatsBar(filteredWines)}
@@ -396,7 +405,10 @@ function App() {
     if (activeTab === 'history') {
       return (
         <div className="pb-24 px-2 py-4">
-             <div className="flex justify-between items-center mb-4 px-1"><h1 className="text-2xl font-serif font-bold text-stone-800 dark:text-stone-100">{t('history')}</h1></div>
+             <div className="flex justify-between items-center mb-4 px-1">
+                <h1 className="text-2xl font-serif font-bold text-stone-800 dark:text-stone-100">{t('history')}</h1>
+                <button onClick={() => setIsInfoOpen(true)} className="p-2 rounded-full bg-white dark:bg-stone-800 text-stone-400 dark:text-stone-500 shadow-sm"><Info size={22} /></button>
+             </div>
              {renderStatsBar(filteredHistory)}
              {filteredHistory.length === 0 ? <div className="text-center py-20 text-stone-400 flex flex-col items-center"><History size={40} className="opacity-40 mb-4"/><p>{t('empty_history')}</p></div> : (
                 <div className="space-y-3">
@@ -433,6 +445,7 @@ function App() {
         </main>
         <SearchModal isOpen={isSearchOpen} onClose={() => setIsSearchOpen(false)} onSearch={setSearchFilters} currentFilters={searchFilters} onReset={() => setSearchFilters({})} language={settings.language} />
         <SettingsModal isOpen={isSettingsOpen} onClose={() => setIsSettingsOpen(false)} settings={settings} onUpdateSettings={handleUpdateSettings} onExport={handleExport} onImport={handleImport} />
+        <InfoModal isOpen={isInfoOpen} onClose={() => setIsInfoOpen(false)} />
       </div>
     </div>
   );

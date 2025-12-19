@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { X, Search, RotateCcw } from 'lucide-react';
 import { SearchFilters, Language } from '../types';
@@ -39,7 +40,7 @@ export const SearchModal: React.FC<SearchModalProps> = ({ isOpen, onClose, onSea
     onClose();
   };
 
-  const inputClass = "mt-1 block w-full rounded-md border border-gray-300 dark:border-stone-700 bg-white dark:bg-stone-800 text-gray-900 dark:text-stone-100 shadow-sm focus:border-rose-500 focus:ring-rose-500 p-2.5 text-sm transition-colors";
+  const inputClass = "mt-1 block w-full rounded-lg border border-gray-300 dark:border-stone-700 bg-white dark:bg-stone-800 text-gray-900 dark:text-stone-100 shadow-sm focus:border-rose-500 focus:ring-rose-500 h-11 px-3 transition-all";
   const labelClass = "block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1";
 
   return (
