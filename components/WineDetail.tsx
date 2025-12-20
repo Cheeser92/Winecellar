@@ -1,6 +1,6 @@
 
-import React, { useState } from 'react';
-import { ArrowLeft, Check, Calendar, Clock, Tag, Trash2, Star, Pencil, Copy } from 'lucide-react';
+import React, { useState, useRef } from 'react';
+import { ArrowLeft, Check, Calendar, Clock, Tag, Trash2, Star, Pencil, Copy, Camera, ShoppingBag } from 'lucide-react';
 import { Wine, ConsumptionStatus, HistoryEntry, Language, AppFontSize } from '../types';
 import { RATINGS, STRENGTHS } from '../constants';
 import { getTranslation } from '../translations';
@@ -12,19 +12,22 @@ interface WineDetailProps {
   onDelete: (id: string) => void;
   onEdit?: () => void;
   onDuplicate?: (wine: Wine, quantity: number, location: string) => void;
+  onUpdateImage?: (image: string) => void;
   availableLocations: string[];
   isHistory?: boolean;
   language: Language;
   fontSize?: AppFontSize;
 }
 
-export const WineDetail: React.FC<WineDetailProps> = ({ wine, onBack, onConsume, onDelete, onEdit, onDuplicate, availableLocations, isHistory = false, language, fontSize = 'medium' }) => {
+export const WineDetail: React.FC<WineDetailProps> = ({ wine, onBack, onConsume, onDelete, onEdit, onDuplicate, onUpdateImage, availableLocations, isHistory = false, language, fontSize = 'medium' }) => {
   const [showConsumeModal, setShowConsumeModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [showDuplicateModal, setShowDuplicateModal] = useState(false);
   
   const [rating, setRating] = useState<number>(5);
   const [selectedStrength, setSelectedStrength] = useState<number>(wine.strength);
+
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Duplicate state
   const [copyQuantity, setCopyQuantity] = useState<number>(1);
@@ -83,6 +86,17 @@ export const WineDetail: React.FC<WineDetailProps> = ({ wine, onBack, onConsume,
     setShowDuplicateModal(true);
   }
 
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file && onUpdateImage) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        onUpdateImage(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
   const confirmConsume = () => {
     if (onConsume) {
         onConsume(wine as Wine, rating, selectedStrength);
@@ -128,12 +142,21 @@ export const WineDetail: React.FC<WineDetailProps> = ({ wine, onBack, onConsume,
     }
   };
 
-  // Fixed line 130: fontSize might be inferred as string if passed incorrectly, cast to AppFontSize
   const fontClasses = getFontSizeClasses(fontSize as AppFontSize);
 
   return (
     <div className={`min-h-full relative ${hasImage ? 'bg-stone-900' : 'bg-stone-50 dark:bg-black'} transition-colors duration-300`}>
       
+      {/* Hidden File Input for Camera */}
+      <input 
+        type="file" 
+        accept="image/*" 
+        capture="environment" 
+        ref={fileInputRef} 
+        onChange={handleImageChange} 
+        className="hidden" 
+      />
+
       {/* Background Image Layer */}
       {hasImage && (
         <div 
@@ -171,8 +194,25 @@ export const WineDetail: React.FC<WineDetailProps> = ({ wine, onBack, onConsume,
         </div>
       </div>
 
-      {/* Content Layer */}
-      <div className={`relative z-10 pb-20 px-4 transition-all duration-500 ${hasImage ? 'pt-48' : ''}`}>
+      {/* Content Layer - Reduced px-4 to px-1.5 to enlarge the card area */}
+      <div className={`relative z-10 pb-20 px-1.5 transition-all duration-500 ${hasImage ? 'pt-48' : 'pt-4'}`}>
+        
+        {/* Empty state photo prompt for History - DESIGN SYNCED WITH WineForm.tsx */}
+        {isHistory && !hasImage && (
+           <div 
+            onClick={() => fileInputRef.current?.click()}
+            className="mb-6 mx-2.5 flex flex-col items-center justify-center p-6 border-2 border-dashed border-gray-300 dark:border-stone-700 rounded-2xl bg-white/80 dark:bg-stone-900 shadow-sm transition-all hover:bg-white dark:hover:bg-stone-800 cursor-pointer"
+           >
+              <div className="mx-auto h-16 w-16 bg-rose-50 dark:bg-rose-900/20 text-rose-300 dark:text-rose-500 rounded-full flex items-center justify-center mb-3">
+                <Camera size={32} />
+              </div>
+              <div className="flex flex-col items-center text-center">
+                <span className="text-sm font-bold text-rose-700 dark:text-rose-400">{t('take_photo')}</span>
+                <span className="text-[10px] font-bold text-gray-400 dark:text-stone-500 mt-1 uppercase tracking-wider">{t('gallery')}</span>
+              </div>
+           </div>
+        )}
+
         <div className={`rounded-3xl p-6 shadow-2xl space-y-6 ${hasImage ? 'bg-white/90 dark:bg-stone-900/90 backdrop-blur-xl border border-white/40 dark:border-stone-800' : 'bg-white dark:bg-stone-900 border border-stone-100 dark:border-stone-800'} transition-colors duration-300`}>
           
           {/* Title Section */}
@@ -229,17 +269,26 @@ export const WineDetail: React.FC<WineDetailProps> = ({ wine, onBack, onConsume,
 
           {/* Smart Indicators */}
           <div className="space-y-3">
+            {/* Purchase Date / Time in Cellar block */}
             <div className="flex items-center justify-between p-3 rounded-xl bg-white dark:bg-stone-800 border border-stone-100 dark:border-stone-700 shadow-sm transition-colors">
               <div className="flex items-center gap-3">
-                <div className="p-2 bg-blue-50 dark:bg-blue-900/30 text-blue-500 dark:text-blue-300 rounded-full">
-                   <Clock size={18} />
+                <div className={`p-2 ${isHistory ? 'bg-indigo-50 dark:bg-indigo-900/30 text-indigo-500 dark:text-indigo-300' : 'bg-blue-50 dark:bg-blue-900/30 text-blue-500 dark:text-blue-300'} rounded-full`}>
+                   {isHistory ? <ShoppingBag size={18} /> : <Clock size={18} />}
                 </div>
                 <div>
-                  <p className="text-sm font-bold text-stone-800 dark:text-stone-200">{t('time_in_cellar')}</p>
-                  <p className="text-[10px] text-stone-500 dark:text-stone-400">{t('purchase_date')}: {new Date(wine.purchaseDate).toLocaleDateString()}</p>
+                  <p className="text-sm font-bold text-stone-800 dark:text-stone-200">
+                    {isHistory ? t('purchase_date') : t('time_in_cellar')}
+                  </p>
+                  <p className="text-[10px] text-stone-500 dark:text-stone-400">
+                    {isHistory 
+                      ? new Date(wine.purchaseDate).toLocaleDateString() 
+                      : `${t('purchase_date')}: ${new Date(wine.purchaseDate).toLocaleDateString()}`}
+                  </p>
                 </div>
               </div>
-              <span className="font-bold text-blue-900 dark:text-blue-200">{yearsInCellar} {t('years_old')}</span>
+              {!isHistory && (
+                <span className="font-bold text-blue-900 dark:text-blue-200">{yearsInCellar} {t('years_old')}</span>
+              )}
             </div>
             
             {isHistory && historyEntry ? (
@@ -321,13 +370,25 @@ export const WineDetail: React.FC<WineDetailProps> = ({ wine, onBack, onConsume,
                <button
                 type="button"
                 onClick={handleDeleteClick}
-                className={`${isHistory ? 'flex-1' : 'flex-none'} p-4 rounded-xl border border-red-200 dark:border-red-900/50 text-red-500 dark:text-red-400 bg-red-50 dark:bg-red-900/10 hover:bg-red-100 dark:hover:bg-red-900/20 transition cursor-pointer flex items-center justify-center gap-2`}
+                className={`${isHistory ? 'flex-none p-4' : 'flex-none p-4'} rounded-xl border border-red-200 dark:border-red-900/50 text-red-500 dark:text-red-400 bg-red-50 dark:bg-red-900/10 hover:bg-red-100 dark:hover:bg-red-900/20 transition cursor-pointer flex items-center justify-center gap-2`}
               >
                  <Trash2 size={20} />
-                 {isHistory && <span className="font-bold">Supprimer</span>}
+                 {isHistory && <span className="hidden sm:inline font-bold">Supprimer</span>}
               </button>
 
+              {isHistory && (
+                 <button
+                    type="button"
+                    onClick={() => fileInputRef.current?.click()}
+                    className="flex-1 flex items-center justify-center gap-2 bg-stone-100 dark:bg-stone-800 text-stone-800 dark:text-stone-100 font-bold py-4 px-6 rounded-xl hover:bg-stone-200 dark:hover:bg-stone-700 transition active:scale-95 cursor-pointer"
+                 >
+                    <Camera size={20} />
+                    <span>{t('take_photo')}</span>
+                 </button>
+              )}
+
               {!isHistory && (
+                <>
                 <button
                   type="button"
                   onClick={handleDuplicateClick}
@@ -335,9 +396,7 @@ export const WineDetail: React.FC<WineDetailProps> = ({ wine, onBack, onConsume,
                 >
                    <Copy size={20} />
                 </button>
-              )}
               
-              {!isHistory && (
                 <button
                     type="button"
                     onClick={handleConsumeClick}
@@ -346,6 +405,7 @@ export const WineDetail: React.FC<WineDetailProps> = ({ wine, onBack, onConsume,
                     <Check size={20} />
                     <span>{t('consume_bottle')}</span>
                 </button>
+                </>
               )}
           </div>
         </div>

@@ -4,7 +4,7 @@ Application de gestion de cave à vin développée avec React et Capacitor.
 
 ## Prérequis pour le Build Mobile (Android)
 
-Pour générer l'application Android (APK), vous devez avoir configuré votre environnement de développement.
+Pour générer l'application Android (APK) avec le bon logo, suivez ces étapes :
 
 ### 1. Installation des dépendances
 ```bash
@@ -13,17 +13,16 @@ npm install @capacitor/android @capacitor/assets
 npx cap add android
 ```
 
-### 2. Génération de l'icône de l'application (Bouteille de vin)
+### 2. Génération des icônes et splash screen
 
-Pour que l'icône apparaisse sur le téléphone, vous devez transformer le fichier `app-icon.svg` en icônes Android natives :
+Le dossier `/assets` contient déjà les fichiers sources optimisés (`icon-background.svg`, `icon-only.svg`, etc.). Pour générer les ressources natives :
 
-1. Créez un dossier nommé `assets` à la racine (si non présent).
-2. Copiez `app-icon.svg` dans `assets/icon-only.svg` et `assets/icon-background.svg`.
-3. Lancez la commande suivante :
+1. Assurez-vous d'être à la racine du projet.
+2. Lancez la commande suivante :
 ```bash
 npx capacitor-assets generate --android
 ```
-Cette commande va automatiquement créer toutes les tailles d'icônes dans le dossier `android/app/src/main/res`.
+Cette commande va transformer les fichiers du dossier `assets` en ressources Android (`mipmap` pour le launcher et `drawable` pour le splash screen) dans le dossier `android/app/src/main/res`.
 
 ### 3. Résolution de l'erreur JAVA_HOME
 

@@ -220,9 +220,9 @@ function App() {
   const handleEditWine = (wineData: Omit<Wine, 'id'>) => {
     if (selectedWine && 'id' in selectedWine) {
         if (activeTab === 'history') {
-            // Update only history
-            setHistory(prev => prev.map(h => h.id === selectedWine.id ? { ...h, note: wineData.note } : h));
-            setSelectedWine(prev => prev ? { ...prev, note: wineData.note } : null);
+            // Update history entry with all form data
+            setHistory(prev => prev.map(h => h.id === selectedWine.id ? { ...h, ...wineData } : h));
+            setSelectedWine(prev => prev ? { ...prev, ...wineData } : null);
         } else {
             // Update current stock
             const updatedWine = { ...wineData, id: selectedWine.id } as Wine;
@@ -230,6 +230,18 @@ function App() {
             setSelectedWine(updatedWine);
         }
         setView('detail');
+    }
+  };
+
+  const handleUpdateWineImage = (id: string, image: string, isHistory: boolean) => {
+    if (isHistory) {
+      setHistory(prev => prev.map(h => h.id === id ? { ...h, image } : h));
+    } else {
+      setWines(prev => prev.map(w => w.id === id ? { ...w, image } : w));
+    }
+    // Sync UI selection if necessary
+    if (selectedWine && selectedWine.id === id) {
+      setSelectedWine(prev => prev ? { ...prev, image } : null);
     }
   };
 
@@ -363,7 +375,7 @@ function App() {
   const renderContent = () => {
     if (view === 'add') return <WineForm onSave={handleAddWine} onCancel={() => setView('list')} availableLocations={availableLocations} language={settings.language} />;
     if (view === 'edit' && selectedWine) return <WineForm initialData={selectedWine} onSave={handleEditWine} onCancel={() => setView('detail')} availableLocations={availableLocations} language={settings.language} isHistoryMode={activeTab === 'history'} />;
-    if (view === 'detail' && selectedWine) return <WineDetail wine={selectedWine} onBack={() => setView('list')} onConsume={activeTab === 'history' ? undefined : handleConsumeWine} onDelete={activeTab === 'history' ? handleDeleteHistory : handleDeleteWine} onEdit={() => setView('edit')} onDuplicate={handleDuplicateWine} availableLocations={availableLocations} isHistory={activeTab === 'history'} language={settings.language} fontSize={settings.fontSize} />;
+    if (view === 'detail' && selectedWine) return <WineDetail wine={selectedWine} onBack={() => setView('list')} onConsume={activeTab === 'history' ? undefined : handleConsumeWine} onDelete={activeTab === 'history' ? handleDeleteHistory : handleDeleteWine} onEdit={() => setView('edit')} onDuplicate={handleDuplicateWine} onUpdateImage={(img) => handleUpdateWineImage(selectedWine.id, img, activeTab === 'history')} availableLocations={availableLocations} isHistory={activeTab === 'history'} language={settings.language} fontSize={settings.fontSize} />;
     if (activeTab === 'stats') return <StatsView wines={wines} history={history} language={settings.language} theme={settings.theme} />;
 
     if (activeTab === 'cellar') {

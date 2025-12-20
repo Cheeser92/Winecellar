@@ -84,16 +84,40 @@ export const WineForm: React.FC<WineFormProps> = ({ onSave, onCancel, initialDat
         </button>
       </div>
 
+      {/* Toujours afficher la section d'image pour permettre la modification même en historique */}
+      <div className="flex flex-col items-center justify-center p-6 border-2 border-dashed border-gray-300 dark:border-stone-700 rounded-xl bg-white dark:bg-stone-900 shadow-sm transition-colors">
+        {formData.image ? (
+          <div className="relative w-full h-56">
+            <img src={formData.image} alt="Preview" className="w-full h-full object-contain rounded-lg shadow-md bg-white dark:bg-stone-800" />
+            <button
+              type="button"
+              onClick={() => setFormData(prev => ({ ...prev, image: null }))}
+              className="absolute top-2 right-2 bg-red-600 text-white p-2 rounded-full shadow-lg hover:bg-red-700 transition"
+            >
+              <X size={16} />
+            </button>
+          </div>
+        ) : (
+          <div className="text-center w-full" onClick={() => fileInputRef.current?.click()}>
+            <div className="mx-auto h-16 w-16 bg-rose-50 dark:bg-rose-900/20 text-rose-300 dark:text-rose-500 rounded-full flex items-center justify-center mb-3">
+              <Camera size={32} />
+            </div>
+            <div className="flex flex-col text-sm text-gray-600 dark:text-gray-400">
+              <label htmlFor="file-upload" className="cursor-pointer font-medium text-rose-700 dark:text-rose-400 hover:text-rose-600">
+                <span>{t('take_photo')}</span>
+                <input id="file-upload" name="file-upload" type="file" accept="image/*" capture="environment" className="sr-only" ref={fileInputRef} onChange={handleImageChange} />
+              </label>
+              <span className="text-xs text-gray-400 mt-1">{t('gallery')}</span>
+            </div>
+          </div>
+        )}
+      </div>
+
       {isHistoryMode ? (
-        <div className="bg-white dark:bg-stone-900 p-5 rounded-xl shadow-sm space-y-6 transition-colors">
-          <div className="flex items-center gap-4 border-b border-gray-100 dark:border-stone-800 pb-4">
-            <div className="w-20 h-20 rounded-xl overflow-hidden bg-stone-100 dark:bg-stone-800 flex-shrink-0 border border-stone-200 dark:border-stone-700">
-              {formData.image ? <img src={formData.image} className="w-full h-full object-cover" alt="" /> : <WineIcon className="w-full h-full p-5 text-stone-300 dark:text-stone-600"/>}
-            </div>
-            <div>
-               <h3 className="font-bold text-lg text-stone-900 dark:text-white leading-tight">{formData.name}</h3>
-               <p className="text-sm text-stone-500 dark:text-stone-400 font-medium">{formData.appellation} - {formData.year}</p>
-            </div>
+        <div className="bg-white dark:bg-stone-900 p-5 rounded-xl shadow-sm space-y-4 transition-colors">
+          <div className="pb-4 border-b border-gray-100 dark:border-stone-800">
+             <h3 className="font-bold text-lg text-stone-900 dark:text-white leading-tight">{formData.name}</h3>
+             <p className="text-sm text-stone-500 dark:text-stone-400 font-medium">{formData.appellation} - {formData.year}</p>
           </div>
           <div>
             <label className={labelClass}>{t('note')}</label>
@@ -110,35 +134,6 @@ export const WineForm: React.FC<WineFormProps> = ({ onSave, onCancel, initialDat
         </div>
       ) : (
         <>
-          {/* Image Upload */}
-          <div className="flex flex-col items-center justify-center p-6 border-2 border-dashed border-gray-300 dark:border-stone-700 rounded-xl bg-white dark:bg-stone-900 shadow-sm transition-colors">
-            {formData.image ? (
-              <div className="relative w-full h-56">
-                <img src={formData.image} alt="Preview" className="w-full h-full object-contain rounded-lg shadow-md bg-white dark:bg-stone-800" />
-                <button
-                  type="button"
-                  onClick={() => setFormData(prev => ({ ...prev, image: null }))}
-                  className="absolute top-2 right-2 bg-red-600 text-white p-2 rounded-full shadow-lg hover:bg-red-700 transition"
-                >
-                  <X size={16} />
-                </button>
-              </div>
-            ) : (
-              <div className="text-center w-full" onClick={() => fileInputRef.current?.click()}>
-                <div className="mx-auto h-16 w-16 bg-rose-50 dark:bg-rose-900/20 text-rose-300 dark:text-rose-500 rounded-full flex items-center justify-center mb-3">
-                  <Camera size={32} />
-                </div>
-                <div className="flex flex-col text-sm text-gray-600 dark:text-gray-400">
-                  <label htmlFor="file-upload" className="cursor-pointer font-medium text-rose-700 dark:text-rose-400 hover:text-rose-600">
-                    <span>{t('take_photo')}</span>
-                    <input id="file-upload" name="file-upload" type="file" accept="image/*" capture="environment" className="sr-only" ref={fileInputRef} onChange={handleImageChange} />
-                  </label>
-                  <span className="text-xs text-gray-400 mt-1">{t('gallery')}</span>
-                </div>
-              </div>
-            )}
-          </div>
-
           <div className="bg-white dark:bg-stone-900 p-5 rounded-xl shadow-sm space-y-4 transition-colors">
             <h3 className="text-sm font-bold text-rose-900 dark:text-rose-500 uppercase tracking-widest border-b border-gray-100 dark:border-stone-800 pb-2 mb-4">Informations principales</h3>
             

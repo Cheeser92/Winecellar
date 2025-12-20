@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { X, Heart } from 'lucide-react';
+import { X, Heart, Mail } from 'lucide-react';
 
 interface InfoModalProps {
   isOpen: boolean;
@@ -27,7 +27,7 @@ export const InfoModal: React.FC<InfoModalProps> = ({ isOpen, onClose }) => {
         <h2 className="text-xl font-serif font-bold text-stone-900 dark:text-stone-100 mb-1">My Wine Cellar</h2>
         <p className="text-xs font-bold text-stone-400 dark:text-stone-500 uppercase tracking-widest mb-4">v1.0 • 2025</p>
         
-        <div className="space-y-4 mb-8">
+        <div className="space-y-4 mb-6">
             <p className="text-sm text-stone-600 dark:text-stone-400 leading-relaxed">
                 Développé entièrement avec <br/>
                 <span className="font-bold text-rose-900 dark:text-rose-400">Google AI Studio</span>
@@ -40,6 +40,19 @@ export const InfoModal: React.FC<InfoModalProps> = ({ isOpen, onClose }) => {
             <p className="text-sm font-serif italic text-stone-800 dark:text-stone-200 font-bold">
                 Cheeser92
             </p>
+        </div>
+
+        <div className="w-full mb-8 p-5 bg-stone-50 dark:bg-stone-800/50 rounded-2xl border border-stone-100 dark:border-stone-800">
+          <p className="text-[11px] text-stone-500 dark:text-stone-400 leading-relaxed mb-4 text-center">
+            Un commentaire, une remarque, un remerciement ? Envoyez un message. Les demandes de modifications seront traitées en fonction de mon temps libre.
+          </p>
+          <button 
+            onClick={() => window.open('mailto:cheeser92@gmail.com', '_blank')}
+            className="w-full bg-white dark:bg-stone-800 text-rose-900 dark:text-rose-400 font-bold py-3 px-4 rounded-xl border border-rose-100 dark:border-rose-900/30 hover:bg-rose-50 dark:hover:bg-rose-900/20 transition flex items-center justify-center gap-2 shadow-sm active:scale-95"
+          >
+            <Mail size={16} />
+            Me contacter
+          </button>
         </div>
 
         <button 
