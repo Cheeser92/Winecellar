@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { Plus, LayoutGrid, History, Wine as WineIcon, Search, XCircle, ChevronDown, ChevronRight, Calculator, Coins, Hash, PieChart, Settings as SettingsIcon, Info } from 'lucide-react';
+import { Plus, LayoutGrid, History, Wine as WineIcon, Search, XCircle, ChevronDown, ChevronRight, Calculator, Coins, Hash, PieChart, Settings as SettingsIcon, Info, Clock, Calendar, ArrowRight, X } from 'lucide-react';
 import { Wine, HistoryEntry, WineColor, SearchFilters, AppSettings, LOCATION_HORS_CAVE, BackupData, AppFontSize } from './types';
 import { WineForm } from './components/WineForm';
 import { WineDetail } from './components/WineDetail';
@@ -8,7 +8,7 @@ import { SearchModal } from './components/SearchModal';
 import { StatsView } from './components/StatsView';
 import { SettingsModal } from './components/SettingsModal';
 import { InfoModal } from './components/InfoModal';
-import { getTranslation } from './translations';
+import { getTranslation, translations } from './translations';
 
 type View = 'list' | 'history' | 'add' | 'detail' | 'edit';
 type Tab = 'cellar' | 'stats' | 'history';
@@ -29,6 +29,10 @@ function App() {
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isInfoOpen, setIsInfoOpen] = useState(false);
+  const [isQuantityModalOpen, setIsQuantityModalOpen] = useState(false);
+  const [isCostModalOpen, setIsCostModalOpen] = useState(false);
+  const [isHistoryQuantityModalOpen, setIsHistoryQuantityModalOpen] = useState(false);
+
   const [searchFilters, setSearchFilters] = useState<SearchFilters>({});
   const [settings, setSettings] = useState<AppSettings>(() => {
     const saved = localStorage.getItem('my-wine-cellar-settings');
@@ -62,19 +66,48 @@ function App() {
     localStorage.setItem('my-wine-cellar-settings', JSON.stringify(settings));
   }, [settings]);
 
-  // Handle Shelf Logic when settings change
+  // Handle Shelf Logic and Language Migration
   const handleUpdateSettings = (newSettings: AppSettings) => {
+    let updatedWines = [...wines];
+
+    // 1. Logic for language change (Migrate shelf names)
+    if (newSettings.language !== settings.language) {
+        const oldPrefix = translations[settings.language].shelf_prefix;
+        const newPrefix = translations[newSettings.language].shelf_prefix;
+        const oldOffsite = translations[settings.language].off_site;
+        const newOffsite = translations[newSettings.language].off_site;
+
+        updatedWines = updatedWines.map(wine => {
+            // Check if it's a shelf (prefix + number)
+            if (wine.location.startsWith(oldPrefix)) {
+                return { ...wine, location: wine.location.replace(oldPrefix, newPrefix) };
+            }
+            // Check if it's "Off-site"
+            if (wine.location === oldOffsite) {
+                return { ...wine, location: newOffsite };
+            }
+            return wine;
+        });
+    }
+
+    // 2. Logic for reducing shelf count
     if (newSettings.shelfCount < settings.shelfCount) {
-        const updatedWines = wines.map(wine => {
+        const newPrefix = translations[newSettings.language].shelf_prefix;
+        const newOffsite = translations[newSettings.language].off_site;
+
+        updatedWines = updatedWines.map(wine => {
              const match = wine.location.match(/(\d+)/);
-             if (match) {
+             if (match && wine.location.startsWith(newPrefix)) {
                  const shelfNum = parseInt(match[0]);
                  if (shelfNum > newSettings.shelfCount) {
-                     return { ...wine, location: LOCATION_HORS_CAVE };
+                     return { ...wine, location: newOffsite };
                  }
              }
              return wine;
         });
+    }
+
+    if (updatedWines !== wines) {
         setWines(updatedWines);
     }
     setSettings(newSettings);
@@ -161,7 +194,8 @@ function App() {
           badgeLabel: 'text-[9px]',
           badgeValue: 'text-xs',
           shelfTitle: 'text-base',
-          shelfCount: 'text-xs'
+          shelfCount: 'text-xs',
+          shelfCost: 'text-[9px]'
         };
       case 'large':
         return {
@@ -170,7 +204,8 @@ function App() {
           badgeLabel: 'text-[11px]',
           badgeValue: 'text-base',
           shelfTitle: 'text-xl',
-          shelfCount: 'text-sm'
+          shelfCount: 'text-sm',
+          shelfCost: 'text-xs'
         };
       case 'medium':
       default:
@@ -180,14 +215,15 @@ function App() {
           badgeLabel: 'text-[10px]',
           badgeValue: 'text-sm',
           shelfTitle: 'text-lg',
-          shelfCount: 'text-xs'
+          shelfCount: 'text-xs',
+          shelfCost: 'text-[10px]'
         };
     }
   };
 
   const fontClasses = getFontSizeClasses(settings.fontSize || 'medium');
 
-  const filterList = <T extends Wine>(list: T[]): T[] => {
+  const filterList = <T extends Wine>(list: T[], isHistoryList: boolean = false): T[] => {
     const hasFilters = Object.keys(searchFilters).length > 0;
     if (!hasFilters) return list;
 
@@ -199,15 +235,20 @@ function App() {
       if (searchFilters.color && item.color !== searchFilters.color) return false;
       if (searchFilters.year !== undefined && item.year !== searchFilters.year) return false;
       if (searchFilters.origin && !item.origin.toLowerCase().includes(searchFilters.origin.toLowerCase())) return false;
-      if (searchFilters.recommendedYear !== undefined && item.recommendedYear !== searchFilters.recommendedYear) return false;
       if (searchFilters.strength !== undefined && item.strength !== searchFilters.strength) return false;
-      if (searchFilters.agingPotential && item.agingPotential !== searchFilters.agingPotential) return false;
+      
+      // Fields to ignore in History search
+      if (!isHistoryList) {
+        if (searchFilters.recommendedYear !== undefined && item.recommendedYear !== searchFilters.recommendedYear) return false;
+        if (searchFilters.agingPotential && item.agingPotential !== searchFilters.agingPotential) return false;
+      }
+      
       return true;
     });
   };
 
-  const filteredWines = filterList<Wine>(wines);
-  const filteredHistory = filterList<HistoryEntry>(history);
+  const filteredWines = filterList<Wine>(wines, false);
+  const filteredHistory = filterList<HistoryEntry>(history, true);
   const isFiltering = Object.keys(searchFilters).length > 0;
 
   const handleAddWine = (wineData: Omit<Wine, 'id'>) => {
@@ -345,22 +386,35 @@ function App() {
     const totalBottles = items.reduce((acc, item) => acc + item.quantity, 0);
     const totalCost = items.reduce((acc, item) => acc + (item.price * item.quantity), 0);
     const avgPrice = totalBottles > 0 ? totalCost / totalBottles : 0;
+    
+    const isCellar = activeTab === 'cellar';
+    const isHistory = activeTab === 'history';
+    const isStats = activeTab === 'stats';
+
     return (
       <div className="grid grid-cols-3 gap-1.5 mb-4">
-        <div className="bg-white dark:bg-stone-800 p-2 rounded-xl shadow-sm border border-stone-100 dark:border-stone-700 flex flex-col items-center justify-center transition-colors">
+        <button 
+          disabled={isStats}
+          onClick={() => isCellar ? setIsQuantityModalOpen(true) : setIsHistoryQuantityModalOpen(true)}
+          className={`bg-white dark:bg-stone-800 p-2 rounded-xl shadow-sm border border-stone-100 dark:border-stone-700 flex flex-col items-center justify-center transition-all ${!isStats ? 'active:scale-95 cursor-pointer hover:bg-stone-50 dark:hover:bg-stone-700' : ''}`}
+        >
             <div className="flex items-center gap-1 text-stone-400 dark:text-stone-500 mb-0.5">
                <Hash size={10}/>
-               <span className="text-[9px] uppercase font-bold tracking-wide">{t('bottles')}</span>
+               <span className="text-[9px] uppercase font-bold tracking-wide">{isHistory ? t('consumed') : t('bottles')}</span>
             </div>
             <p className="text-base font-bold text-stone-800 dark:text-stone-100 leading-tight">{totalBottles}</p>
-        </div>
-        <div className="bg-white dark:bg-stone-800 p-2 rounded-xl shadow-sm border border-stone-100 dark:border-stone-700 flex flex-col items-center justify-center transition-colors">
+        </button>
+        <button 
+          disabled={!isCellar}
+          onClick={() => setIsCostModalOpen(true)}
+          className={`bg-white dark:bg-stone-800 p-2 rounded-xl shadow-sm border border-stone-100 dark:border-stone-700 flex flex-col items-center justify-center transition-all ${isCellar ? 'active:scale-95 cursor-pointer hover:bg-stone-50 dark:hover:bg-stone-700' : ''}`}
+        >
              <div className="flex items-center gap-1 text-stone-400 dark:text-stone-500 mb-0.5">
                <Coins size={10}/>
                <span className="text-[9px] uppercase font-bold tracking-wide">{t('total_cost')}</span>
             </div>
             <p className="text-base font-bold text-stone-800 dark:text-stone-100 leading-tight">{totalCost.toLocaleString(settings.language, { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 })}</p>
-        </div>
+        </button>
         <div className="bg-white dark:bg-stone-800 p-2 rounded-xl shadow-sm border border-stone-100 dark:border-stone-700 flex flex-col items-center justify-center transition-colors">
             <div className="flex items-center gap-1 text-stone-400 dark:text-stone-500 mb-0.5">
                <Calculator size={10}/>
@@ -369,6 +423,95 @@ function App() {
             <p className="text-base font-bold text-stone-800 dark:text-stone-100 leading-tight">{avgPrice.toLocaleString(settings.language, { style: 'currency', currency: 'EUR', maximumFractionDigits: 1 })}</p>
         </div>
       </div>
+    );
+  };
+
+  const renderFloatingList = (isOpen: boolean, onClose: () => void, title: string, items: Wine[] | HistoryEntry[], sortType: 'consumption' | 'cost' | 'most_consumed') => {
+    if (!isOpen) return null;
+
+    const sortedItems = [...items].sort((a, b) => {
+        if (sortType === 'consumption') {
+            return a.recommendedYear - b.recommendedYear;
+        } else if (sortType === 'most_consumed') {
+            return b.quantity - a.quantity;
+        } else {
+            return (b.price * b.quantity) - (a.price * a.quantity);
+        }
+    });
+
+    return (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
+            <div className="relative bg-white dark:bg-stone-900 rounded-2xl w-full max-w-md max-h-[85vh] flex flex-col shadow-2xl overflow-hidden border border-stone-100 dark:border-stone-800 animate-in zoom-in-95 duration-200">
+                <div className="p-4 border-b border-stone-100 dark:border-stone-800 flex justify-between items-center bg-stone-50/50 dark:bg-stone-800/50">
+                    <h2 className="font-serif font-bold text-lg text-rose-900 dark:text-rose-100">{title}</h2>
+                    <button onClick={onClose} className="p-2 text-stone-400 hover:text-stone-600 dark:hover:text-stone-200 rounded-full bg-white dark:bg-stone-800 shadow-sm"><X size={20}/></button>
+                </div>
+                <div className="flex-1 overflow-y-auto p-3 space-y-2.5 no-scrollbar">
+                    {sortedItems.map(wine => {
+                        const yearsInCellar = Math.max(0, (new Date().getTime() - new Date(wine.purchaseDate).getTime()) / (1000 * 60 * 60 * 24 * 365.25)).toFixed(1);
+                        const age = new Date().getFullYear() - wine.year;
+                        const totalCost = wine.price * wine.quantity;
+                        const isHistoryEntry = 'consumedDate' in wine;
+
+                        return (
+                            <div 
+                                key={wine.id} 
+                                onClick={() => { setSelectedWine(wine); setView('detail'); onClose(); }}
+                                className={`flex gap-3 items-center p-3 rounded-xl cursor-pointer transition-all border-l-4 shadow-sm ${getColorTheme(wine.color)}`}
+                            >
+                                <div className="w-14 h-14 rounded-full bg-white dark:bg-stone-800 flex-shrink-0 overflow-hidden border border-white dark:border-stone-700 shadow-sm relative">
+                                    {wine.image ? <img src={wine.image} className="w-full h-full object-cover" alt="" /> : <WineIcon className="w-6 h-6 m-auto mt-4 text-stone-300 dark:text-stone-600"/>}
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                    <p className="font-bold text-stone-900 dark:text-white truncate leading-tight">{wine.name}</p>
+                                    <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
+                                        <span className="text-[10px] font-bold text-stone-500 dark:text-stone-400 uppercase">{wine.year} • {age} {t('years_old')}</span>
+                                        {!isHistoryEntry && (
+                                            <>
+                                                <div className="w-1 h-1 rounded-full bg-stone-300 dark:bg-stone-700"></div>
+                                                <span className="text-[10px] font-bold text-stone-500 dark:text-stone-400 uppercase">{wine.location}</span>
+                                            </>
+                                        )}
+                                    </div>
+                                    <div className="flex items-center gap-3 mt-1.5">
+                                        {sortType === 'consumption' ? (
+                                            <div className="flex items-center gap-1 text-rose-800 dark:text-rose-400 bg-rose-50 dark:bg-rose-900/20 px-1.5 py-0.5 rounded border border-rose-100 dark:border-rose-900/30">
+                                                <Calendar size={10} />
+                                                <span className="text-[10px] font-bold">{t('recommended_year')}: {wine.recommendedYear}</span>
+                                            </div>
+                                        ) : sortType === 'most_consumed' && isHistoryEntry ? (
+                                             <div className="flex items-center gap-1 text-amber-800 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/20 px-1.5 py-0.5 rounded border border-amber-100 dark:border-amber-900/30">
+                                                <History size={10} />
+                                                <span className="text-[10px] font-bold">{t('consumed_on')} {new Date((wine as HistoryEntry).consumedDate).toLocaleDateString()}</span>
+                                            </div>
+                                        ) : (
+                                            <div className="flex items-center gap-1 text-emerald-800 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/20 px-1.5 py-0.5 rounded border border-emerald-100 dark:border-emerald-900/30">
+                                                <Coins size={10} />
+                                                <span className="text-[10px] font-bold">{totalCost.toLocaleString(settings.language, { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 })}</span>
+                                            </div>
+                                        )}
+                                        {sortType !== 'most_consumed' && (
+                                            <div className="flex items-center gap-1 text-stone-500 dark:text-stone-400">
+                                                <Clock size={10} />
+                                                <span className="text-[10px] font-medium">{yearsInCellar} {t('years_old')} {t('time_in_cellar').toLowerCase()}</span>
+                                            </div>
+                                        )}
+                                        {sortType === 'most_consumed' && (
+                                            <div className="flex items-center gap-1 text-stone-500 dark:text-stone-400">
+                                                <Hash size={10} />
+                                                <span className="text-[10px] font-bold">{t('total_drunk')}: {wine.quantity}</span>
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+                                <ArrowRight size={16} className="text-stone-300 dark:text-stone-600 flex-shrink-0" />
+                            </div>
+                        )
+                    })}
+                </div>
+            </div>
+        </div>
     );
   };
 
@@ -395,9 +538,51 @@ function App() {
                 const shelfWines = filteredWines.filter(w => w.location === shelfName);
                 if (shelfWines.length === 0) return null;
                 const isExpanded = expandedShelves[shelfName] || false;
+                
+                const shelfQty = shelfWines.reduce((acc, w) => acc + w.quantity, 0);
+                const shelfTotalCost = shelfWines.reduce((acc, w) => acc + (w.price * w.quantity), 0);
+                const shelfColorCounts = shelfWines.reduce((acc, w) => {
+                    acc[w.color] = (acc[w.color] || 0) + w.quantity;
+                    return acc;
+                }, { [WineColor.ROUGE]: 0, [WineColor.BLANC]: 0, [WineColor.ROSE]: 0 } as Record<WineColor, number>);
+
                 return (
                     <div key={shelfName} className="bg-white dark:bg-stone-900 rounded-xl shadow-sm border border-stone-100/80 dark:border-stone-800 overflow-hidden">
-                        <button onClick={() => toggleShelf(shelfName)} className={`w-full p-4 flex justify-between items-center ${isExpanded ? 'bg-stone-50 dark:bg-stone-800 border-b border-stone-100 dark:border-stone-800' : ''}`}><div className="flex items-center gap-2.5"><div className="text-stone-400">{isExpanded ? <ChevronDown size={18} /> : <ChevronRight size={18} />}</div><h2 className={`font-bold text-gray-800 dark:text-gray-100 ${fontClasses.shelfTitle}`}>{shelfName}</h2></div><span className={`bg-gray-100 dark:bg-stone-800 text-gray-500 dark:text-stone-400 font-semibold px-2 py-0.5 rounded-full border border-gray-200 dark:border-stone-700 ${fontClasses.shelfCount}`}>{shelfWines.reduce((acc, w) => acc + w.quantity, 0)}</span></button>
+                        <button onClick={() => toggleShelf(shelfName)} className={`w-full p-4 flex justify-between items-center ${isExpanded ? 'bg-stone-50 dark:bg-stone-800 border-b border-stone-100 dark:border-stone-800' : ''}`}>
+                            <div className="flex items-center gap-2.5">
+                                <div className="text-stone-400">{isExpanded ? <ChevronDown size={18} /> : <ChevronRight size={18} />}</div>
+                                <h2 className={`font-bold text-gray-800 dark:text-gray-100 ${fontClasses.shelfTitle}`}>{shelfName}</h2>
+                            </div>
+                            <div className="flex items-center gap-3">
+                                {/* Color distribution */}
+                                <div className="flex items-center gap-2 mr-1">
+                                    {shelfColorCounts[WineColor.ROUGE] > 0 && (
+                                        <div className="flex items-center gap-0.5">
+                                            <div className="w-2 h-2 rounded-full bg-rose-800 dark:bg-rose-600 shadow-sm"></div>
+                                            <span className={`font-bold text-stone-500 dark:text-stone-400 ${fontClasses.shelfCost}`}>{shelfColorCounts[WineColor.ROUGE]}</span>
+                                        </div>
+                                    )}
+                                    {shelfColorCounts[WineColor.BLANC] > 0 && (
+                                        <div className="flex items-center gap-0.5">
+                                            <div className="w-2 h-2 rounded-full bg-yellow-400 dark:bg-yellow-500 shadow-sm"></div>
+                                            <span className={`font-bold text-stone-500 dark:text-stone-400 ${fontClasses.shelfCost}`}>{shelfColorCounts[WineColor.BLANC]}</span>
+                                        </div>
+                                    )}
+                                    {shelfColorCounts[WineColor.ROSE] > 0 && (
+                                        <div className="flex items-center gap-0.5">
+                                            <div className="w-2 h-2 rounded-full bg-pink-400 dark:bg-pink-500 shadow-sm"></div>
+                                            <span className={`font-bold text-stone-500 dark:text-stone-400 ${fontClasses.shelfCost}`}>{shelfColorCounts[WineColor.ROSE]}</span>
+                                        </div>
+                                    )}
+                                </div>
+                                <span className={`text-stone-400 dark:text-stone-500 font-bold uppercase ${fontClasses.shelfCost}`}>
+                                    {shelfTotalCost.toLocaleString(settings.language, { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 })}
+                                </span>
+                                <span className={`bg-gray-100 dark:bg-stone-800 text-gray-500 dark:text-stone-400 font-semibold px-2 py-0.5 rounded-full border border-gray-200 dark:border-stone-700 ${fontClasses.shelfCount}`}>
+                                    {shelfQty}
+                                </span>
+                            </div>
+                        </button>
                         {isExpanded && <div className="p-2 space-y-2">
                               {shelfWines.map(wine => (
                                   <div key={wine.id} onClick={() => { setSelectedWine(wine); setView('detail'); }} className={`flex gap-2.5 items-center p-2 rounded-lg cursor-pointer transition-all shadow-sm border-l-4 ${getColorTheme(wine.color)}`}>
@@ -419,7 +604,10 @@ function App() {
         <div className="pb-24 px-2 py-4">
              <div className="flex justify-between items-center mb-4 px-1">
                 <h1 className="text-2xl font-serif font-bold text-stone-800 dark:text-stone-100">{t('history')}</h1>
-                <button onClick={() => setIsInfoOpen(true)} className="p-2 rounded-full bg-white dark:bg-stone-800 text-stone-400 dark:text-stone-500 shadow-sm"><Info size={22} /></button>
+                <div className="flex gap-2">
+                    <button onClick={() => setIsSearchOpen(true)} className={`p-2 rounded-full transition-all ${isFiltering ? 'bg-rose-100 dark:bg-rose-900 text-rose-900 dark:text-rose-100 shadow-sm' : 'bg-white dark:bg-stone-800 text-stone-400 dark:text-stone-500 hover:text-stone-600 dark:hover:text-stone-300 shadow-sm'}`}><Search size={22} /></button>
+                    <button onClick={() => setIsInfoOpen(true)} className="p-2 rounded-full bg-white dark:bg-stone-800 text-stone-400 dark:text-stone-500 shadow-sm"><Info size={22} /></button>
+                </div>
              </div>
              {renderStatsBar(filteredHistory)}
              {filteredHistory.length === 0 ? <div className="text-center py-20 text-stone-400 flex flex-col items-center"><History size={40} className="opacity-40 mb-4"/><p>{t('empty_history')}</p></div> : (
@@ -455,9 +643,14 @@ function App() {
             </div>
           )}
         </main>
-        <SearchModal isOpen={isSearchOpen} onClose={() => setIsSearchOpen(false)} onSearch={setSearchFilters} currentFilters={searchFilters} onReset={() => setSearchFilters({})} language={settings.language} />
+        <SearchModal isOpen={isSearchOpen} onClose={() => setIsSearchOpen(false)} onSearch={setSearchFilters} currentFilters={searchFilters} onReset={() => setSearchFilters({})} language={settings.language} isHistoryMode={activeTab === 'history'} />
         <SettingsModal isOpen={isSettingsOpen} onClose={() => setIsSettingsOpen(false)} settings={settings} onUpdateSettings={handleUpdateSettings} onExport={handleExport} onImport={handleImport} />
         <InfoModal isOpen={isInfoOpen} onClose={() => setIsInfoOpen(false)} />
+        
+        {/* Floating Modals for Stats Bar */}
+        {renderFloatingList(isQuantityModalOpen, () => setIsQuantityModalOpen(false), t('priority_consumption'), wines, 'consumption')}
+        {renderFloatingList(isCostModalOpen, () => setIsCostModalOpen(false), t('top_value_wines'), wines, 'cost')}
+        {renderFloatingList(isHistoryQuantityModalOpen, () => setIsHistoryQuantityModalOpen(false), t('most_consumed_wines'), history, 'most_consumed')}
       </div>
     </div>
   );

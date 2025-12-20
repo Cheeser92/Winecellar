@@ -82,24 +82,26 @@ export const StatsView: React.FC<StatsViewProps> = ({ wines, history, language, 
   const cellarRegionData = processStackedData(wines, 'region');
   const cellarCountryData = processStackedData(wines, 'country');
 
-  const cellarYearDataRaw = wines.reduce((acc, wine) => {
-    if (!wine.purchaseDate) return acc;
-    const year = new Date(wine.purchaseDate).getFullYear().toString();
-    const qty = Number(wine.quantity);
-    acc[year] = (acc[year] || 0) + qty;
-    return acc;
-  }, {} as Record<string, number>);
+  // Logic for Purchase Year stacked by color
+  const processCellarYearData = () => {
+    const rawData = wines.reduce((acc, wine) => {
+      if (!wine.purchaseDate) return acc;
+      const year = new Date(wine.purchaseDate).getFullYear().toString();
+      if (!acc[year]) {
+        acc[year] = { year, [WineColor.ROUGE]: 0, [WineColor.BLANC]: 0, [WineColor.ROSE]: 0 };
+      }
+      acc[year][wine.color] += Number(wine.quantity);
+      return acc;
+    }, {} as Record<string, any>);
+    return Object.values(rawData).sort((a: any, b: any) => Number(a.year) - Number(b.year));
+  };
 
-  const cellarYearData = Object.entries(cellarYearDataRaw)
-    .map(([year, quantity]) => ({ year, quantity }))
-    .sort((a, b) => Number(a.year) - Number(b.year));
+  const cellarYearData = processCellarYearData();
 
   // --- HISTORY DATA PROCESSING ---
 
-  // 1. Region & Color (Stacked Bar)
   const histRegionColorData = processStackedData(history, 'region');
 
-  // 2. & 3. Avg Rating Helpers - Now Weighted by Quantity
   const getAvgRatingByRegion = (color: string) => {
       const grouped = history
         .filter(h => h.color === color)
@@ -129,7 +131,6 @@ export const StatsView: React.FC<StatsViewProps> = ({ wines, history, language, 
   const histAvgRatingRed = getAvgRatingByRegion(WineColor.ROUGE);
   const histAvgRatingWhite = getAvgRatingByRegion(WineColor.BLANC);
 
-  // 4, 5, 6, 7 Pie Charts Helpers
   const getPieData = (key: keyof HistoryEntry) => {
       const grouped = history.reduce((acc, h) => {
           const val = String(h[key]) || 'Inconnu';
@@ -142,10 +143,8 @@ export const StatsView: React.FC<StatsViewProps> = ({ wines, history, language, 
 
   const histColorData = getPieData('color');
   const histRegionData = getPieData('region');
-  const histYearData = getPieData('year'); // Vintage
+  const histYearData = getPieData('year'); 
   const histCountryData = getPieData('country');
-
-  // RENDERERS
 
   const renderSectionHeader = (title: string, isOpen: boolean, toggle: () => void) => (
     <button 
@@ -163,7 +162,6 @@ export const StatsView: React.FC<StatsViewProps> = ({ wines, history, language, 
     <div className="pb-24 p-4">
         <h1 className="text-2xl font-serif font-bold text-rose-950 dark:text-rose-100 mb-6 px-2 pt-2">{t('stats')}</h1>
 
-        {/* CELLAR STATS SECTION */}
         {renderSectionHeader(t('section_cellar_stats'), showCellarStats, () => setShowCellarStats(!showCellarStats))}
         
         {showCellarStats && (
@@ -172,7 +170,6 @@ export const StatsView: React.FC<StatsViewProps> = ({ wines, history, language, 
                     <div className="p-8 text-center text-stone-400 dark:text-stone-600 italic mb-6">{t('empty_cellar')}</div>
                 ) : (
                     <>
-                        {/* 1. Pie Chart - Color */}
                         <ChartContainer title={t('stats_color')}>
                             <ResponsiveContainer width="100%" height="100%">
                                 <PieChart>
@@ -196,7 +193,6 @@ export const StatsView: React.FC<StatsViewProps> = ({ wines, history, language, 
                             </ResponsiveContainer>
                         </ChartContainer>
 
-                        {/* 2. Bar Chart - Region & Color */}
                         <ChartContainer title={t('stats_region')}>
                             <ResponsiveContainer width="100%" height="100%">
                                 <BarChart
@@ -222,7 +218,6 @@ export const StatsView: React.FC<StatsViewProps> = ({ wines, history, language, 
                             </ResponsiveContainer>
                         </ChartContainer>
 
-                        {/* 3. Bar Chart - Country & Color */}
                         <ChartContainer title={t('stats_country')}>
                             <ResponsiveContainer width="100%" height="100%">
                                 <BarChart
@@ -247,7 +242,6 @@ export const StatsView: React.FC<StatsViewProps> = ({ wines, history, language, 
                             </ResponsiveContainer>
                         </ChartContainer>
 
-                        {/* 4. Bar Chart - Purchase Date */}
                         <ChartContainer title={t('stats_year')}>
                             <ResponsiveContainer width="100%" height="100%">
                                 <BarChart
@@ -258,8 +252,15 @@ export const StatsView: React.FC<StatsViewProps> = ({ wines, history, language, 
                                     <XAxis dataKey="year" tick={{fontSize: 10, fill: isDark ? '#a8a29e' : '#666'}}/>
                                     <YAxis tick={{fontSize: 10, fill: isDark ? '#a8a29e' : '#666'}} allowDecimals={false}/>
                                     <Tooltip cursor={{fill: isDark ? '#292524' : '#f5f5f4'}} contentStyle={tooltipStyle} itemStyle={{color: isDark ? '#fff' : '#333'}}/>
-                                    <Bar dataKey="quantity" name="Quantité" fill={isDark ? '#78716c' : '#44403c'} radius={[4, 4, 0, 0]} barSize={40}>
-                                      <LabelList dataKey="quantity" position="top" fill={isDark ? "#a8a29e" : "#44403c"} fontSize={10} />
+                                    <Legend />
+                                    <Bar dataKey={WineColor.ROUGE} stackId="a" fill={COLORS_MAP[WineColor.ROUGE]} radius={[4, 4, 0, 0]}>
+                                      <LabelList dataKey={WineColor.ROUGE} position="center" fill="white" fontSize={10} formatter={(val: number) => val > 0 ? val : ''} />
+                                    </Bar>
+                                    <Bar dataKey={WineColor.BLANC} stackId="a" fill={COLORS_MAP[WineColor.BLANC]}>
+                                      <LabelList dataKey={WineColor.BLANC} position="center" fill="black" fontSize={10} formatter={(val: number) => val > 0 ? val : ''} />
+                                    </Bar>
+                                    <Bar dataKey={WineColor.ROSE} stackId="a" fill={COLORS_MAP[WineColor.ROSE]}>
+                                      <LabelList dataKey={WineColor.ROSE} position="center" fill="white" fontSize={10} formatter={(val: number) => val > 0 ? val : ''} />
                                     </Bar>
                                 </BarChart>
                             </ResponsiveContainer>
@@ -269,7 +270,6 @@ export const StatsView: React.FC<StatsViewProps> = ({ wines, history, language, 
             </div>
         )}
 
-        {/* HISTORY STATS SECTION */}
         {renderSectionHeader(t('section_history_stats'), showHistoryStats, () => setShowHistoryStats(!showHistoryStats))}
         
         {showHistoryStats && (
@@ -278,7 +278,6 @@ export const StatsView: React.FC<StatsViewProps> = ({ wines, history, language, 
                     <div className="p-8 text-center text-stone-400 dark:text-stone-600 italic mb-6">{t('empty_history')}</div>
                 ) : (
                     <>
-                         {/* 1. Region & Color (Count) */}
                         <ChartContainer title={t('stats_hist_region_color')}>
                             <ResponsiveContainer width="100%" height="100%">
                                 <BarChart
@@ -304,7 +303,6 @@ export const StatsView: React.FC<StatsViewProps> = ({ wines, history, language, 
                             </ResponsiveContainer>
                         </ChartContainer>
 
-                        {/* 2. Avg Rating (Red) */}
                          <ChartContainer title={t('stats_hist_avg_rating_red')}>
                             <ResponsiveContainer width="100%" height="100%">
                                 <BarChart
@@ -322,7 +320,6 @@ export const StatsView: React.FC<StatsViewProps> = ({ wines, history, language, 
                             </ResponsiveContainer>
                         </ChartContainer>
 
-                        {/* 3. Avg Rating (White) */}
                         <ChartContainer title={t('stats_hist_avg_rating_white')}>
                             <ResponsiveContainer width="100%" height="100%">
                                 <BarChart
@@ -340,7 +337,6 @@ export const StatsView: React.FC<StatsViewProps> = ({ wines, history, language, 
                             </ResponsiveContainer>
                         </ChartContainer>
 
-                        {/* 4. Consumption by Color (Pie) */}
                         <ChartContainer title={t('stats_hist_cons_color')}>
                             <ResponsiveContainer width="100%" height="100%">
                                 <PieChart>
@@ -364,8 +360,7 @@ export const StatsView: React.FC<StatsViewProps> = ({ wines, history, language, 
                             </ResponsiveContainer>
                         </ChartContainer>
 
-                        {/* 5. Consumption by Region (Pie) */}
-                         <ChartContainer title={t('stats_hist_cons_region')}>
+                        <ChartContainer title={t('stats_hist_cons_region')}>
                             <ResponsiveContainer width="100%" height="100%">
                                 <PieChart>
                                     <Pie
@@ -390,7 +385,6 @@ export const StatsView: React.FC<StatsViewProps> = ({ wines, history, language, 
                             </ResponsiveContainer>
                         </ChartContainer>
 
-                         {/* 6. Consumption by Year (Pie) */}
                          <ChartContainer title={t('stats_hist_cons_year')}>
                             <ResponsiveContainer width="100%" height="100%">
                                 <PieChart>
@@ -414,7 +408,6 @@ export const StatsView: React.FC<StatsViewProps> = ({ wines, history, language, 
                             </ResponsiveContainer>
                         </ChartContainer>
 
-                         {/* 7. Consumption by Country (Pie) */}
                          <ChartContainer title={t('stats_hist_cons_country')}>
                             <ResponsiveContainer width="100%" height="100%">
                                 <PieChart>

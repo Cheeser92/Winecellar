@@ -54,6 +54,7 @@ export const translations = {
     
     // Stats
     bottles: "Bouteilles",
+    consumed: "Consommées",
     total_cost: "Coût Total",
     avg_price: "Prix Moy.",
     stats_color: "Répartition par Couleur (%)",
@@ -103,7 +104,12 @@ export const translations = {
     personal_note: "Note personnelle",
     no_tag: "Aucun tag",
     no_note: "Aucune note",
-    about: "À propos"
+    about: "À propos",
+
+    // New Float Modals
+    priority_consumption: "Priorités de consommation",
+    top_value_wines: "Valeurs de la cave",
+    most_consumed_wines: "Vins les plus consommés"
   },
   en: {
     app_title: "My Wine Cellar",
@@ -157,6 +163,7 @@ export const translations = {
 
     // Stats
     bottles: "Bottles",
+    consumed: "Consumed",
     total_cost: "Total Cost",
     avg_price: "Avg Price",
     stats_color: "Distribution by Color (%)",
@@ -206,7 +213,12 @@ export const translations = {
     personal_note: "Personal note",
     no_tag: "No tags",
     no_note: "No notes",
-    about: "About"
+    about: "About",
+
+    // New Float Modals
+    priority_consumption: "Consumption Priorities",
+    top_value_wines: "Cellar Values",
+    most_consumed_wines: "Most consumed wines"
   }
 };
 

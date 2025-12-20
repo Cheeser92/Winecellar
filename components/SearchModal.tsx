@@ -12,9 +12,10 @@ interface SearchModalProps {
   currentFilters: SearchFilters;
   onReset: () => void;
   language: Language;
+  isHistoryMode?: boolean;
 }
 
-export const SearchModal: React.FC<SearchModalProps> = ({ isOpen, onClose, onSearch, currentFilters, onReset, language }) => {
+export const SearchModal: React.FC<SearchModalProps> = ({ isOpen, onClose, onSearch, currentFilters, onReset, language, isHistoryMode = false }) => {
   const [filters, setFilters] = useState<SearchFilters>(currentFilters);
   const t = (key: any) => getTranslation(language, key);
 
@@ -106,11 +107,13 @@ export const SearchModal: React.FC<SearchModalProps> = ({ isOpen, onClose, onSea
           </div>
 
           <div className="grid grid-cols-2 gap-4">
-             <div>
-              <label className={labelClass}>{t('recommended_year')}</label>
-              <input type="number" name="recommendedYear" value={filters.recommendedYear || ''} onChange={handleChange} className={inputClass} placeholder="Ex: 2025" />
-            </div>
-            <div>
+             { !isHistoryMode && (
+               <div>
+                <label className={labelClass}>{t('recommended_year')}</label>
+                <input type="number" name="recommendedYear" value={filters.recommendedYear || ''} onChange={handleChange} className={inputClass} placeholder="Ex: 2025" />
+              </div>
+             )}
+            <div className={isHistoryMode ? "col-span-2" : ""}>
               <label className={labelClass}>{t('strength')}</label>
               <select name="strength" value={filters.strength !== undefined ? filters.strength : ''} onChange={handleChange} className={inputClass}>
                 <option value="">Toutes</option>
@@ -119,13 +122,15 @@ export const SearchModal: React.FC<SearchModalProps> = ({ isOpen, onClose, onSea
             </div>
           </div>
 
-           <div>
-            <label className={labelClass}>{t('aging')}</label>
-            <select name="agingPotential" value={filters.agingPotential || ''} onChange={handleChange} className={inputClass}>
-              <option value="">Toutes</option>
-              {AGING_POTENTIALS.map(a => <option key={a} value={a}>{a}</option>)}
-            </select>
-          </div>
+          { !isHistoryMode && (
+             <div>
+              <label className={labelClass}>{t('aging')}</label>
+              <select name="agingPotential" value={filters.agingPotential || ''} onChange={handleChange} className={inputClass}>
+                <option value="">Toutes</option>
+                {AGING_POTENTIALS.map(a => <option key={a} value={a}>{a}</option>)}
+              </select>
+            </div>
+          )}
 
         </div>
 
