@@ -352,11 +352,11 @@ function App() {
   const getColorTheme = (color: WineColor) => {
     switch (color) {
       case WineColor.ROUGE:
-        return 'border-l-rose-700 bg-rose-100/50 hover:bg-rose-200/50 dark:bg-rose-900/40 dark:hover:bg-rose-900/60 dark:border-l-rose-600';
+        return 'border-l-rose-900 bg-rose-200/60 hover:bg-rose-300/60 dark:bg-rose-950/40 dark:hover:bg-rose-900/60 dark:border-l-rose-700';
       case WineColor.BLANC:
         return 'border-l-yellow-500 bg-yellow-100/50 hover:bg-yellow-200/50 dark:bg-yellow-900/40 dark:hover:bg-yellow-900/60 dark:border-l-yellow-400';
       case WineColor.ROSE:
-        return 'border-l-pink-500 bg-pink-100/50 hover:bg-pink-200/50 dark:bg-pink-900/40 dark:hover:bg-pink-900/60 dark:border-l-pink-400';
+        return 'border-l-pink-500 bg-pink-50/60 hover:bg-pink-100/60 dark:bg-pink-900/20 dark:hover:bg-pink-900/40 dark:border-l-pink-400';
       default:
         return 'border-l-gray-300 bg-white dark:bg-stone-800';
     }
@@ -365,7 +365,7 @@ function App() {
   const getQuantityBadgeStyle = (color: WineColor) => {
     switch (color) {
         case WineColor.ROUGE:
-            return 'bg-rose-100 dark:bg-rose-900/40 text-rose-900 dark:text-rose-100 border border-rose-200 dark:border-rose-800';
+            return 'bg-rose-200/80 dark:bg-rose-900/60 text-rose-950 dark:text-rose-100 border border-rose-300 dark:border-rose-800';
         case WineColor.BLANC:
             return 'bg-yellow-100 dark:bg-yellow-900/40 text-yellow-900 dark:text-yellow-100 border border-yellow-200 dark:border-yellow-800';
         case WineColor.ROSE:
@@ -558,7 +558,7 @@ function App() {
                                 <div className="flex items-center gap-2 mr-1">
                                     {shelfColorCounts[WineColor.ROUGE] > 0 && (
                                         <div className="flex items-center gap-0.5">
-                                            <div className="w-2 h-2 rounded-full bg-rose-800 dark:bg-rose-600 shadow-sm"></div>
+                                            <div className="w-2 h-2 rounded-full bg-rose-950 dark:bg-rose-600 shadow-sm"></div>
                                             <span className={`font-bold text-stone-500 dark:text-stone-400 ${fontClasses.shelfCost}`}>{shelfColorCounts[WineColor.ROUGE]}</span>
                                         </div>
                                     )}
