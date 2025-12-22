@@ -15,7 +15,6 @@ interface WineFormProps {
 }
 
 export const WineForm: React.FC<WineFormProps> = ({ onSave, onCancel, initialData, availableLocations, language, isHistoryMode = false }) => {
-  // Translate helper
   const t = (key: any) => getTranslation(language, key);
 
   const [formData, setFormData] = useState<Omit<Wine, 'id'>>({
@@ -36,11 +35,10 @@ export const WineForm: React.FC<WineFormProps> = ({ onSave, onCancel, initialDat
     note: initialData?.note || '',
     agingPotential: initialData?.agingPotential || AgingPotential.MOYENNE,
     image: initialData?.image || null,
-    location: initialData?.location || availableLocations[0], // Default to first shelf
+    location: initialData?.location || availableLocations[0],
   });
 
   const isEdit = !!initialData;
-
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
@@ -84,24 +82,15 @@ export const WineForm: React.FC<WineFormProps> = ({ onSave, onCancel, initialDat
         </button>
       </div>
 
-      {/* Toujours afficher la section d'image pour permettre la modification même en historique */}
       <div className="flex flex-col items-center justify-center p-6 border-2 border-dashed border-gray-300 dark:border-stone-700 rounded-xl bg-white dark:bg-stone-900 shadow-sm transition-colors">
         {formData.image ? (
           <div className="relative w-full h-56">
             <img src={formData.image} alt="Preview" className="w-full h-full object-contain rounded-lg shadow-md bg-white dark:bg-stone-800" />
-            <button
-              type="button"
-              onClick={() => setFormData(prev => ({ ...prev, image: null }))}
-              className="absolute top-2 right-2 bg-red-600 text-white p-2 rounded-full shadow-lg hover:bg-red-700 transition"
-            >
-              <X size={16} />
-            </button>
+            <button type="button" onClick={() => setFormData(prev => ({ ...prev, image: null }))} className="absolute top-2 right-2 bg-red-600 text-white p-2 rounded-full shadow-lg hover:bg-red-700 transition"><X size={16} /></button>
           </div>
         ) : (
           <div className="text-center w-full" onClick={() => fileInputRef.current?.click()}>
-            <div className="mx-auto h-16 w-16 bg-rose-50 dark:bg-rose-900/20 text-rose-300 dark:text-rose-500 rounded-full flex items-center justify-center mb-3">
-              <Camera size={32} />
-            </div>
+            <div className="mx-auto h-16 w-16 bg-rose-50 dark:bg-rose-900/20 text-rose-300 dark:text-rose-500 rounded-full flex items-center justify-center mb-3"><Camera size={32} /></div>
             <div className="flex flex-col text-sm text-gray-600 dark:text-gray-400">
               <label htmlFor="file-upload" className="cursor-pointer font-medium text-rose-700 dark:text-rose-400 hover:text-rose-600">
                 <span>{t('take_photo')}</span>
@@ -113,41 +102,20 @@ export const WineForm: React.FC<WineFormProps> = ({ onSave, onCancel, initialDat
         )}
       </div>
 
-      {isHistoryMode ? (
-        <div className="bg-white dark:bg-stone-900 p-5 rounded-xl shadow-sm space-y-4 transition-colors">
-          <div className="pb-4 border-b border-gray-100 dark:border-stone-800">
-             <h3 className="font-bold text-lg text-stone-900 dark:text-white leading-tight">{formData.name}</h3>
-             <p className="text-sm text-stone-500 dark:text-stone-400 font-medium">{formData.appellation} - {formData.year}</p>
-          </div>
-          <div>
-            <label className={labelClass}>{t('note')}</label>
-            <textarea 
-              name="note" 
-              value={formData.note} 
-              onChange={handleChange} 
-              rows={8} 
-              className={textareaClass} 
-              autoFocus
-              placeholder="Racontez votre dégustation..."
-            />
-          </div>
-        </div>
-      ) : (
+      {!isHistoryMode ? (
         <>
           <div className="bg-white dark:bg-stone-900 p-5 rounded-xl shadow-sm space-y-4 transition-colors">
-            <h3 className="text-sm font-bold text-rose-900 dark:text-rose-500 uppercase tracking-widest border-b border-gray-100 dark:border-stone-800 pb-2 mb-4">Informations principales</h3>
-            
+            <h3 className="text-sm font-bold text-rose-900 dark:text-rose-500 uppercase tracking-widest border-b border-gray-100 dark:border-stone-800 pb-2 mb-4">{t('info_main')}</h3>
             <div className="space-y-4">
               <div>
                 <label className={labelClass}>{t('name')}</label>
-                <input required type="text" name="name" value={formData.name} onChange={handleChange} className={inputClass} placeholder="Ex: Château Margaux" />
+                <input required type="text" name="name" value={formData.name} onChange={handleChange} className={inputClass} placeholder={t('placeholder_wine_name')} />
               </div>
               <div>
                 <label className={labelClass}>{t('appellation')}</label>
-                <input required type="text" name="appellation" value={formData.appellation} onChange={handleChange} className={inputClass} placeholder="Ex: Margaux, Cabernet Sauvignon" />
+                <input required type="text" name="appellation" value={formData.appellation} onChange={handleChange} className={inputClass} placeholder={t('placeholder_appellation')} />
               </div>
             </div>
-
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className={labelClass}>{t('region')}</label>
@@ -160,12 +128,11 @@ export const WineForm: React.FC<WineFormProps> = ({ onSave, onCancel, initialDat
                 <input type="text" name="country" value={formData.country} onChange={handleChange} className={inputClass} />
               </div>
             </div>
-
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className={labelClass}>{t('color')}</label>
                 <select name="color" value={formData.color} onChange={handleChange} className={inputClass}>
-                  {COLORS.map(c => <option key={c} value={c}>{c}</option>)}
+                  {COLORS.map(c => <option key={c} value={c}>{t(`color_${c}`)}</option>)}
                 </select>
               </div>
               <div>
@@ -176,20 +143,17 @@ export const WineForm: React.FC<WineFormProps> = ({ onSave, onCancel, initialDat
           </div>
 
           <div className="bg-white dark:bg-stone-900 p-5 rounded-xl shadow-sm space-y-4 transition-colors">
-            <h3 className="text-sm font-bold text-rose-900 dark:text-rose-500 uppercase tracking-widest border-b border-gray-100 dark:border-stone-800 pb-2 mb-4">Détails de la cave</h3>
-
+            <h3 className="text-sm font-bold text-rose-900 dark:text-rose-500 uppercase tracking-widest border-b border-gray-100 dark:border-stone-800 pb-2 mb-4">{t('info_detail_bottle')}</h3>
             <div>
               <label className={labelClass}>{t('location')}</label>
               <select name="location" value={formData.location} onChange={handleChange} className={inputClass}>
                   {availableLocations.map(l => <option key={l} value={l}>{l}</option>)}
               </select>
             </div>
-
             <div>
               <label className={labelClass}>{t('origin')}</label>
-              <input type="text" name="origin" value={formData.origin} onChange={handleChange} className={inputClass} placeholder="Ex: Cadeau de Pierre" />
+              <input type="text" name="origin" value={formData.origin} onChange={handleChange} className={inputClass} placeholder={t('placeholder_origin')} />
             </div>
-
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className={labelClass}>{t('purchase_date')}</label>
@@ -200,7 +164,6 @@ export const WineForm: React.FC<WineFormProps> = ({ onSave, onCancel, initialDat
                 <input type="text" name="purchasePlace" value={formData.purchasePlace} onChange={handleChange} className={inputClass} />
               </div>
             </div>
-
             <div className="grid grid-cols-3 gap-4">
               <div>
                 <label className={labelClass}>{t('quantity')}</label>
@@ -211,7 +174,6 @@ export const WineForm: React.FC<WineFormProps> = ({ onSave, onCancel, initialDat
                 <input required type="number" min="1900" max="2100" name="recommendedYear" value={formData.recommendedYear} onChange={handleChange} className={inputClass} />
               </div>
             </div>
-
             <div className="grid grid-cols-2 gap-4">
                <div>
                 <label className={labelClass}>{t('price')}</label>
@@ -224,31 +186,42 @@ export const WineForm: React.FC<WineFormProps> = ({ onSave, onCancel, initialDat
                 </select>
               </div>
             </div>
-
-             <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-2 gap-4">
                <div>
                 <label className={labelClass}>{t('aging')}</label>
                 <select name="agingPotential" value={formData.agingPotential} onChange={handleChange} className={inputClass}>
-                  {AGING_POTENTIALS.map(a => <option key={a} value={a}>{a}</option>)}
+                  {AGING_POTENTIALS.map(a => <option key={a} value={a}>{t(`aging_${a}`)}</option>)}
                 </select>
               </div>
-              <div>
-                <label className={labelClass}>{t('tag')}</label>
-                <input type="text" name="tag" value={formData.tag} onChange={handleChange} className={inputClass} placeholder="Ex: Bio, Grand Cru" />
-              </div>
             </div>
-
+            <div>
+                <label className={labelClass}>{t('tag')}</label>
+                <textarea name="tag" value={formData.tag} onChange={handleChange} rows={2} className={textareaClass} placeholder={t('placeholder_tag')} />
+            </div>
             <div>
               <label className={labelClass}>{t('note')}</label>
               <textarea name="note" value={formData.note} onChange={handleChange} rows={3} className={textareaClass} />
             </div>
           </div>
         </>
+      ) : (
+        <div className="bg-white dark:bg-stone-900 p-5 rounded-xl shadow-sm space-y-4 transition-colors">
+          <div className="pb-4 border-b border-gray-100 dark:border-stone-800">
+             <h3 className="font-bold text-lg text-stone-900 dark:text-white leading-tight">{formData.name}</h3>
+             <p className="text-sm text-stone-500 dark:text-stone-400 font-medium">{formData.appellation} - {formData.year}</p>
+          </div>
+          <div>
+            <label className={labelClass}>{t('note')}</label>
+            <textarea name="note" value={formData.note} onChange={handleChange} rows={8} className={textareaClass} autoFocus placeholder={t('placeholder_note')}/>
+          </div>
+          <div>
+            <label className={labelClass}>{t('tag')}</label>
+            <textarea name="tag" value={formData.tag} onChange={handleChange} rows={2} className={textareaClass} placeholder={t('placeholder_tag')} />
+          </div>
+        </div>
       )}
 
-      <button type="submit" className="w-full sticky bottom-4 bg-rose-900 dark:bg-rose-700 text-white font-bold py-4 px-6 rounded-xl shadow-lg hover:bg-rose-800 dark:hover:bg-rose-600 active:scale-95 transition-all duration-200">
-        {t('save')}
-      </button>
+      <button type="submit" className="w-full sticky bottom-4 bg-rose-900 dark:bg-rose-700 text-white font-bold py-4 px-6 rounded-xl shadow-lg hover:bg-rose-800 dark:hover:bg-rose-600 active:scale-95 transition-all duration-200">{t('save')}</button>
     </form>
   );
 };

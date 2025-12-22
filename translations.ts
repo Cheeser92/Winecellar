@@ -52,6 +52,16 @@ export const translations = {
     take_photo: "Prendre une photo",
     gallery: "ou choisir depuis la galerie",
     
+    // Form Placeholders
+    placeholder_wine_name: "Ex: Château Margaux",
+    placeholder_appellation: "Ex: Margaux, Cabernet Sauvignon",
+    placeholder_origin: "Ex: Cadeau de Pierre",
+    placeholder_note: "Racontez votre dégustation...",
+    placeholder_tag: "Ex: Bio, Grand Cru",
+    placeholder_contains: "Contient...",
+    placeholder_vintage: "Ex: 2020",
+    placeholder_drink_in: "Ex: 2025",
+    
     // Stats
     bottles: "Bouteilles",
     consumed: "Consommées",
@@ -62,9 +72,13 @@ export const translations = {
     stats_country: "Vins par Pays & Couleur",
     stats_year: "Quantité par Année d'achat",
     
-    // New Stats Sections
+    // Section Headers
+    info_main: "Informations principales",
+    info_detail_bottle: "Détail de la bouteille",
     section_cellar_stats: "Vins en cave",
     section_history_stats: "Vins consommés",
+    
+    // History Specific Stats
     stats_hist_region_color: "Répartition par Région & Couleur",
     stats_hist_avg_rating_red: "Note moy. par Région (Rouge)",
     stats_hist_avg_rating_white: "Note moy. par Région (Blanc)",
@@ -90,6 +104,14 @@ export const translations = {
     font_medium: "Moyen",
     font_large: "Grand",
     
+    // Enums
+    aging_Longue: "Longue",
+    aging_Moyenne: "Moyenne",
+    aging_Courte: "Courte",
+    color_Rouge: "Rouge",
+    color_Blanc: "Blanc",
+    color_Rosé: "Rosé",
+
     // Misc
     shelf_prefix: "Etagère",
     off_site: "Hors cave",
@@ -105,6 +127,13 @@ export const translations = {
     no_tag: "Aucun tag",
     no_note: "Aucune note",
     about: "À propos",
+    qty: "Qté",
+    delete: "Supprimer",
+
+    // Shelf Delete
+    shelf_delete_title: "Supprimer l'étagère",
+    shelf_delete_msg: "Les bouteilles de l'étagère seront placées dans la partie hors cave.",
+    swipe_to_confirm: "Glissez pour confirmer",
 
     // New Float Modals
     priority_consumption: "Priorités de consommation",
@@ -161,6 +190,16 @@ export const translations = {
     take_photo: "Take a photo",
     gallery: "or choose from gallery",
 
+    // Form Placeholders
+    placeholder_wine_name: "e.g. Chateau Margaux",
+    placeholder_appellation: "e.g. Margaux, Cabernet Sauvignon",
+    placeholder_origin: "e.g. Gift from Pierre",
+    placeholder_note: "Tell us about your tasting...",
+    placeholder_tag: "e.g. Organic, Grand Cru",
+    placeholder_contains: "Contains...",
+    placeholder_vintage: "e.g. 2020",
+    placeholder_drink_in: "e.g. 2025",
+
     // Stats
     bottles: "Bottles",
     consumed: "Consumed",
@@ -171,9 +210,13 @@ export const translations = {
     stats_country: "Wines by Country & Color",
     stats_year: "Quantity by Purchase Year",
 
-    // New Stats Sections
+    // Section Headers
+    info_main: "Main Information",
+    info_detail_bottle: "Bottle Details",
     section_cellar_stats: "Wines in Cellar",
     section_history_stats: "Consumed Wines",
+
+    // History Specific Stats
     stats_hist_region_color: "Distribution by Region & Color",
     stats_hist_avg_rating_red: "Avg Rating by Region (Red)",
     stats_hist_avg_rating_white: "Avg Rating by Region (White)",
@@ -199,6 +242,14 @@ export const translations = {
     font_medium: "Medium",
     font_large: "Large",
 
+    // Enums
+    aging_Longue: "Long",
+    aging_Moyenne: "Average",
+    aging_Courte: "Short",
+    color_Rouge: "Red",
+    color_Blanc: "White",
+    color_Rosé: "Rosé",
+
     // Misc
     shelf_prefix: "Shelf",
     off_site: "Off-site",
@@ -214,6 +265,13 @@ export const translations = {
     no_tag: "No tags",
     no_note: "No notes",
     about: "About",
+    qty: "QTY",
+    delete: "Delete",
+
+    // Shelf Delete
+    shelf_delete_title: "Delete Shelf",
+    shelf_delete_msg: "Bottles on this shelf will be moved to 'Off-site'.",
+    swipe_to_confirm: "Swipe to confirm",
 
     // New Float Modals
     priority_consumption: "Consumption Priorities",

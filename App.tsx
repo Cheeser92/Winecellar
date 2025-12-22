@@ -1,6 +1,6 @@
 
-import React, { useState, useEffect } from 'react';
-import { Plus, LayoutGrid, History, Wine as WineIcon, Search, XCircle, ChevronDown, ChevronRight, Calculator, Coins, Hash, PieChart, Settings as SettingsIcon, Info, Clock, Calendar, ArrowRight, X } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { Plus, LayoutGrid, History, Wine as WineIcon, Search, XCircle, ChevronDown, ChevronRight, Calculator, Coins, Hash, PieChart, Settings as SettingsIcon, Info, Clock, Calendar, ArrowRight, X, Trash2 } from 'lucide-react';
 import { Wine, HistoryEntry, WineColor, SearchFilters, AppSettings, LOCATION_HORS_CAVE, BackupData, AppFontSize } from './types';
 import { WineForm } from './components/WineForm';
 import { WineDetail } from './components/WineDetail';
@@ -32,6 +32,7 @@ function App() {
   const [isQuantityModalOpen, setIsQuantityModalOpen] = useState(false);
   const [isCostModalOpen, setIsCostModalOpen] = useState(false);
   const [isHistoryQuantityModalOpen, setIsHistoryQuantityModalOpen] = useState(false);
+  const [shelfToDelete, setShelfToDelete] = useState<string | null>(null);
 
   const [searchFilters, setSearchFilters] = useState<SearchFilters>({});
   const [settings, setSettings] = useState<AppSettings>(() => {
@@ -78,11 +79,9 @@ function App() {
         const newOffsite = translations[newSettings.language].off_site;
 
         updatedWines = updatedWines.map(wine => {
-            // Check if it's a shelf (prefix + number)
             if (wine.location.startsWith(oldPrefix)) {
                 return { ...wine, location: wine.location.replace(oldPrefix, newPrefix) };
             }
-            // Check if it's "Off-site"
             if (wine.location === oldOffsite) {
                 return { ...wine, location: newOffsite };
             }
@@ -113,7 +112,6 @@ function App() {
     setSettings(newSettings);
   };
 
-  // Improved Export Logic
   const handleExport = async () => {
     const backup: BackupData = {
       wines,
@@ -195,7 +193,8 @@ function App() {
           badgeValue: 'text-xs',
           shelfTitle: 'text-base',
           shelfCount: 'text-xs',
-          shelfCost: 'text-[9px]'
+          shelfCost: 'text-[9px]',
+          shelfColorCount: 'text-xs'
         };
       case 'large':
         return {
@@ -205,7 +204,8 @@ function App() {
           badgeValue: 'text-base',
           shelfTitle: 'text-xl',
           shelfCount: 'text-sm',
-          shelfCost: 'text-xs'
+          shelfCost: 'text-xs',
+          shelfColorCount: 'text-base'
         };
       case 'medium':
       default:
@@ -216,7 +216,8 @@ function App() {
           badgeValue: 'text-sm',
           shelfTitle: 'text-lg',
           shelfCount: 'text-xs',
-          shelfCost: 'text-[10px]'
+          shelfCost: 'text-[10px]',
+          shelfColorCount: 'text-sm'
         };
     }
   };
@@ -236,13 +237,10 @@ function App() {
       if (searchFilters.year !== undefined && item.year !== searchFilters.year) return false;
       if (searchFilters.origin && !item.origin.toLowerCase().includes(searchFilters.origin.toLowerCase())) return false;
       if (searchFilters.strength !== undefined && item.strength !== searchFilters.strength) return false;
-      
-      // Fields to ignore in History search
       if (!isHistoryList) {
         if (searchFilters.recommendedYear !== undefined && item.recommendedYear !== searchFilters.recommendedYear) return false;
         if (searchFilters.agingPotential && item.agingPotential !== searchFilters.agingPotential) return false;
       }
-      
       return true;
     });
   };
@@ -261,11 +259,9 @@ function App() {
   const handleEditWine = (wineData: Omit<Wine, 'id'>) => {
     if (selectedWine && 'id' in selectedWine) {
         if (activeTab === 'history') {
-            // Update history entry with all form data
             setHistory(prev => prev.map(h => h.id === selectedWine.id ? { ...h, ...wineData } : h));
             setSelectedWine(prev => prev ? { ...prev, ...wineData } : null);
         } else {
-            // Update current stock
             const updatedWine = { ...wineData, id: selectedWine.id } as Wine;
             setWines(prev => prev.map(w => w.id === selectedWine.id ? updatedWine : w));
             setSelectedWine(updatedWine);
@@ -280,7 +276,6 @@ function App() {
     } else {
       setWines(prev => prev.map(w => w.id === id ? { ...w, image } : w));
     }
-    // Sync UI selection if necessary
     if (selectedWine && selectedWine.id === id) {
       setSelectedWine(prev => prev ? { ...prev, image } : null);
     }
@@ -347,6 +342,12 @@ function App() {
 
   const toggleShelf = (shelf: string) => {
     setExpandedShelves(prev => ({ ...prev, [shelf]: !prev[shelf] }));
+  };
+
+  const handleConfirmDeleteShelf = (shelfName: string) => {
+    const offsiteLabel = t('off_site');
+    setWines(prev => prev.map(w => w.location === shelfName ? { ...w, location: offsiteLabel } : w));
+    setShelfToDelete(null);
   };
 
   const getColorTheme = (color: WineColor) => {
@@ -430,13 +431,9 @@ function App() {
     if (!isOpen) return null;
 
     const sortedItems = [...items].sort((a, b) => {
-        if (sortType === 'consumption') {
-            return a.recommendedYear - b.recommendedYear;
-        } else if (sortType === 'most_consumed') {
-            return b.quantity - a.quantity;
-        } else {
-            return (b.price * b.quantity) - (a.price * a.quantity);
-        }
+        if (sortType === 'consumption') return a.recommendedYear - b.recommendedYear;
+        else if (sortType === 'most_consumed') return b.quantity - a.quantity;
+        else return (b.price * b.quantity) - (a.price * a.quantity);
     });
 
     return (
@@ -455,11 +452,7 @@ function App() {
                         const isHistoryEntry = 'consumedDate' in wine;
 
                         return (
-                            <div 
-                                key={wine.id} 
-                                onClick={() => { setSelectedWine(wine); setView('detail'); onClose(); }}
-                                className={`flex gap-3 items-center p-3 rounded-xl cursor-pointer transition-all border-l-4 shadow-sm ${getColorTheme(wine.color)}`}
-                            >
+                            <div key={wine.id} onClick={() => { setSelectedWine(wine); setView('detail'); onClose(); }} className={`flex gap-3 items-center p-3 rounded-xl cursor-pointer transition-all border-l-4 shadow-sm ${getColorTheme(wine.color)}`}>
                                 <div className="w-14 h-14 rounded-full bg-white dark:bg-stone-800 flex-shrink-0 overflow-hidden border border-white dark:border-stone-700 shadow-sm relative">
                                     {wine.image ? <img src={wine.image} className="w-full h-full object-cover" alt="" /> : <WineIcon className="w-6 h-6 m-auto mt-4 text-stone-300 dark:text-stone-600"/>}
                                 </div>
@@ -515,6 +508,59 @@ function App() {
     );
   };
 
+  const SliderConfirm = ({ onConfirm, onCancel, message }: { onConfirm: () => void, onCancel: () => void, message: string }) => {
+    const [sliderValue, setSliderValue] = useState(0);
+    const containerRef = useRef<HTMLDivElement>(null);
+
+    const handleInput = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const val = parseInt(e.target.value);
+        setSliderValue(val);
+        if (val >= 95) {
+            onConfirm();
+        }
+    };
+
+    const handleRelease = () => {
+        if (sliderValue < 95) {
+            setSliderValue(0);
+        }
+    };
+
+    const trackWidth = containerRef.current ? containerRef.current.offsetWidth - 48 : 280;
+
+    return (
+        <div className="space-y-6 pt-2" ref={containerRef}>
+            <p className="text-stone-600 dark:text-stone-300 text-sm leading-relaxed">{message}</p>
+            <div className="relative h-14 bg-stone-100 dark:bg-stone-800 rounded-2xl flex items-center px-2 border border-stone-200 dark:border-stone-700 overflow-hidden shadow-inner">
+                <div 
+                    className="absolute left-0 top-0 h-full bg-rose-900/20 dark:bg-rose-700/20 transition-all duration-75"
+                    style={{ width: `${sliderValue}%` }}
+                />
+                <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                    <span className="text-stone-400 dark:text-stone-500 text-xs font-bold uppercase tracking-widest">{t('swipe_to_confirm')}</span>
+                </div>
+                <input 
+                    type="range"
+                    min="0"
+                    max="100"
+                    value={sliderValue}
+                    onInput={handleInput}
+                    onMouseUp={handleRelease}
+                    onTouchEnd={handleRelease}
+                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+                />
+                <div 
+                    className="w-10 h-10 bg-rose-900 dark:bg-rose-700 rounded-xl flex items-center justify-center text-white shadow-lg pointer-events-none transition-transform duration-75"
+                    style={{ transform: `translateX(${(sliderValue / 100) * trackWidth}px)` }}
+                >
+                    <ArrowRight size={24} />
+                </div>
+            </div>
+            <button onClick={onCancel} className="w-full py-2 text-stone-400 dark:text-stone-500 font-bold hover:text-stone-600 dark:hover:text-stone-300 transition">{t('cancel')}</button>
+        </div>
+    );
+  };
+
   const renderContent = () => {
     if (view === 'add') return <WineForm onSave={handleAddWine} onCancel={() => setView('list')} availableLocations={availableLocations} language={settings.language} />;
     if (view === 'edit' && selectedWine) return <WineForm initialData={selectedWine} onSave={handleEditWine} onCancel={() => setView('detail')} availableLocations={availableLocations} language={settings.language} isHistoryMode={activeTab === 'history'} />;
@@ -548,30 +594,29 @@ function App() {
 
                 return (
                     <div key={shelfName} className="bg-white dark:bg-stone-900 rounded-xl shadow-sm border border-stone-100/80 dark:border-stone-800 overflow-hidden">
-                        <button onClick={() => toggleShelf(shelfName)} className={`w-full p-4 flex justify-between items-center ${isExpanded ? 'bg-stone-50 dark:bg-stone-800 border-b border-stone-100 dark:border-stone-800' : ''}`}>
-                            <div className="flex items-center gap-2.5">
+                        <div className={`w-full flex justify-between items-center ${isExpanded ? 'bg-stone-50 dark:bg-stone-800 border-b border-stone-100 dark:border-stone-800' : ''}`}>
+                            <button onClick={() => toggleShelf(shelfName)} className="flex-1 p-4 flex items-center gap-2.5 text-left">
                                 <div className="text-stone-400">{isExpanded ? <ChevronDown size={18} /> : <ChevronRight size={18} />}</div>
                                 <h2 className={`font-bold text-gray-800 dark:text-gray-100 ${fontClasses.shelfTitle}`}>{shelfName}</h2>
-                            </div>
-                            <div className="flex items-center gap-3">
-                                {/* Color distribution */}
+                            </button>
+                            <div className="flex items-center gap-2 px-3">
                                 <div className="flex items-center gap-2 mr-1">
                                     {shelfColorCounts[WineColor.ROUGE] > 0 && (
                                         <div className="flex items-center gap-0.5">
-                                            <div className="w-2 h-2 rounded-full bg-rose-950 dark:bg-rose-600 shadow-sm"></div>
-                                            <span className={`font-bold text-stone-500 dark:text-stone-400 ${fontClasses.shelfCost}`}>{shelfColorCounts[WineColor.ROUGE]}</span>
+                                            <div className="w-2.5 h-2.5 rounded-full bg-rose-950 dark:bg-rose-600 shadow-sm"></div>
+                                            <span className={`font-bold text-stone-600 dark:text-stone-300 ${fontClasses.shelfColorCount}`}>{shelfColorCounts[WineColor.ROUGE]}</span>
                                         </div>
                                     )}
                                     {shelfColorCounts[WineColor.BLANC] > 0 && (
                                         <div className="flex items-center gap-0.5">
-                                            <div className="w-2 h-2 rounded-full bg-yellow-400 dark:bg-yellow-500 shadow-sm"></div>
-                                            <span className={`font-bold text-stone-500 dark:text-stone-400 ${fontClasses.shelfCost}`}>{shelfColorCounts[WineColor.BLANC]}</span>
+                                            <div className="w-2.5 h-2.5 rounded-full bg-yellow-400 dark:bg-yellow-500 shadow-sm"></div>
+                                            <span className={`font-bold text-stone-600 dark:text-stone-300 ${fontClasses.shelfColorCount}`}>{shelfColorCounts[WineColor.BLANC]}</span>
                                         </div>
                                     )}
                                     {shelfColorCounts[WineColor.ROSE] > 0 && (
                                         <div className="flex items-center gap-0.5">
-                                            <div className="w-2 h-2 rounded-full bg-pink-400 dark:bg-pink-500 shadow-sm"></div>
-                                            <span className={`font-bold text-stone-500 dark:text-stone-400 ${fontClasses.shelfCost}`}>{shelfColorCounts[WineColor.ROSE]}</span>
+                                            <div className="w-2.5 h-2.5 rounded-full bg-pink-400 dark:bg-pink-500 shadow-sm"></div>
+                                            <span className={`font-bold text-stone-600 dark:text-stone-300 ${fontClasses.shelfColorCount}`}>{shelfColorCounts[WineColor.ROSE]}</span>
                                         </div>
                                     )}
                                 </div>
@@ -581,14 +626,20 @@ function App() {
                                 <span className={`bg-gray-100 dark:bg-stone-800 text-gray-500 dark:text-stone-400 font-semibold px-2 py-0.5 rounded-full border border-gray-200 dark:border-stone-700 ${fontClasses.shelfCount}`}>
                                     {shelfQty}
                                 </span>
+                                <button 
+                                    onClick={(e) => { e.stopPropagation(); setShelfToDelete(shelfName); }}
+                                    className="p-1.5 text-stone-300 hover:text-red-500 dark:hover:text-red-400 transition"
+                                >
+                                    <Trash2 size={16} />
+                                </button>
                             </div>
-                        </button>
+                        </div>
                         {isExpanded && <div className="p-2 space-y-2">
                               {shelfWines.map(wine => (
                                   <div key={wine.id} onClick={() => { setSelectedWine(wine); setView('detail'); }} className={`flex gap-2.5 items-center p-2 rounded-lg cursor-pointer transition-all shadow-sm border-l-4 ${getColorTheme(wine.color)}`}>
                                       <div className="w-12 h-12 rounded-full bg-white dark:bg-stone-800 flex-shrink-0 overflow-hidden border border-white dark:border-stone-700 shadow-sm relative">{wine.image ? <img src={wine.image} className="w-full h-full object-cover" alt="" /> : <WineIcon className="w-5 h-5 m-auto mt-3.5 text-stone-300 dark:text-stone-600"/>}</div>
                                       <div className="flex-1 min-w-0"><p className={`font-bold text-gray-800 dark:text-gray-100 truncate ${fontClasses.title} leading-tight`}>{wine.name}</p><div className="flex items-center gap-1.5 mt-0.5"><p className={`text-gray-500 dark:text-gray-400 truncate ${fontClasses.sub}`}>{wine.region} - {wine.year}</p><div className={`w-1.5 h-1.5 rounded-full ${getConsumptionStatusColor(wine)} flex-shrink-0`}></div></div></div>
-                                      <div className={`flex flex-col items-center justify-center w-9 h-9 rounded shadow-sm ${getQuantityBadgeStyle(wine.color)} flex-shrink-0`}><span className={`uppercase font-bold opacity-60 leading-none ${fontClasses.badgeLabel}`}>Qté</span><span className={`font-bold leading-none mt-0.5 ${fontClasses.badgeValue}`}>{wine.quantity}</span></div>
+                                      <div className={`flex flex-col items-center justify-center w-9 h-9 rounded shadow-sm ${getQuantityBadgeStyle(wine.color)} flex-shrink-0`}><span className={`uppercase font-bold opacity-60 leading-none ${fontClasses.badgeLabel}`}>{t('qty')}</span><span className={`font-bold leading-none mt-0.5 ${fontClasses.badgeValue}`}>{wine.quantity}</span></div>
                                   </div>
                               ))}
                           </div>}
@@ -646,11 +697,23 @@ function App() {
         <SearchModal isOpen={isSearchOpen} onClose={() => setIsSearchOpen(false)} onSearch={setSearchFilters} currentFilters={searchFilters} onReset={() => setSearchFilters({})} language={settings.language} isHistoryMode={activeTab === 'history'} />
         <SettingsModal isOpen={isSettingsOpen} onClose={() => setIsSettingsOpen(false)} settings={settings} onUpdateSettings={handleUpdateSettings} onExport={handleExport} onImport={handleImport} />
         <InfoModal isOpen={isInfoOpen} onClose={() => setIsInfoOpen(false)} />
-        
-        {/* Floating Modals for Stats Bar */}
         {renderFloatingList(isQuantityModalOpen, () => setIsQuantityModalOpen(false), t('priority_consumption'), wines, 'consumption')}
         {renderFloatingList(isCostModalOpen, () => setIsCostModalOpen(false), t('top_value_wines'), wines, 'cost')}
         {renderFloatingList(isHistoryQuantityModalOpen, () => setIsHistoryQuantityModalOpen(false), t('most_consumed_wines'), history, 'most_consumed')}
+        
+        {shelfToDelete && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+                <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setShelfToDelete(null)} />
+                <div className="relative bg-white dark:bg-stone-900 rounded-2xl w-full max-w-sm p-6 shadow-2xl transition-colors animate-in zoom-in-95 duration-200">
+                    <h3 className="text-xl font-serif font-bold text-rose-950 dark:text-rose-100 mb-2">{t('shelf_delete_title')}</h3>
+                    <SliderConfirm 
+                        message={t('shelf_delete_msg')}
+                        onConfirm={() => handleConfirmDeleteShelf(shelfToDelete)}
+                        onCancel={() => setShelfToDelete(null)}
+                    />
+                </div>
+            </div>
+        )}
       </div>
     </div>
   );
