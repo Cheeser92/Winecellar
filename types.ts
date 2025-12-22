@@ -17,7 +17,6 @@ export enum ConsumptionStatus {
   RED = 'Rouge'
 }
 
-// StorageLocation est maintenant un string pour supporter "Etagère N" dynamiquement
 export type StorageLocation = string;
 export const LOCATION_HORS_CAVE = 'Hors cave';
 
@@ -25,27 +24,27 @@ export interface Wine {
   id: string;
   name: string;
   appellation: string;
-  region: string; // Changé de Region enum à string pour flexibilité
+  region: string;
   country: string;
   color: WineColor;
-  year: number; // Vintage
+  year: number;
   origin: string;
-  purchaseDate: string; // ISO Date string
+  purchaseDate: string;
   purchasePlace: string;
   quantity: number;
   recommendedYear: number;
   price: number;
-  strength: number; // 100, 75, 50, 25, 0
+  strength: number;
   tag: string;
-  note: string; // Text note
+  note: string;
   agingPotential: AgingPotential;
-  image: string | null; // Base64
+  image: string | null;
   location: StorageLocation;
 }
 
 export interface HistoryEntry extends Wine {
   consumedDate: string;
-  consumptionRating: number; // 1-5
+  consumptionRating: number;
 }
 
 export interface SearchFilters {
@@ -72,9 +71,15 @@ export interface AppSettings {
   fontSize: AppFontSize;
 }
 
+export interface LocationData {
+  countries: string[];
+  regions: Record<string, string[]>;
+}
+
 export interface BackupData {
   wines: Wine[];
   history: HistoryEntry[];
   settings: AppSettings;
+  locations?: LocationData;
   timestamp: string;
 }

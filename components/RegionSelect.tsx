@@ -1,25 +1,32 @@
 
 import React, { useState, useRef, useEffect } from 'react';
-import { Search, MapPin, ChevronDown, AlertCircle } from 'lucide-react';
-import { REGIONS_BY_COUNTRY_FR, REGIONS_BY_COUNTRY_EN } from '../constants';
+import { Search, MapPin, ChevronDown, AlertCircle, Pencil } from 'lucide-react';
 import { Language } from '../types';
 
 interface RegionSelectProps {
   value: string;
   country: string;
+  regions: string[];
   onChange: (value: string) => void;
+  onEdit?: () => void; // Rendu facultatif
   language: Language;
   className?: string;
   placeholder?: string;
 }
 
-export const RegionSelect: React.FC<RegionSelectProps> = ({ value, country, onChange, language, className, placeholder }) => {
+export const RegionSelect: React.FC<RegionSelectProps> = ({ 
+  value, 
+  country, 
+  regions, 
+  onChange, 
+  onEdit, 
+  language, 
+  className, 
+  placeholder 
+}) => {
   const [isOpen, setIsOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const wrapperRef = useRef<HTMLDivElement>(null);
-
-  // Sélection de la source de données selon la langue
-  const regionsSource = language === 'fr' ? REGIONS_BY_COUNTRY_FR : REGIONS_BY_COUNTRY_EN;
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -37,38 +44,37 @@ export const RegionSelect: React.FC<RegionSelectProps> = ({ value, country, onCh
     setIsOpen(false);
   };
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    onChange(e.target.value);
-    setSearchTerm(e.target.value);
-    if (!isOpen) setIsOpen(true);
-  };
+  const filteredRegions = regions.filter(r => 
+    r.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
-  const getFilteredRegions = () => {
-    const term = searchTerm.toLowerCase();
-    
-    // On ne récupère QUE les régions du pays sélectionné
-    const countryRegions = regionsSource[country] || [];
-    return countryRegions.filter(r => r.toLowerCase().includes(term));
-  };
-
-  const filteredRegions = getFilteredRegions();
   const hasCountry = !!country;
-  const hasResults = filteredRegions.length > 0;
 
   return (
     <div className="relative" ref={wrapperRef}>
-      <div className="relative">
+      <div className="relative group">
         <input
           type="text"
           value={value}
-          onChange={handleInputChange}
-          onFocus={() => setIsOpen(true)}
-          placeholder={placeholder || (language === 'fr' ? 'Saisir une région...' : 'Enter region...')}
-          className={`${className} ${!hasCountry ? 'opacity-60' : ''}`}
+          readOnly
+          onClick={() => hasCountry && setIsOpen(!isOpen)}
+          placeholder={placeholder || (language === 'fr' ? 'Sélectionner...' : 'Select...')}
+          className={`${className} cursor-pointer selection:bg-transparent pr-12 ${!hasCountry ? 'opacity-50 cursor-not-allowed' : ''}`}
         />
-        <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1 text-stone-400 pointer-events-none">
-          <MapPin size={16} />
-          <ChevronDown size={14} />
+        <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-2">
+          {onEdit && (
+            <button 
+              type="button"
+              onClick={(e) => { e.stopPropagation(); onEdit(); }}
+              className="p-1.5 text-stone-400 hover:text-rose-900 dark:hover:text-rose-400 transition-colors bg-stone-50 dark:bg-stone-900 rounded-md border border-stone-200 dark:border-stone-700"
+            >
+              <Pencil size={14} />
+            </button>
+          )}
+          <div className="flex items-center gap-1 text-stone-400 pointer-events-none">
+            <MapPin size={16} />
+            <ChevronDown size={14} />
+          </div>
         </div>
       </div>
 
@@ -78,7 +84,7 @@ export const RegionSelect: React.FC<RegionSelectProps> = ({ value, country, onCh
             <div className="p-4 text-center">
               <AlertCircle size={20} className="mx-auto text-amber-500 mb-2" />
               <p className="text-xs text-stone-500 dark:text-stone-400 font-medium">
-                {language === 'fr' ? 'Veuillez d\'abord sélectionner un pays' : 'Please select a country first'}
+                {language === 'fr' ? "Sélectionnez d'abord un pays" : 'Select a country first'}
               </p>
             </div>
           ) : (
@@ -99,7 +105,7 @@ export const RegionSelect: React.FC<RegionSelectProps> = ({ value, country, onCh
                 </div>
               </div>
               <div className="max-h-60 overflow-y-auto no-scrollbar">
-                {hasResults ? (
+                {filteredRegions.length > 0 ? (
                   <div className="pb-1">
                     <div className="px-4 py-1.5 text-[10px] font-bold text-stone-400 dark:text-stone-500 uppercase tracking-widest bg-stone-50/50 dark:bg-stone-900/30">
                       {country}
@@ -109,7 +115,7 @@ export const RegionSelect: React.FC<RegionSelectProps> = ({ value, country, onCh
                         key={`${country}-${region}`}
                         type="button"
                         onClick={() => handleSelect(region)}
-                        className={`w-full text-left px-4 py-2.5 text-sm hover:bg-rose-50 dark:hover:bg-rose-900/20 transition-colors flex items-center justify-between ${value === region ? 'text-rose-900 dark:text-rose-400 font-bold bg-rose-50/50 dark:bg-rose-900/10' : 'text-stone-700 dark:text-stone-300'}`}
+                        className={`w-full text-left px-4 py-3 text-sm hover:bg-rose-50 dark:hover:bg-rose-900/20 transition-colors flex items-center justify-between ${value === region ? 'text-rose-900 dark:text-rose-400 font-bold bg-rose-50/50 dark:bg-rose-900/10' : 'text-stone-700 dark:text-stone-300'}`}
                       >
                         {region}
                         {value === region && <div className="w-1.5 h-1.5 rounded-full bg-rose-900 dark:bg-rose-400"></div>}
@@ -117,13 +123,19 @@ export const RegionSelect: React.FC<RegionSelectProps> = ({ value, country, onCh
                     ))}
                   </div>
                 ) : (
-                  <div className="px-4 py-6 text-center">
-                    <p className="text-xs text-stone-400 italic mb-1">
-                      {language === 'fr' ? 'Aucune région connue pour ce pays' : 'No known regions for this country'}
+                  <div className="px-4 py-8 text-center">
+                    <p className="text-xs text-stone-400 italic mb-3">
+                      {language === 'fr' ? 'Aucune région répertoriée' : 'No region listed'}
                     </p>
-                    <p className="text-[10px] text-stone-500 uppercase tracking-tight">
-                      {language === 'fr' ? 'Saisie manuelle possible' : 'Manual entry allowed'}
-                    </p>
+                    {onEdit && (
+                      <button 
+                        type="button"
+                        onClick={() => { onEdit(); setIsOpen(false); }}
+                        className="px-4 py-2 bg-rose-50 dark:bg-rose-900/20 text-rose-900 dark:text-rose-400 rounded-lg text-[10px] font-bold uppercase tracking-widest border border-rose-200 dark:border-rose-900/30"
+                      >
+                        {language === 'fr' ? 'Ajouter une région' : 'Add a region'}
+                      </button>
+                    )}
                   </div>
                 )}
               </div>

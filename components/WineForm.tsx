@@ -1,8 +1,8 @@
 
 import React, { useState, useRef } from 'react';
-import { Camera, X, Upload, Wine as WineIcon } from 'lucide-react';
-import { Wine, WineColor, AgingPotential, Language } from '../types';
-import { COLORS, AGING_POTENTIALS, STRENGTHS, REGIONS_BY_COUNTRY_FR, REGIONS_BY_COUNTRY_EN } from '../constants';
+import { Camera, X } from 'lucide-react';
+import { Wine, WineColor, AgingPotential, Language, LocationData } from '../types';
+import { COLORS, AGING_POTENTIALS, STRENGTHS } from '../constants';
 import { getTranslation } from '../translations';
 import { CountrySelect } from './CountrySelect';
 import { RegionSelect } from './RegionSelect';
@@ -12,11 +12,22 @@ interface WineFormProps {
   onCancel: () => void;
   initialData?: Partial<Wine>;
   availableLocations: string[];
+  locationData: LocationData;
+  onOpenLocationManager: () => void;
   language: Language;
   isHistoryMode?: boolean;
 }
 
-export const WineForm: React.FC<WineFormProps> = ({ onSave, onCancel, initialData, availableLocations, language, isHistoryMode = false }) => {
+export const WineForm: React.FC<WineFormProps> = ({ 
+  onSave, 
+  onCancel, 
+  initialData, 
+  availableLocations, 
+  locationData,
+  onOpenLocationManager,
+  language, 
+  isHistoryMode = false 
+}) => {
   const t = (key: any) => getTranslation(language, key);
 
   const [formData, setFormData] = useState<Omit<Wine, 'id'>>({
@@ -54,20 +65,13 @@ export const WineForm: React.FC<WineFormProps> = ({ onSave, onCancel, initialDat
   };
 
   const handleCountryChange = (newCountry: string) => {
-    const regionsSource = language === 'fr' ? REGIONS_BY_COUNTRY_FR : REGIONS_BY_COUNTRY_EN;
-    const oldCountryRegions = regionsSource[formData.country] || [];
-    
-    // Si la région actuelle était une région prédéfinie de l'ancien pays, on la vide
+    // Si la région actuelle n'est pas dans le nouveau pays, on réinitialise
+    const newRegions = locationData.regions[newCountry] || [];
     let newRegion = formData.region;
-    if (oldCountryRegions.includes(formData.region)) {
+    if (!newRegions.includes(formData.region)) {
         newRegion = '';
     }
-
-    setFormData(prev => ({ 
-      ...prev, 
-      country: newCountry,
-      region: newRegion
-    }));
+    setFormData(prev => ({ ...prev, country: newCountry, region: newRegion }));
   };
 
   const handleRegionChange = (region: string) => {
@@ -144,7 +148,9 @@ export const WineForm: React.FC<WineFormProps> = ({ onSave, onCancel, initialDat
                 <label className={labelClass}>{t('country')}</label>
                 <CountrySelect 
                   value={formData.country} 
+                  countries={locationData.countries}
                   onChange={handleCountryChange} 
+                  onEdit={onOpenLocationManager}
                   language={language}
                   className={inputClass}
                 />
@@ -154,7 +160,9 @@ export const WineForm: React.FC<WineFormProps> = ({ onSave, onCancel, initialDat
                 <RegionSelect
                   value={formData.region}
                   country={formData.country}
+                  regions={locationData.regions[formData.country] || []}
                   onChange={handleRegionChange}
+                  onEdit={onOpenLocationManager}
                   language={language}
                   className={inputClass}
                 />

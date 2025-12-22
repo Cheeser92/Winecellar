@@ -1,26 +1,36 @@
 
 import React, { useState, useRef, useEffect } from 'react';
-import { Search, Globe, ChevronDown } from 'lucide-react';
-import { COUNTRIES_FR, COUNTRIES_EN } from '../constants';
+import { Search, Globe, ChevronDown, Pencil } from 'lucide-react';
 import { Language } from '../types';
+// Add missing import for getTranslation
+import { getTranslation } from '../translations';
 
 interface CountrySelectProps {
   value: string;
+  countries: string[];
   onChange: (value: string) => void;
+  onEdit?: () => void; // Rendu facultatif
   language: Language;
   className?: string;
   placeholder?: string;
 }
 
-export const CountrySelect: React.FC<CountrySelectProps> = ({ value, onChange, language, className, placeholder }) => {
+export const CountrySelect: React.FC<CountrySelectProps> = ({ 
+  value, 
+  countries, 
+  onChange, 
+  onEdit, 
+  language, 
+  className, 
+  placeholder 
+}) => {
   const [isOpen, setIsOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const wrapperRef = useRef<HTMLDivElement>(null);
+  // Define the t helper function for translations
+  const t = (key: any) => getTranslation(language, key);
 
-  // Sélection de la liste source selon la langue
-  const countryList = language === 'fr' ? COUNTRIES_FR : COUNTRIES_EN;
-
-  const filteredCountries = countryList.filter(c => 
+  const filteredCountries = countries.filter(c => 
     c.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
@@ -40,26 +50,31 @@ export const CountrySelect: React.FC<CountrySelectProps> = ({ value, onChange, l
     setIsOpen(false);
   };
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    onChange(e.target.value);
-    setSearchTerm(e.target.value);
-    if (!isOpen) setIsOpen(true);
-  };
-
   return (
     <div className="relative" ref={wrapperRef}>
-      <div className="relative">
+      <div className="relative group">
         <input
           type="text"
           value={value}
-          onChange={handleInputChange}
-          onFocus={() => setIsOpen(true)}
-          placeholder={placeholder || (language === 'fr' ? 'Saisir un pays...' : 'Enter country...')}
-          className={className}
+          readOnly
+          onClick={() => setIsOpen(!isOpen)}
+          placeholder={placeholder || (language === 'fr' ? 'Sélectionner un pays...' : 'Select country...')}
+          className={`${className} cursor-pointer selection:bg-transparent pr-12`}
         />
-        <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1 text-stone-400 pointer-events-none">
-          <Globe size={16} />
-          <ChevronDown size={14} />
+        <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-2">
+          {onEdit && (
+            <button 
+              type="button"
+              onClick={(e) => { e.stopPropagation(); onEdit(); }}
+              className="p-1.5 text-stone-400 hover:text-rose-900 dark:hover:text-rose-400 transition-colors bg-stone-50 dark:bg-stone-900 rounded-md border border-stone-200 dark:border-stone-700"
+            >
+              <Pencil size={14} />
+            </button>
+          )}
+          <div className="flex items-center gap-1 text-stone-400 pointer-events-none">
+            <Globe size={16} />
+            <ChevronDown size={14} />
+          </div>
         </div>
       </div>
 
@@ -85,20 +100,26 @@ export const CountrySelect: React.FC<CountrySelectProps> = ({ value, onChange, l
                   key={country}
                   type="button"
                   onClick={() => handleSelect(country)}
-                  className={`w-full text-left px-4 py-2.5 text-sm hover:bg-rose-50 dark:hover:bg-rose-900/20 transition-colors flex items-center justify-between ${value === country ? 'text-rose-900 dark:text-rose-400 font-bold bg-rose-50/50 dark:bg-rose-900/10' : 'text-stone-700 dark:text-stone-300'}`}
+                  className={`w-full text-left px-4 py-3 text-sm hover:bg-rose-50 dark:hover:bg-rose-900/20 transition-colors flex items-center justify-between ${value === country ? 'text-rose-900 dark:text-rose-400 font-bold bg-rose-50/50 dark:bg-rose-900/10' : 'text-stone-700 dark:text-stone-300'}`}
                 >
                   {country}
                   {value === country && <div className="w-1.5 h-1.5 rounded-full bg-rose-900 dark:bg-rose-400"></div>}
                 </button>
               ))
             ) : (
-              <div className="px-4 py-6 text-center">
-                <p className="text-xs text-stone-400 italic mb-1">
-                  {language === 'fr' ? 'Aucun pays trouvé' : 'No country found'}
+              <div className="px-4 py-8 text-center">
+                <p className="text-xs text-stone-400 italic mb-3">
+                  {language === 'fr' ? 'Aucun pays répertorié' : 'No country listed'}
                 </p>
-                <p className="text-[10px] text-stone-500 uppercase tracking-tight">
-                  {language === 'fr' ? 'Saisie manuelle possible' : 'Manual entry allowed'}
-                </p>
+                {onEdit && (
+                  <button 
+                    type="button"
+                    onClick={() => { onEdit(); setIsOpen(false); }}
+                    className="px-4 py-2 bg-rose-50 dark:bg-rose-900/20 text-rose-900 dark:text-rose-400 rounded-lg text-[10px] font-bold uppercase tracking-widest border border-rose-200 dark:border-rose-900/30"
+                  >
+                    {t('add_country')}
+                  </button>
+                )}
               </div>
             )}
           </div>

@@ -138,7 +138,19 @@ export const translations = {
     // New Float Modals
     priority_consumption: "Priorités de consommation",
     top_value_wines: "Valeurs de la cave",
-    most_consumed_wines: "Vins les plus consommés"
+    most_consumed_wines: "Vins les plus consommés",
+
+    // Location Management
+    manage_locations: "Gérer Pays & Régions",
+    add_country: "Ajouter un pays",
+    add_region: "Ajouter une région",
+    select_country_first: "Sélectionnez d'abord un pays",
+    country_added: "Pays ajouté !",
+    region_added: "Région ajoutée !",
+    new_country_placeholder: "Nom du nouveau pays...",
+    new_region_placeholder: "Nom de la nouvelle région...",
+    country_already_exists: "Ce pays existe déjà.",
+    region_already_exists: "Cette région existe déjà."
   },
   en: {
     app_title: "My Wine Cellar",
@@ -276,7 +288,19 @@ export const translations = {
     // New Float Modals
     priority_consumption: "Consumption Priorities",
     top_value_wines: "Cellar Values",
-    most_consumed_wines: "Most consumed wines"
+    most_consumed_wines: "Most consumed wines",
+
+    // Location Management
+    manage_locations: "Manage Countries & Regions",
+    add_country: "Add country",
+    add_region: "Add region",
+    select_country_first: "Select a country first",
+    country_added: "Country added!",
+    region_added: "Region added!",
+    new_country_placeholder: "New country name...",
+    new_region_placeholder: "New region name...",
+    country_already_exists: "Country already exists.",
+    region_already_exists: "Region already exists."
   }
 };
 
