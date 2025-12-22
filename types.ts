@@ -1,22 +1,4 @@
 
-export enum Region {
-  BORDEAUX = 'Bordeaux',
-  SUD_OUEST = 'Sud-Ouest',
-  BOURGOGNE = 'Bourgogne',
-  LOIRE = 'Loire',
-  JURA = 'Jura',
-  ETRANGER = 'Etranger',
-  BEAUJOLAIS = 'Beaujolais',
-  RHONE = 'Rhône',
-  ALSACE = 'Alsace',
-  CHAMPAGNE = 'Champagne',
-  CORSE = 'Corse',
-  LANGUEDOC_ROUSSILLON = 'Languedoc-Roussillon',
-  PROVENCE = 'Provence',
-  SAVOIE = 'Savoie',
-  ILE_DE_FRANCE = 'Ile-De-France'
-}
-
 export enum WineColor {
   ROUGE = 'Rouge',
   BLANC = 'Blanc',
@@ -43,7 +25,7 @@ export interface Wine {
   id: string;
   name: string;
   appellation: string;
-  region: Region;
+  region: string; // Changé de Region enum à string pour flexibilité
   country: string;
   color: WineColor;
   year: number; // Vintage

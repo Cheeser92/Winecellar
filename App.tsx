@@ -192,9 +192,10 @@ function App() {
           badgeLabel: 'text-[9px]',
           badgeValue: 'text-xs',
           shelfTitle: 'text-base',
-          shelfCount: 'text-xs',
-          shelfCost: 'text-[9px]',
-          shelfColorCount: 'text-xs'
+          shelfCount: 'text-sm',
+          shelfCost: 'text-xs',
+          shelfColorCount: 'text-sm',
+          statsValue: 'text-base'
         };
       case 'large':
         return {
@@ -203,9 +204,10 @@ function App() {
           badgeLabel: 'text-[11px]',
           badgeValue: 'text-base',
           shelfTitle: 'text-xl',
-          shelfCount: 'text-sm',
-          shelfCost: 'text-xs',
-          shelfColorCount: 'text-base'
+          shelfCount: 'text-xl',
+          shelfCost: 'text-lg',
+          shelfColorCount: 'text-xl',
+          statsValue: 'text-2xl'
         };
       case 'medium':
       default:
@@ -215,9 +217,10 @@ function App() {
           badgeLabel: 'text-[10px]',
           badgeValue: 'text-sm',
           shelfTitle: 'text-lg',
-          shelfCount: 'text-xs',
-          shelfCost: 'text-[10px]',
-          shelfColorCount: 'text-sm'
+          shelfCount: 'text-lg',
+          shelfCost: 'text-base',
+          shelfColorCount: 'text-lg',
+          statsValue: 'text-xl'
         };
     }
   };
@@ -403,7 +406,7 @@ function App() {
                <Hash size={10}/>
                <span className="text-[9px] uppercase font-bold tracking-wide">{isHistory ? t('consumed') : t('bottles')}</span>
             </div>
-            <p className="text-base font-bold text-stone-800 dark:text-stone-100 leading-tight">{totalBottles}</p>
+            <p className={`font-bold text-stone-800 dark:text-stone-100 leading-tight ${fontClasses.statsValue}`}>{totalBottles}</p>
         </button>
         <button 
           disabled={!isCellar}
@@ -414,14 +417,14 @@ function App() {
                <Coins size={10}/>
                <span className="text-[9px] uppercase font-bold tracking-wide">{t('total_cost')}</span>
             </div>
-            <p className="text-base font-bold text-stone-800 dark:text-stone-100 leading-tight">{totalCost.toLocaleString(settings.language, { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 })}</p>
+            <p className={`font-bold text-stone-800 dark:text-stone-100 leading-tight ${fontClasses.statsValue}`}>{totalCost.toLocaleString(settings.language, { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 })}</p>
         </button>
         <div className="bg-white dark:bg-stone-800 p-2 rounded-xl shadow-sm border border-stone-100 dark:border-stone-700 flex flex-col items-center justify-center transition-colors">
             <div className="flex items-center gap-1 text-stone-400 dark:text-stone-500 mb-0.5">
                <Calculator size={10}/>
                <span className="text-[9px] uppercase font-bold tracking-wide">{t('avg_price')}</span>
             </div>
-            <p className="text-base font-bold text-stone-800 dark:text-stone-100 leading-tight">{avgPrice.toLocaleString(settings.language, { style: 'currency', currency: 'EUR', maximumFractionDigits: 1 })}</p>
+            <p className={`font-bold text-stone-800 dark:text-stone-100 leading-tight ${fontClasses.statsValue}`}>{avgPrice.toLocaleString(settings.language, { style: 'currency', currency: 'EUR', maximumFractionDigits: 1 })}</p>
         </div>
       </div>
     );
@@ -600,37 +603,37 @@ function App() {
                                 <h2 className={`font-bold text-gray-800 dark:text-gray-100 ${fontClasses.shelfTitle}`}>{shelfName}</h2>
                             </button>
                             <div className="flex items-center gap-2 px-3">
-                                <div className="flex items-center gap-2 mr-1">
+                                <div className="flex items-center gap-3 mr-1">
                                     {shelfColorCounts[WineColor.ROUGE] > 0 && (
-                                        <div className="flex items-center gap-0.5">
-                                            <div className="w-2.5 h-2.5 rounded-full bg-rose-950 dark:bg-rose-600 shadow-sm"></div>
+                                        <div className="flex items-center gap-1">
+                                            <div className="w-3 h-3 rounded-full bg-rose-950 dark:bg-rose-600 shadow-sm"></div>
                                             <span className={`font-bold text-stone-600 dark:text-stone-300 ${fontClasses.shelfColorCount}`}>{shelfColorCounts[WineColor.ROUGE]}</span>
                                         </div>
                                     )}
                                     {shelfColorCounts[WineColor.BLANC] > 0 && (
-                                        <div className="flex items-center gap-0.5">
-                                            <div className="w-2.5 h-2.5 rounded-full bg-yellow-400 dark:bg-yellow-500 shadow-sm"></div>
+                                        <div className="flex items-center gap-1">
+                                            <div className="w-3 h-3 rounded-full bg-yellow-400 dark:bg-yellow-500 shadow-sm"></div>
                                             <span className={`font-bold text-stone-600 dark:text-stone-300 ${fontClasses.shelfColorCount}`}>{shelfColorCounts[WineColor.BLANC]}</span>
                                         </div>
                                     )}
                                     {shelfColorCounts[WineColor.ROSE] > 0 && (
-                                        <div className="flex items-center gap-0.5">
-                                            <div className="w-2.5 h-2.5 rounded-full bg-pink-400 dark:bg-pink-500 shadow-sm"></div>
+                                        <div className="flex items-center gap-1">
+                                            <div className="w-3 h-3 rounded-full bg-pink-400 dark:bg-pink-500 shadow-sm"></div>
                                             <span className={`font-bold text-stone-600 dark:text-stone-300 ${fontClasses.shelfColorCount}`}>{shelfColorCounts[WineColor.ROSE]}</span>
                                         </div>
                                     )}
                                 </div>
-                                <span className={`text-stone-400 dark:text-stone-500 font-bold uppercase ${fontClasses.shelfCost}`}>
+                                <span className={`text-stone-400 dark:text-stone-500 font-bold uppercase transition-all ${fontClasses.shelfCost}`}>
                                     {shelfTotalCost.toLocaleString(settings.language, { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 })}
                                 </span>
-                                <span className={`bg-gray-100 dark:bg-stone-800 text-gray-500 dark:text-stone-400 font-semibold px-2 py-0.5 rounded-full border border-gray-200 dark:border-stone-700 ${fontClasses.shelfCount}`}>
+                                <span className={`bg-gray-100 dark:bg-stone-800 text-gray-600 dark:text-stone-300 font-bold px-2 py-0.5 rounded-full border border-gray-200 dark:border-stone-700 transition-all ${fontClasses.shelfCount}`}>
                                     {shelfQty}
                                 </span>
                                 <button 
                                     onClick={(e) => { e.stopPropagation(); setShelfToDelete(shelfName); }}
                                     className="p-1.5 text-stone-300 hover:text-red-500 dark:hover:text-red-400 transition"
                                 >
-                                    <Trash2 size={16} />
+                                    <Trash2 size={18} />
                                 </button>
                             </div>
                         </div>

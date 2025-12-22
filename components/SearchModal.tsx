@@ -2,8 +2,10 @@
 import React, { useState } from 'react';
 import { X, Search, RotateCcw } from 'lucide-react';
 import { SearchFilters, Language } from '../types';
-import { REGIONS, COLORS, AGING_POTENTIALS, STRENGTHS } from '../constants';
+import { COLORS, AGING_POTENTIALS, STRENGTHS, REGIONS_BY_COUNTRY_FR, REGIONS_BY_COUNTRY_EN } from '../constants';
 import { getTranslation } from '../translations';
+import { CountrySelect } from './CountrySelect';
+import { RegionSelect } from './RegionSelect';
 
 interface SearchModalProps {
   isOpen: boolean;
@@ -27,6 +29,27 @@ export const SearchModal: React.FC<SearchModalProps> = ({ isOpen, onClose, onSea
       ...prev,
       [name]: value === '' ? undefined : (name === 'year' || name === 'recommendedYear' || name === 'strength' ? Number(value) : value)
     }));
+  };
+
+  const handleCountryChange = (newCountry: string) => {
+    const regionsSource = language === 'fr' ? REGIONS_BY_COUNTRY_FR : REGIONS_BY_COUNTRY_EN;
+    const oldCountryRegions = regionsSource[filters.country || ''] || [];
+    
+    // Si la région actuelle était une région prédéfinie de l'ancien pays, on la vide
+    let newRegion = filters.region;
+    if (filters.region && oldCountryRegions.includes(filters.region)) {
+        newRegion = undefined;
+    }
+
+    setFilters(prev => ({ 
+      ...prev, 
+      country: newCountry || undefined,
+      region: newRegion
+    }));
+  };
+
+  const handleRegionChange = (region: string) => {
+    setFilters(prev => ({ ...prev, region: region || undefined }));
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -72,15 +95,23 @@ export const SearchModal: React.FC<SearchModalProps> = ({ isOpen, onClose, onSea
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className={labelClass}>{t('region')}</label>
-              <select name="region" value={filters.region || ''} onChange={handleChange} className={inputClass}>
-                <option value="">{language === 'fr' ? 'Toutes' : 'All'}</option>
-                {REGIONS.map(r => <option key={r} value={r}>{r}</option>)}
-              </select>
+              <label className={labelClass}>{t('country')}</label>
+              <CountrySelect 
+                value={filters.country || ''} 
+                onChange={handleCountryChange} 
+                language={language}
+                className={inputClass}
+              />
             </div>
             <div>
-              <label className={labelClass}>{t('country')}</label>
-              <input type="text" name="country" value={filters.country || ''} onChange={handleChange} className={inputClass} />
+              <label className={labelClass}>{t('region')}</label>
+              <RegionSelect
+                value={filters.region || ''}
+                country={filters.country || ''}
+                onChange={handleRegionChange}
+                language={language}
+                className={inputClass}
+              />
             </div>
           </div>
 
