@@ -78,7 +78,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, s
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
-      <div className="relative bg-stone-50 dark:bg-stone-900 rounded-2xl w-full max-w-sm shadow-2xl overflow-hidden transition-colors duration-300 flex flex-col max-h-[90vh]">
+      <div className="relative bg-white dark:bg-stone-900 rounded-2xl w-full max-w-sm shadow-2xl overflow-hidden transition-colors duration-300 flex flex-col max-h-[90vh]">
         <div className="flex justify-between items-center p-4 border-b border-stone-100 dark:border-stone-800 bg-white dark:bg-stone-800 flex-shrink-0">
           <h2 className="text-xl font-serif font-bold text-stone-900 dark:text-stone-100">{t('settings')}</h2>
           <button onClick={onClose} className="text-stone-400 hover:text-stone-600 dark:hover:text-stone-200 bg-stone-100 dark:bg-stone-800 p-2 rounded-full transition-colors"><X size={20} /></button>
@@ -114,7 +114,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, s
       </div>
        {showImportModal && (
         <div className="absolute inset-0 z-[60] flex items-center justify-center p-4">
-           <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={() => setShowImportModal(false)}/><div className="relative bg-stone-50 dark:bg-stone-900 rounded-2xl w-full max-w-sm p-6 shadow-2xl transition-colors border border-stone-100 dark:border-stone-800"><div className="flex items-center gap-3 mb-4 text-amber-600 dark:text-amber-500"><AlertTriangle size={24} /><h3 className="text-xl font-bold text-stone-900 dark:text-white">{t('confirm')}</h3></div><p className="text-stone-600 dark:text-stone-300 mb-8 leading-relaxed">{t('import_warning')}</p><div className="flex gap-3"><button onClick={() => setShowImportModal(false)} className="flex-1 py-3 rounded-xl border border-stone-200 dark:border-stone-700 text-stone-600 dark:text-stone-300 font-medium hover:bg-stone-50 dark:hover:bg-stone-800 transition">{t('cancel')}</button><button onClick={confirmImport} className="flex-1 py-3 rounded-xl bg-rose-900 dark:bg-rose-700 text-white font-bold hover:bg-rose-800 dark:hover:bg-rose-600 shadow-lg shadow-rose-900/20 transition">{t('confirm')}</button></div></div>
+           <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={() => setShowImportModal(false)}/><div className="relative bg-white dark:bg-stone-900 rounded-2xl w-full max-w-sm p-6 shadow-2xl transition-colors border border-stone-100 dark:border-stone-800"><div className="flex items-center gap-3 mb-4 text-amber-600 dark:text-amber-500"><AlertTriangle size={24} /><h3 className="text-xl font-bold text-stone-900 dark:text-white">{t('confirm')}</h3></div><p className="text-stone-600 dark:text-stone-300 mb-8 leading-relaxed">{t('import_warning')}</p><div className="flex gap-3"><button onClick={() => setShowImportModal(false)} className="flex-1 py-3 rounded-xl border border-stone-200 dark:border-stone-700 text-stone-600 dark:text-stone-300 font-medium hover:bg-stone-50 dark:hover:bg-stone-800 transition">{t('cancel')}</button><button onClick={confirmImport} className="flex-1 py-3 rounded-xl bg-rose-900 dark:bg-rose-700 text-white font-bold hover:bg-rose-800 dark:hover:bg-rose-600 shadow-lg shadow-rose-900/20 transition">{t('confirm')}</button></div></div>
         </div>
       )}
     </div>

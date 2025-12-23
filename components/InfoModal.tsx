@@ -13,7 +13,7 @@ export const InfoModal: React.FC<InfoModalProps> = ({ isOpen, onClose }) => {
   return (
     <div className="fixed inset-0 z-[60] flex items-center justify-center p-6">
       <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
-      <div className="relative bg-stone-50 dark:bg-stone-900 rounded-3xl w-full max-w-xs p-8 shadow-2xl flex flex-col items-center text-center transition-all animate-in zoom-in-95 duration-200">
+      <div className="relative bg-white dark:bg-stone-900 rounded-3xl w-full max-w-xs p-8 shadow-2xl flex flex-col items-center text-center transition-all animate-in zoom-in-95 duration-200">
         <button onClick={onClose} className="absolute top-4 right-4 text-stone-400 hover:text-stone-600 dark:hover:text-stone-200 p-1">
           <X size={20} />
         </button>

@@ -103,7 +103,7 @@ export const SearchModal: React.FC<SearchModalProps> = ({
     <div className="fixed inset-0 z-[150] flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
       
-      <div className="relative bg-stone-50 dark:bg-stone-900 rounded-2xl w-full max-w-md max-h-[90vh] flex flex-col shadow-2xl transition-colors duration-300">
+      <div className="relative bg-white dark:bg-stone-900 rounded-2xl w-full max-w-md max-h-[90vh] flex flex-col shadow-2xl transition-colors duration-300">
         <div className="flex justify-between items-center p-4 border-b border-gray-100 dark:border-stone-800 bg-white dark:bg-stone-800">
           <h2 className="text-xl font-serif font-bold text-gray-800 dark:text-gray-100 flex items-center gap-2">
             <Search size={20} className="text-rose-900 dark:text-rose-500"/>
@@ -139,7 +139,7 @@ export const SearchModal: React.FC<SearchModalProps> = ({
                   value={filters.country || ''} 
                   countries={locationData.countries}
                   onChange={handleCountryChange}
-                  onClear={() => handleCountryChange('')} // Utilisation de onClear du composant
+                  onClear={() => handleCountryChange('')} 
                   language={language}
                   className={inputClass}
                 />
@@ -153,7 +153,7 @@ export const SearchModal: React.FC<SearchModalProps> = ({
                   country={filters.country || ''}
                   regions={filters.country ? (locationData.regions[filters.country] || []) : []}
                   onChange={handleRegionChange}
-                  onClear={() => handleRegionChange('')} // Utilisation de onClear du composant
+                  onClear={() => handleRegionChange('')} 
                   language={language}
                   className={inputClass}
                 />

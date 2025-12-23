@@ -369,8 +369,8 @@ function App() {
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
             <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
-            <div className="relative bg-stone-50 dark:bg-stone-900 rounded-2xl w-full max-w-md max-h-[85vh] flex flex-col shadow-2xl overflow-hidden border border-stone-100 dark:border-stone-800 animate-in zoom-in-95 duration-200">
-                <div className="p-4 border-b border-stone-100 dark:border-stone-800 flex justify-between items-center bg-white dark:bg-stone-800/50">
+            <div className="relative bg-white dark:bg-stone-900 rounded-2xl w-full max-w-md max-h-[85vh] flex flex-col shadow-2xl overflow-hidden border border-stone-100 dark:border-stone-800 animate-in zoom-in-95 duration-200">
+                <div className="p-4 border-b border-stone-100 dark:border-stone-800 flex justify-between items-center bg-stone-50/50 dark:bg-stone-800/50">
                     <h2 className="font-serif font-bold text-lg text-rose-900 dark:text-rose-100">{title}</h2>
                     <button onClick={onClose} className="p-2 text-stone-400 hover:text-stone-600 dark:hover:text-stone-200 rounded-full bg-white dark:bg-stone-800 shadow-sm"><X size={20}/></button>
                 </div>
@@ -439,7 +439,7 @@ function App() {
         {shelfToDelete && (
             <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
                 <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setShelfToDelete(null)} />
-                <div className="relative bg-stone-50 dark:bg-stone-900 rounded-2xl w-full max-w-sm p-6 shadow-2xl transition-colors animate-in zoom-in-95 duration-200">
+                <div className="relative bg-white dark:bg-stone-900 rounded-2xl w-full max-w-sm p-6 shadow-2xl transition-colors animate-in zoom-in-95 duration-200">
                     <h3 className="text-xl font-serif font-bold text-rose-950 dark:text-rose-100 mb-2">{t('shelf_delete_title')}</h3>
                     <SliderConfirm message={t('shelf_delete_msg')} onConfirm={() => handleConfirmDeleteShelf(shelfToDelete)} onCancel={() => setShelfToDelete(null)} />
                 </div>
