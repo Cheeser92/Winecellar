@@ -99,7 +99,7 @@ export const WineForm: React.FC<WineFormProps> = ({
   const labelClass = "block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1";
 
   return (
-    <form onSubmit={handleSubmit} className="flex flex-col gap-5 pb-24 p-4 bg-stone-50 dark:bg-black min-h-full transition-colors duration-300">
+    <form onSubmit={handleSubmit} className="flex flex-col gap-5 pb-24 p-4 bg-stone-100 dark:bg-black min-h-full transition-colors duration-300">
       <div className="flex justify-between items-center mb-2 bg-white dark:bg-stone-900 p-4 rounded-xl shadow-sm sticky top-0 z-10 transition-colors">
         <h2 className="text-xl font-serif font-bold text-rose-900 dark:text-rose-100">
           {isHistoryMode ? t('personal_note') : (isEdit ? t('edit_bottle') : t('add_bottle'))}

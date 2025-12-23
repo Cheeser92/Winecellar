@@ -369,8 +369,8 @@ function App() {
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
             <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
-            <div className="relative bg-white dark:bg-stone-900 rounded-2xl w-full max-w-md max-h-[85vh] flex flex-col shadow-2xl overflow-hidden border border-stone-100 dark:border-stone-800 animate-in zoom-in-95 duration-200">
-                <div className="p-4 border-b border-stone-100 dark:border-stone-800 flex justify-between items-center bg-stone-50/50 dark:bg-stone-800/50">
+            <div className="relative bg-stone-50 dark:bg-stone-900 rounded-2xl w-full max-w-md max-h-[85vh] flex flex-col shadow-2xl overflow-hidden border border-stone-100 dark:border-stone-800 animate-in zoom-in-95 duration-200">
+                <div className="p-4 border-b border-stone-100 dark:border-stone-800 flex justify-between items-center bg-white dark:bg-stone-800/50">
                     <h2 className="font-serif font-bold text-lg text-rose-900 dark:text-rose-100">{title}</h2>
                     <button onClick={onClose} className="p-2 text-stone-400 hover:text-stone-600 dark:hover:text-stone-200 rounded-full bg-white dark:bg-stone-800 shadow-sm"><X size={20}/></button>
                 </div>
@@ -422,7 +422,7 @@ function App() {
   return (
     <div className={settings.theme === 'dark' ? 'dark' : ''}>
       <div className="bg-stone-200 dark:bg-stone-950 h-screen w-full flex justify-center overflow-hidden">
-        <main className="w-full max-w-md h-full bg-stone-50 dark:bg-black shadow-2xl relative flex flex-col transition-colors duration-300">
+        <main className="w-full max-w-md h-full bg-stone-100 dark:bg-black shadow-2xl relative flex flex-col transition-colors duration-300">
           <div className="flex-1 overflow-y-auto no-scrollbar relative">{renderContent()}</div>
           {view === 'list' && activeTab === 'cellar' && ( <button onClick={() => setView('add')} className="absolute bottom-24 right-6 bg-rose-900 dark:bg-rose-700 text-white p-4 rounded-full shadow-lg shadow-rose-900/30 hover:scale-105 active:scale-95 z-30"><Plus size={28} /></button> )}
           {view === 'list' && ( <div className="absolute bottom-0 left-0 right-0 bg-white/95 dark:bg-stone-900/95 backdrop-blur-md border-t border-stone-200 dark:border-stone-800 z-40 safe-area-bottom"><div className="flex justify-around items-center h-20 pb-2"><button onClick={() => { setActiveTab('cellar'); setView('list'); }} className={`flex flex-col items-center justify-center w-full h-full ${activeTab === 'cellar' ? 'text-rose-900 dark:text-rose-400' : 'text-stone-400'}`}><LayoutGrid size={24} /><span className="text-xs font-semibold">{t('cellar')}</span></button><button onClick={() => { setActiveTab('stats'); setView('list'); }} className={`flex flex-col items-center justify-center w-full h-full ${activeTab === 'stats' ? 'text-rose-900 dark:text-rose-400' : 'text-stone-400'}`}><PieChart size={24} /><span className="text-xs font-semibold">{t('stats')}</span></button><button onClick={() => { setActiveTab('history'); setView('list'); }} className={`flex flex-col items-center justify-center w-full h-full ${activeTab === 'history' ? 'text-rose-900 dark:text-rose-400' : 'text-stone-400'}`}><History size={24} /><span className="text-xs font-semibold">{t('history')}</span></button></div></div> )}
@@ -439,7 +439,7 @@ function App() {
         {shelfToDelete && (
             <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
                 <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setShelfToDelete(null)} />
-                <div className="relative bg-white dark:bg-stone-900 rounded-2xl w-full max-w-sm p-6 shadow-2xl transition-colors animate-in zoom-in-95 duration-200">
+                <div className="relative bg-stone-50 dark:bg-stone-900 rounded-2xl w-full max-w-sm p-6 shadow-2xl transition-colors animate-in zoom-in-95 duration-200">
                     <h3 className="text-xl font-serif font-bold text-rose-950 dark:text-rose-100 mb-2">{t('shelf_delete_title')}</h3>
                     <SliderConfirm message={t('shelf_delete_msg')} onConfirm={() => handleConfirmDeleteShelf(shelfToDelete)} onCancel={() => setShelfToDelete(null)} />
                 </div>

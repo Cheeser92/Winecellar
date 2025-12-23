@@ -120,7 +120,7 @@ export const WineDetail: React.FC<WineDetailProps> = ({ wine, onBack, onConsume,
   const fontClasses = getFontSizeClasses(fontSize as AppFontSize);
 
   return (
-    <div className={`min-h-full relative ${hasImage ? 'bg-stone-900' : 'bg-stone-50 dark:bg-black'} transition-colors duration-300`}>
+    <div className={`min-h-full relative ${hasImage ? 'bg-stone-900' : 'bg-stone-100 dark:bg-black'} transition-colors duration-300`}>
       <input type="file" accept="image/*" capture="environment" ref={fileInputRef} onChange={handleImageChange} className="hidden" />
       {hasImage && (
         <div className="absolute inset-0 z-0 bg-cover bg-center" style={{ backgroundImage: `url(${wine.image})` }}>

@@ -92,9 +92,9 @@ export const SearchModal: React.FC<SearchModalProps> = ({
       <button 
         type="button" 
         onClick={onClick}
-        className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 text-stone-300 hover:text-rose-600 dark:hover:text-rose-400 transition-colors bg-white dark:bg-stone-800 rounded-md z-10"
+        className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 text-stone-500 hover:text-rose-600 dark:text-stone-400 dark:hover:text-rose-400 transition-colors z-20"
       >
-        <Eraser size={14} />
+        <Eraser size={16} />
       </button>
     );
   };
@@ -103,8 +103,8 @@ export const SearchModal: React.FC<SearchModalProps> = ({
     <div className="fixed inset-0 z-[150] flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
       
-      <div className="relative bg-white dark:bg-stone-900 rounded-2xl w-full max-w-md max-h-[90vh] flex flex-col shadow-2xl transition-colors duration-300">
-        <div className="flex justify-between items-center p-4 border-b border-gray-100 dark:border-stone-800">
+      <div className="relative bg-stone-50 dark:bg-stone-900 rounded-2xl w-full max-w-md max-h-[90vh] flex flex-col shadow-2xl transition-colors duration-300">
+        <div className="flex justify-between items-center p-4 border-b border-gray-100 dark:border-stone-800 bg-white dark:bg-stone-800">
           <h2 className="text-xl font-serif font-bold text-gray-800 dark:text-gray-100 flex items-center gap-2">
             <Search size={20} className="text-rose-900 dark:text-rose-500"/>
             {t('search')}
@@ -138,11 +138,11 @@ export const SearchModal: React.FC<SearchModalProps> = ({
                 <CountrySelect 
                   value={filters.country || ''} 
                   countries={locationData.countries}
-                  onChange={handleCountryChange} 
+                  onChange={handleCountryChange}
+                  onClear={() => handleCountryChange('')} // Utilisation de onClear du composant
                   language={language}
                   className={inputClass}
                 />
-                <ClearButton onClick={() => handleCountryChange('')} visible={!!filters.country} />
               </div>
             </div>
             <div>
@@ -153,10 +153,10 @@ export const SearchModal: React.FC<SearchModalProps> = ({
                   country={filters.country || ''}
                   regions={filters.country ? (locationData.regions[filters.country] || []) : []}
                   onChange={handleRegionChange}
+                  onClear={() => handleRegionChange('')} // Utilisation de onClear du composant
                   language={language}
                   className={inputClass}
                 />
-                <ClearButton onClick={() => handleRegionChange('')} visible={!!filters.region} />
               </div>
             </div>
           </div>
@@ -225,7 +225,7 @@ export const SearchModal: React.FC<SearchModalProps> = ({
           )}
         </div>
 
-        <div className="p-4 border-t border-gray-100 dark:border-stone-800 flex gap-3 bg-gray-50 dark:bg-stone-900 rounded-b-2xl transition-colors">
+        <div className="p-4 border-t border-gray-100 dark:border-stone-800 flex gap-3 bg-white dark:bg-stone-900 rounded-b-2xl transition-colors">
           <button onClick={handleReset} className="flex items-center justify-center gap-2 px-4 py-3 rounded-xl border border-gray-300 dark:border-stone-700 text-gray-600 dark:text-stone-300 font-medium hover:bg-white dark:hover:bg-stone-800 transition"><RotateCcw size={18} /></button>
           <button onClick={handleSubmit} className="flex-1 bg-rose-900 dark:bg-rose-700 text-white font-bold py-3 px-6 rounded-xl shadow-lg shadow-rose-900/20 hover:bg-rose-800 dark:hover:bg-rose-600 transition">{t('search')}</button>
         </div>

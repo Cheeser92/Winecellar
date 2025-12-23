@@ -13,7 +13,7 @@ export const InfoModal: React.FC<InfoModalProps> = ({ isOpen, onClose }) => {
   return (
     <div className="fixed inset-0 z-[60] flex items-center justify-center p-6">
       <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
-      <div className="relative bg-white dark:bg-stone-900 rounded-3xl w-full max-w-xs p-8 shadow-2xl flex flex-col items-center text-center transition-all animate-in zoom-in-95 duration-200">
+      <div className="relative bg-stone-50 dark:bg-stone-900 rounded-3xl w-full max-w-xs p-8 shadow-2xl flex flex-col items-center text-center transition-all animate-in zoom-in-95 duration-200">
         <button onClick={onClose} className="absolute top-4 right-4 text-stone-400 hover:text-stone-600 dark:hover:text-stone-200 p-1">
           <X size={20} />
         </button>
@@ -42,13 +42,13 @@ export const InfoModal: React.FC<InfoModalProps> = ({ isOpen, onClose }) => {
             </p>
         </div>
 
-        <div className="w-full mb-8 p-5 bg-stone-50 dark:bg-stone-800/50 rounded-2xl border border-stone-100 dark:border-stone-800">
+        <div className="w-full mb-8 p-5 bg-white dark:bg-stone-800/50 rounded-2xl border border-stone-100 dark:border-stone-800 shadow-sm">
           <p className="text-[11px] text-stone-500 dark:text-stone-400 leading-relaxed mb-4 text-center">
             Un commentaire, une remarque, un remerciement ? Envoyez un message. Les demandes de modifications seront traitées en fonction de mon temps libre.
           </p>
           <button 
             onClick={() => window.open('mailto:cheeser92@gmail.com', '_blank')}
-            className="w-full bg-white dark:bg-stone-800 text-rose-900 dark:text-rose-400 font-bold py-3 px-4 rounded-xl border border-rose-100 dark:border-rose-900/30 hover:bg-rose-50 dark:hover:bg-rose-900/20 transition flex items-center justify-center gap-2 shadow-sm active:scale-95"
+            className="w-full bg-stone-50 dark:bg-stone-800 text-rose-900 dark:text-rose-400 font-bold py-3 px-4 rounded-xl border border-rose-100 dark:border-rose-900/30 hover:bg-rose-100 dark:hover:bg-rose-900/20 transition flex items-center justify-center gap-2 shadow-sm active:scale-95"
           >
             <Mail size={16} />
             Me contacter
@@ -57,7 +57,7 @@ export const InfoModal: React.FC<InfoModalProps> = ({ isOpen, onClose }) => {
 
         <button 
           onClick={onClose}
-          className="w-full bg-stone-100 dark:bg-stone-800 text-stone-800 dark:text-stone-200 font-bold py-3 rounded-xl hover:bg-stone-200 dark:hover:bg-stone-700 transition"
+          className="w-full bg-white dark:bg-stone-800 text-stone-800 dark:text-stone-200 font-bold py-3 rounded-xl hover:bg-stone-100 dark:hover:bg-stone-700 transition shadow-sm"
         >
           Fermer
         </button>

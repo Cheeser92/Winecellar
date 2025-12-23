@@ -1,6 +1,6 @@
 
 import React, { useState, useRef, useEffect } from 'react';
-import { Search, MapPin, ChevronDown, AlertCircle, Pencil } from 'lucide-react';
+import { Search, MapPin, ChevronDown, AlertCircle, Pencil, Eraser } from 'lucide-react';
 import { Language } from '../types';
 
 interface RegionSelectProps {
@@ -8,7 +8,8 @@ interface RegionSelectProps {
   country: string;
   regions: string[];
   onChange: (value: string) => void;
-  onEdit?: () => void; // Rendu facultatif
+  onClear?: () => void; // Nouvelle prop pour la gomme
+  onEdit?: () => void;
   language: Language;
   className?: string;
   placeholder?: string;
@@ -19,6 +20,7 @@ export const RegionSelect: React.FC<RegionSelectProps> = ({
   country, 
   regions, 
   onChange, 
+  onClear,
   onEdit, 
   language, 
   className, 
@@ -59,9 +61,19 @@ export const RegionSelect: React.FC<RegionSelectProps> = ({
           readOnly
           onClick={() => hasCountry && setIsOpen(!isOpen)}
           placeholder={placeholder || (language === 'fr' ? 'Sélectionner...' : 'Select...')}
-          className={`${className} cursor-pointer selection:bg-transparent pr-12 ${!hasCountry ? 'opacity-50 cursor-not-allowed' : ''}`}
+          className={`${className} cursor-pointer selection:bg-transparent pr-20 ${!hasCountry ? 'opacity-50 cursor-not-allowed' : ''}`}
         />
-        <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-2">
+        <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1.5">
+          {onClear && value && (
+            <button 
+              type="button"
+              onClick={(e) => { e.stopPropagation(); onClear(); }}
+              className="p-1 text-stone-400 hover:text-rose-600 dark:hover:text-rose-400 transition-colors"
+              title={language === 'fr' ? 'Effacer' : 'Clear'}
+            >
+              <Eraser size={16} />
+            </button>
+          )}
           {onEdit && (
             <button 
               type="button"
@@ -71,7 +83,7 @@ export const RegionSelect: React.FC<RegionSelectProps> = ({
               <Pencil size={14} />
             </button>
           )}
-          <div className="flex items-center gap-1 text-stone-400 pointer-events-none">
+          <div className="flex items-center gap-0.5 text-stone-400 pointer-events-none">
             <MapPin size={16} />
             <ChevronDown size={14} />
           </div>
