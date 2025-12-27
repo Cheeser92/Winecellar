@@ -310,14 +310,41 @@ function App() {
   const handleDeleteHistory = (id: string) => { setGlobalHistory(prev => prev.filter(h => h.id !== id)); setView('list'); };
 
   const handleConsumeWine = (wine: Wine, rating: number, strength: number, consumeQty: number = 1) => {
-    const existingHistoryIndex = globalHistory.findIndex(h => h.name === wine.name && h.year === wine.year && h.appellation === wine.appellation);
+    // Regroupement par Nom, Couleur, Appellation, Pays, Région ET Millésime
+    const existingHistoryIndex = globalHistory.findIndex(h => 
+      h.name === wine.name && 
+      h.color === wine.color && 
+      h.appellation === wine.appellation &&
+      h.country === wine.country &&
+      h.region === wine.region &&
+      h.year === wine.year
+    );
+
     let newHistory = [...globalHistory];
     if (existingHistoryIndex >= 0) {
-        newHistory[existingHistoryIndex] = { ...newHistory[existingHistoryIndex], quantity: newHistory[existingHistoryIndex].quantity + consumeQty, consumptionRating: rating, strength, consumedDate: new Date().toISOString(), originalCellarName: activeCellar.name };
+        // Mise à jour de l'entrée existante avec la photo la plus récente et la nouvelle date
+        newHistory[existingHistoryIndex] = { 
+          ...newHistory[existingHistoryIndex], 
+          quantity: newHistory[existingHistoryIndex].quantity + consumeQty, 
+          consumptionRating: rating, 
+          strength, 
+          image: wine.image, 
+          consumedDate: new Date().toISOString(), 
+          originalCellarName: activeCellar.name 
+        };
     } else {
-        const historyEntry: HistoryEntry = { ...wine, strength, consumedDate: new Date().toISOString(), consumptionRating: rating, quantity: consumeQty, originalCellarName: activeCellar.name };
+        // Nouvelle entrée
+        const historyEntry: HistoryEntry = { 
+          ...wine, 
+          strength, 
+          consumedDate: new Date().toISOString(), 
+          consumptionRating: rating, 
+          quantity: consumeQty, 
+          originalCellarName: activeCellar.name 
+        };
         newHistory.push(historyEntry);
     }
+
     const newWines = wines.map(w => w.id === wine.id ? { ...w, quantity: w.quantity - consumeQty } : w).filter(w => w.quantity > 0);
     updateActiveCellar({ wines: newWines });
     setGlobalHistory(newHistory);
@@ -427,7 +454,7 @@ function App() {
   const renderContent = () => {
     if (view === 'add') return <WineForm onSave={handleAddWine} onCancel={() => setView('list')} availableLocations={availableLocations} locationData={locationData} onOpenLocationManager={() => setIsLocationManagerOpen(true)} language={settings.language} fontSize={settings.fontSize} />;
     if (view === 'edit' && selectedWine) return <WineForm initialData={selectedWine} onSave={handleEditWine} onCancel={() => setView('detail')} availableLocations={availableLocations} locationData={locationData} onOpenLocationManager={() => setIsLocationManagerOpen(true)} language={settings.language} isHistoryMode={activeTab === 'history'} fontSize={settings.fontSize} />;
-    if (view === 'detail' && selectedWine) return <WineDetail wine={selectedWine} cellars={cellars} currentCellarId={activeCellarId} onBack={() => setView('list')} onConsume={activeTab === 'history' ? undefined : handleConsumeWine} onDelete={activeTab === 'history' ? handleDeleteHistory : handleDeleteWine} onEdit={() => setView('edit')} onTransfer={handleTransferWine} onUpdateImage={async (img) => { const compressed = await compressImage(img); if (activeTab === 'history') { setGlobalHistory(prev => prev.map(x => x.id === selectedWine.id ? { ...x, image: compressed } : x)); } else { updateActiveCellar({ wines: wines.map(x => x.id === selectedWine.id ? { ...x, image: compressed } : x) }); } }} onEnlargeImage={setLargeImage} availableLocations={availableLocations} isHistory={activeTab === 'history'} language={settings.language} fontSize={settings.fontSize} />;
+    if (view === 'detail' && selectedWine) return <WineDetail wine={selectedWine} cellars={cellars} currentCellarId={activeCellarId} onBack={() => setView('list')} onConsume={activeTab === 'history' ? undefined : handleConsumeWine} onDelete={activeTab === 'history' ? handleDeleteHistory : handleDeleteWine} onEdit={() => setView('edit')} onTransfer={handleTransferWine} onUpdateImage={activeTab === 'history' ? undefined : async (img) => { const compressed = await compressImage(img); updateActiveCellar({ wines: wines.map(x => x.id === selectedWine.id ? { ...x, image: compressed } : x) }); }} onEnlargeImage={setLargeImage} availableLocations={availableLocations} isHistory={activeTab === 'history'} language={settings.language} fontSize={settings.fontSize} />;
     
     if (activeTab === 'stats') return (
       <div className="pb-24 px-2 py-4">
@@ -475,23 +502,42 @@ function App() {
           return (
             <div key={shelfName} className="bg-white dark:bg-stone-900 rounded-xl shadow-sm border border-stone-100/80 dark:border-stone-800 overflow-hidden">
               <div className={`w-full flex justify-between items-center ${isExpanded ? 'bg-stone-50 dark:bg-stone-800 border-b border-stone-100 dark:border-stone-800' : ''}`}>
-                <button onClick={() => toggleShelf(shelfName)} className="flex-1 p-4 flex items-center gap-2.5 text-left"><div className="text-stone-400">{isExpanded ? <ChevronDown size={18} /> : <ChevronRight size={18} />}</div><h2 className={`font-bold text-gray-800 dark:text-gray-100 ${fontClasses.shelfTitle}`}>{shelfName}</h2></button>
+                <div className="flex-1 flex items-center p-4 gap-2.5 overflow-hidden">
+                    <button onClick={() => toggleShelf(shelfName)} className="flex items-center gap-2.5 text-left overflow-hidden">
+                        <div className="text-stone-400 flex-shrink-0">{isExpanded ? <ChevronDown size={18} /> : <ChevronRight size={18} />}</div>
+                        <h2 className={`font-bold text-gray-800 dark:text-gray-100 truncate ${fontClasses.shelfTitle}`}>{shelfName}</h2>
+                    </button>
+                    {shelfName !== t('off_site') && (
+                        <button 
+                            onClick={(e) => { e.stopPropagation(); setShelfToDelete(shelfName); }} 
+                            className="p-1.5 text-stone-300 hover:text-red-500 transition-colors flex-shrink-0"
+                        >
+                            <Trash2 size={18} />
+                        </button>
+                    )}
+                </div>
                 <div className="flex items-center gap-2 px-3">
                   <div className="flex items-center gap-3 mr-1">
-                    {shelfColorCounts[WineColor.ROUGE] > 0 && <div className="flex items-center gap-1"><div className="w-3 h-3 rounded-full bg-rose-950 dark:bg-rose-600 shadow-sm"></div><span className={`font-bold text-stone-600 dark:text-stone-300 ${fontClasses.shelfColorCount}`}>{shelfColorCounts[WineColor.ROUGE]}</span></div>}
-                    {shelfColorCounts[WineColor.BLANC] > 0 && <div className="flex items-center gap-1"><div className="w-3 h-3 rounded-full bg-yellow-400 dark:bg-yellow-500 shadow-sm"></div><span className={`font-bold text-stone-600 dark:text-stone-300 ${fontClasses.shelfColorCount}`}>{shelfColorCounts[WineColor.BLANC]}</span></div>}
-                    {shelfColorCounts[WineColor.ROSE] > 0 && <div className="flex items-center gap-1"><div className="w-3 h-3 rounded-full bg-pink-400 dark:bg-pink-500 shadow-sm"></div><span className={`font-bold text-stone-600 dark:text-stone-300 ${fontClasses.shelfColorCount}`}>{shelfColorCounts[WineColor.ROSE]}</span></div>}
+                    {shelfColorCounts[WineColor.ROUGE] > 0 && <div className="flex items-center gap-1"><div className="w-3 h-3 rounded-full bg-rose-950 dark:bg-rose-600 shadow-sm"></div><span className={`font-bold text-stone-600 text-sm`}>{shelfColorCounts[WineColor.ROUGE]}</span></div>}
+                    {shelfColorCounts[WineColor.BLANC] > 0 && <div className="flex items-center gap-1"><div className="w-3 h-3 rounded-full bg-yellow-400 dark:bg-yellow-500 shadow-sm"></div><span className={`font-bold text-stone-600 text-sm`}>{shelfColorCounts[WineColor.BLANC]}</span></div>}
+                    {shelfColorCounts[WineColor.ROSE] > 0 && <div className="flex items-center gap-1"><div className="w-3 h-3 rounded-full bg-pink-400 dark:bg-pink-500 shadow-sm"></div><span className={`font-bold text-stone-600 text-sm`}>{shelfColorCounts[WineColor.ROSE]}</span></div>}
                   </div>
                   <span className={`text-stone-400 dark:text-stone-500 font-bold uppercase tracking-wide transition-all ${fontClasses.shelfCost}`}>{shelfTotalCost.toLocaleString(settings.language, { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 })}</span>
                   <span className={`bg-gray-100 dark:bg-stone-800 text-gray-600 dark:text-stone-300 font-bold px-2 py-0.5 rounded-full border border-gray-200 dark:border-stone-700 transition-all ${fontClasses.shelfCount}`}>{shelfQty}</span>
-                  {shelfName !== t('off_site') && <button onClick={(e) => { e.stopPropagation(); setShelfToDelete(shelfName); }} className="p-1.5 text-stone-300 hover:text-red-500 transition"><Trash2 size={18} /></button>}
                 </div>
               </div>
               {isExpanded && <div className="p-2 space-y-2">{shelfWines.map(wine => (
                 <div key={wine.id} onClick={() => { setSelectedWine(wine); setView('detail'); }} className={`flex gap-2.5 items-center p-2 rounded-lg cursor-pointer transition-all shadow-sm border-l-4 ${getColorTheme(wine.color)}`}>
                   <div className="w-12 h-12 rounded-full bg-white dark:bg-stone-800 flex-shrink-0 overflow-hidden border border-white dark:border-stone-700 relative">{wine.image ? <img src={wine.image} className="w-full h-full object-cover" alt="" /> : <WineIcon className="w-5 h-5 m-auto mt-3.5 text-stone-300"/>}</div>
                   <div className="flex-1 min-w-0"><p className={`font-bold text-gray-800 dark:text-gray-100 truncate leading-tight ${fontClasses.title}`}>{wine.name}</p><div className="flex items-center gap-1.5 mt-0.5"><p className={`text-gray-500 dark:text-gray-400 truncate ${fontClasses.sub}`}>{wine.region} - {wine.year}</p><div className={`w-1.5 h-1.5 rounded-full ${getConsumptionStatusColor(wine)} flex-shrink-0`}></div></div></div>
-                  <div className="flex items-center gap-2"><div className={`flex flex-col items-center justify-center w-9 h-9 rounded shadow-sm bg-white/50 dark:bg-stone-800 text-stone-600 dark:text-stone-300`}><span className={`uppercase font-bold opacity-60 leading-none ${fontClasses.badgeLabel}`}>{t('qty')}</span><span className={`font-bold leading-none mt-0.5 ${fontClasses.badgeValue}`}>{wine.quantity}</span></div></div>
+                  <div className="flex items-center gap-2">
+                    {wine.image && (
+                      <button onClick={(e) => { e.stopPropagation(); setLargeImage(wine.image); }} className="p-2 text-stone-400 hover:text-rose-900 transition-colors bg-white/50 dark:bg-stone-800 rounded-lg shadow-sm">
+                        <Eye size={18} />
+                      </button>
+                    )}
+                    <div className={`flex flex-col items-center justify-center w-9 h-9 rounded shadow-sm bg-white/50 dark:bg-stone-800 text-stone-600 dark:text-stone-300`}><span className={`uppercase font-bold opacity-60 leading-none ${fontClasses.badgeLabel}`}>{t('qty')}</span><span className={`font-bold leading-none mt-0.5 ${fontClasses.badgeValue}`}>{wine.quantity}</span></div>
+                  </div>
                 </div>
               ))}</div>}
             </div>
@@ -519,7 +565,27 @@ function App() {
         <div className="space-y-3">{filteredHistory.map((entry) => (
           <div key={entry.id} onClick={() => { setSelectedWine(entry); setView('detail'); }} className={`flex gap-3 p-2.5 rounded-xl cursor-pointer shadow-sm border-l-4 ${getColorTheme(entry.color)}`}>
             <div className="w-12 h-12 rounded-lg bg-white dark:bg-stone-800 flex-shrink-0 overflow-hidden border border-stone-200">{entry.image ? <img src={entry.image} className="w-full h-full object-cover" /> : <WineIcon className="w-full h-full p-3 text-stone-300"/>}</div>
-            <div className="flex-1 min-w-0"><div className="flex justify-between items-start"><h3 className={`font-bold text-stone-800 dark:text-stone-100 truncate leading-tight ${fontClasses.title}`}>{entry.name}</h3><div className="flex items-center gap-0.5 text-amber-400 bg-amber-50 dark:bg-amber-900/20 px-1 rounded shadow-sm"><span className={`font-bold text-amber-600 ${fontClasses.badgeValue}`}>{entry.consumptionRating}</span><Star size={10} className="fill-current" /></div></div><p className={`text-stone-600 dark:text-stone-400 font-medium truncate ${fontClasses.sub}`}>{entry.appellation} - {entry.year}</p><div className="flex items-center justify-between mt-1"><p className={`text-stone-400 dark:text-stone-500 ${fontClasses.sub}`}>{t('consumed_on')} {new Date(entry.consumedDate).toLocaleDateString()}</p><div className={`bg-white/50 dark:bg-stone-800 px-2 py-1 rounded text-stone-900 dark:text-stone-100 font-bold border border-stone-200 dark:border-stone-700 ${fontClasses.shelfCount}`}>{t('total_drunk')}: {entry.quantity}</div></div></div>
+            <div className="flex-1 min-w-0">
+              <div className="flex justify-between items-start">
+                <h3 className={`font-bold text-stone-800 dark:text-stone-100 truncate leading-tight ${fontClasses.title}`}>{entry.name}</h3>
+                <div className="flex items-center gap-2">
+                   {entry.image && (
+                    <button onClick={(e) => { e.stopPropagation(); setLargeImage(entry.image); }} className="p-1.5 text-stone-400 hover:text-rose-900 transition-colors bg-white/50 dark:bg-stone-800 rounded-lg shadow-sm">
+                      <Eye size={16} />
+                    </button>
+                  )}
+                  <div className="flex items-center gap-0.5 text-amber-400 bg-amber-50 dark:bg-amber-900/20 px-1 rounded shadow-sm">
+                    <span className={`font-bold text-amber-600 ${fontClasses.badgeValue}`}>{entry.consumptionRating}</span>
+                    <Star size={10} className="fill-current" />
+                  </div>
+                </div>
+              </div>
+              <p className={`text-stone-600 dark:text-stone-400 font-medium truncate ${fontClasses.sub}`}>{entry.appellation} - {entry.year}</p>
+              <div className="flex items-center justify-between mt-1">
+                <p className={`text-stone-400 dark:text-stone-500 ${fontClasses.sub}`}>{t('consumed_on')} {new Date(entry.consumedDate).toLocaleDateString()}</p>
+                <div className={`bg-white/50 dark:bg-stone-800 px-2 py-1 rounded text-stone-900 dark:text-stone-100 font-bold border border-stone-200 dark:border-stone-700 ${fontClasses.title}`}>{t('total_drunk')}: {entry.quantity}</div>
+              </div>
+            </div>
           </div>
         ))}</div>
       </div>

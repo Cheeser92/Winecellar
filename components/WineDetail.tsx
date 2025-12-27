@@ -1,6 +1,6 @@
 
 import React, { useState, useRef } from 'react';
-import { ArrowLeft, Check, Calendar, Clock, Tag, Trash2, Star, Pencil, Copy, Camera, ShoppingBag, Wine as WineIcon, Minus, Plus, Maximize2, Move, Warehouse } from 'lucide-react';
+import { ArrowLeft, Check, Calendar, Clock, Tag, Trash2, Star, Pencil, Copy, Eye, Camera, ShoppingBag, Wine as WineIcon, Minus, Plus, Move, Warehouse } from 'lucide-react';
 import { Wine, ConsumptionStatus, HistoryEntry, Language, AppFontSize, Cellar } from '../types';
 import { RATINGS, STRENGTHS } from '../constants';
 import { getTranslation } from '../translations';
@@ -101,7 +101,8 @@ export const WineDetail: React.FC<WineDetailProps> = ({ wine, cellars, currentCe
 
   return (
     <div className={`min-h-full relative ${wine.image ? 'bg-stone-900' : 'bg-stone-100 dark:bg-black'} transition-colors duration-300`}>
-      <input type="file" accept="image/*" capture="environment" ref={fileInputRef} onChange={handleImageChange} className="hidden" />
+      {/* Photo input only if NOT in history mode */}
+      {!isHistory && <input type="file" accept="image/*" capture="environment" ref={fileInputRef} onChange={handleImageChange} className="hidden" />}
       
       {wine.image && (
         <div className="absolute inset-0 z-0 bg-cover bg-center" style={{ backgroundImage: `url(${wine.image})` }}>
@@ -113,7 +114,7 @@ export const WineDetail: React.FC<WineDetailProps> = ({ wine, cellars, currentCe
         <button onClick={onBack} className="pointer-events-auto bg-white/90 dark:bg-black/50 backdrop-blur text-stone-800 dark:text-stone-200 p-2.5 rounded-full shadow-lg active:scale-95 transition"><ArrowLeft size={24} /></button>
         <div className="flex items-center gap-3 pointer-events-auto">
           {onEnlargeImage && wine.image && (
-            <button onClick={() => onEnlargeImage(wine.image!)} className="bg-white/90 dark:bg-black/50 backdrop-blur text-stone-800 dark:text-stone-200 p-2.5 rounded-full shadow-lg active:scale-95 transition"><Maximize2 size={20} /></button>
+            <button onClick={() => onEnlargeImage(wine.image!)} className="bg-white/90 dark:bg-black/50 backdrop-blur text-stone-800 dark:text-stone-200 p-2.5 rounded-full shadow-lg active:scale-95 transition"><Eye size={20} /></button>
           )}
           {onEdit && (<button onClick={onEdit} className="bg-white/90 dark:bg-black/50 backdrop-blur text-stone-800 dark:text-stone-200 p-2.5 rounded-full shadow-lg active:scale-95 transition"><Pencil size={20} /></button>)}
           
@@ -208,17 +209,17 @@ export const WineDetail: React.FC<WineDetailProps> = ({ wine, cellars, currentCe
           </div>
 
           <div className="pt-4 flex gap-3">
-               <button type="button" onClick={() => setShowDeleteModal(true)} className={`${isHistory ? 'flex-1' : 'flex-none p-4'} rounded-xl border border-red-200 dark:border-red-900/50 text-red-500 dark:text-red-400 bg-red-50 dark:bg-red-900/10 hover:bg-red-100 transition cursor-pointer flex items-center justify-center gap-2`}>
+               <button type="button" onClick={() => setShowDeleteModal(true)} className={`${isHistory ? 'flex-1 h-[56px]' : 'h-[56px] w-[56px] flex-none'} rounded-xl border border-red-200 dark:border-red-900/50 text-red-500 dark:text-red-400 bg-red-50 dark:bg-red-900/10 hover:bg-red-100 transition cursor-pointer flex items-center justify-center gap-2`}>
                  <Trash2 size={20} />
                  {isHistory && <span className="font-bold">{t('delete')}</span>}
               </button>
               {!isHistory && (
                 <>
-                <button type="button" onClick={() => handleTransferClick(false)} className="flex-none p-4 rounded-xl border border-indigo-200 dark:border-indigo-900/50 text-indigo-500 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-900/10 hover:bg-indigo-100 transition cursor-pointer"><Copy size={20} /></button>
+                <button type="button" onClick={() => handleTransferClick(false)} className="flex-none h-[56px] w-[56px] flex items-center justify-center rounded-xl border border-indigo-200 dark:border-indigo-900/50 text-indigo-500 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-900/10 hover:bg-indigo-100 transition cursor-pointer"><Copy size={20} /></button>
                 {cellars.length > 1 && (
-                  <button type="button" onClick={() => handleTransferClick(true)} className="flex-none p-4 rounded-xl border border-orange-200 dark:border-orange-900/50 text-orange-500 dark:text-orange-400 bg-orange-50 dark:bg-orange-900/10 hover:bg-orange-100 transition cursor-pointer"><Move size={20} /></button>
+                  <button type="button" onClick={() => handleTransferClick(true)} className="flex-none h-[56px] w-[56px] flex items-center justify-center rounded-xl border border-orange-200 dark:border-orange-900/50 text-orange-500 dark:text-orange-400 bg-orange-50 dark:bg-orange-900/10 hover:bg-orange-100 transition cursor-pointer"><Move size={20} /></button>
                 )}
-                <button type="button" onClick={() => setShowConsumeModal(true)} className="flex-1 flex items-center justify-center gap-2 bg-gradient-to-r from-rose-900 to-rose-800 dark:from-rose-700 dark:to-rose-600 text-white font-bold py-4 px-6 rounded-xl shadow-lg shadow-rose-900/20 hover:shadow-xl transition transform active:scale-95 cursor-pointer">
+                <button type="button" onClick={() => setShowConsumeModal(true)} className="flex-1 flex items-center justify-center h-[56px] gap-2 bg-gradient-to-r from-rose-900 to-rose-800 dark:from-rose-700 dark:to-rose-600 text-white font-bold px-6 rounded-xl shadow-lg shadow-rose-900/20 hover:shadow-xl transition transform active:scale-95 cursor-pointer">
                   <Check size={20} /><span>{t('consume_bottle')}</span>
                 </button>
                 </>
