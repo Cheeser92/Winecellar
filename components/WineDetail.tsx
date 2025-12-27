@@ -1,9 +1,10 @@
 
-import React, { useState, useRef } from 'react';
-import { ArrowLeft, Check, Calendar, Clock, Tag, Trash2, Star, Pencil, Copy, Eye, Camera, ShoppingBag, Wine as WineIcon, Minus, Plus, Move, Warehouse, Map as MapIcon } from 'lucide-react';
+import React, { useState, useRef, useEffect } from 'react';
+import { ArrowLeft, Check, Calendar, Clock, Tag, Trash2, Star, Pencil, Copy, Eye, Camera, ShoppingBag, Wine as WineIcon, Minus, Plus, Move, Warehouse, Map as MapIcon, Sparkles, Loader2 } from 'lucide-react';
 import { Wine, ConsumptionStatus, HistoryEntry, Language, AppFontSize, Cellar } from '../types';
 import { RATINGS, STRENGTHS } from '../constants';
 import { getTranslation } from '../translations';
+import { GoogleGenAI } from "@google/genai";
 
 interface WineDetailProps {
   wine: Wine | HistoryEntry;
@@ -35,11 +36,42 @@ export const WineDetail: React.FC<WineDetailProps> = ({ wine, cellars, currentCe
   const [transferQty, setTransferQty] = useState(1);
   const [targetLocation, setTargetLocation] = useState(isHistory ? availableLocations[0] : wine.location);
 
+  const [aiSummary, setAiSummary] = useState<string | null>(null);
+  const [isSummarizing, setIsSummarizing] = useState(false);
+
   const fileInputRef = useRef<HTMLInputElement>(null);
   const t = (key: any) => getTranslation(language, key);
 
   const currentCellar = cellars.find(c => c.id === currentCellarId) || cellars[0];
   const targetCellar = cellars.find(c => c.id === targetCellarId) || currentCellar;
+
+  useEffect(() => {
+    const fetchAiSummary = async () => {
+      if (aiSummary || isSummarizing) return;
+      setIsSummarizing(true);
+      try {
+        const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+        const prompt = `Write a short, elegant and professional sommelier summary (max 100 words) for the following wine: ${wine.name}, ${wine.appellation}, ${wine.year}, ${wine.region}, ${wine.country}. 
+        Include: a brief mention of the estate's history or terroir, the typical aromatic profile for this vintage, and a suggested food pairing. 
+        Language: ${language === 'fr' ? 'French' : 'English'}. Keep it concise and inspiring.`;
+
+        const response = await ai.models.generateContent({
+          model: 'gemini-3-flash-preview',
+          contents: [{ parts: [{ text: prompt }] }],
+        });
+
+        if (response.text) {
+          setAiSummary(response.text.trim());
+        }
+      } catch (error) {
+        console.error("AI Summary generation failed:", error);
+      } finally {
+        setIsSummarizing(false);
+      }
+    };
+
+    fetchAiSummary();
+  }, [wine.id, language]);
 
   const handleTransferClick = (isMove: boolean) => {
     setTransferModal({ isOpen: true, isMove });
@@ -99,13 +131,11 @@ export const WineDetail: React.FC<WineDetailProps> = ({ wine, cellars, currentCe
     [ConsumptionStatus.GREEN]: t('wait'),
   };
 
-  // Generate Map Query
   const mapSearchQuery = encodeURIComponent(`${wine.name} ${wine.region} ${wine.country}`);
   const mapUrl = `https://maps.google.com/maps?q=${mapSearchQuery}&t=&z=13&ie=UTF8&iwloc=&output=embed`;
 
   return (
     <div className={`min-h-full relative ${wine.image ? 'bg-stone-900' : 'bg-stone-100 dark:bg-black'} transition-colors duration-300`}>
-      {/* Photo input only if NOT in history mode */}
       {!isHistory && <input type="file" accept="image/*" capture="environment" ref={fileInputRef} onChange={handleImageChange} className="hidden" />}
       
       {wine.image && (
@@ -212,7 +242,6 @@ export const WineDetail: React.FC<WineDetailProps> = ({ wine, cellars, currentCe
                <div className="col-span-2 bg-amber-50/80 dark:bg-amber-900/10 p-4 rounded-xl border border-amber-100 dark:border-amber-900/30"><p className="text-amber-800 dark:text-amber-500 text-xs font-bold uppercase mb-1">{t('personal_note')}</p><p className={`text-stone-800 dark:text-stone-200 italic leading-relaxed ${fs.infoText}`}>"{wine.note || t('no_note')}"</p></div>
           </div>
 
-          {/* Winery Location Map */}
           <div className="space-y-3 pt-4 border-t border-stone-100 dark:border-stone-800">
              <div className="flex items-center gap-2 text-rose-900 dark:text-rose-400">
                 <MapIcon size={18} />
@@ -230,6 +259,30 @@ export const WineDetail: React.FC<WineDetailProps> = ({ wine, cellars, currentCe
                   className="grayscale dark:invert-[0.9] dark:hue-rotate-180 transition-all opacity-80 hover:opacity-100"
                 />
              </div>
+          </div>
+
+          <div className="space-y-3 pt-4 border-t border-stone-100 dark:border-stone-800">
+            <div className="flex items-center gap-2 text-rose-900 dark:text-rose-400">
+               <Sparkles size={18} />
+               <span className={`font-bold uppercase tracking-wider ${fs.infoText}`}>{t('ai_synthesis')}</span>
+            </div>
+            <div className={`relative p-5 rounded-2xl border ${isSummarizing ? 'animate-pulse bg-stone-50 dark:bg-stone-800 border-stone-100 dark:border-stone-700' : 'bg-stone-100/50 dark:bg-stone-900/50 border-stone-200/50 dark:border-stone-800'} transition-all`}>
+              {isSummarizing ? (
+                <div className="flex flex-col items-center justify-center py-4 text-stone-400 gap-2">
+                  <Loader2 size={24} className="animate-spin" />
+                  <span className={`italic font-medium ${fs.infoText}`}>{t('generating_synthesis')}</span>
+                </div>
+              ) : aiSummary ? (
+                <div className="relative">
+                  <div className="absolute -left-1 -top-1 opacity-10"><WineIcon size={40} className="text-rose-900 dark:text-rose-500" /></div>
+                  <p className={`text-stone-700 dark:text-stone-300 italic leading-relaxed relative z-10 ${fs.infoText}`}>
+                    {aiSummary}
+                  </p>
+                </div>
+              ) : (
+                <p className={`text-stone-400 italic text-center ${fs.infoText}`}>{t('no_note')}</p>
+              )}
+            </div>
           </div>
 
           <div className="pt-4 flex gap-3">

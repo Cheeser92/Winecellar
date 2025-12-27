@@ -71,8 +71,10 @@ export const translations = {
     gallery: "ou choisir depuis la galerie",
     analyzing_label: "Analyse de l'étiquette...",
     
-    // Map
+    // Details Features
     winery_location: "Localisation du domaine",
+    ai_synthesis: "L'avis du Sommelier IA",
+    generating_synthesis: "Rédaction de la fiche par l'IA...",
     
     // Stats
     bottles: "Bouteilles",
@@ -230,8 +232,10 @@ export const translations = {
     gallery: "or choose from gallery",
     analyzing_label: "Analyzing label...",
     
-    // Map
+    // Details Features
     winery_location: "Winery Location",
+    ai_synthesis: "AI Sommelier's View",
+    generating_synthesis: "Writing summary via AI...",
 
     bottles: "Bottles",
     consumed: "Consumed",
