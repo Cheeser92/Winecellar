@@ -1,7 +1,7 @@
 
-import React, { useState, useRef } from 'react';
-import { Camera, X } from 'lucide-react';
-import { Wine, WineColor, AgingPotential, Language, LocationData } from '../types';
+import React, { useState, useRef, useEffect } from 'react';
+import { Camera, X, Minus, Plus, Calendar as CalendarIcon } from 'lucide-react';
+import { Wine, WineColor, AgingPotential, Language, LocationData, AppFontSize } from '../types';
 import { COLORS, AGING_POTENTIALS, STRENGTHS } from '../constants';
 import { getTranslation } from '../translations';
 import { CountrySelect } from './CountrySelect';
@@ -16,6 +16,7 @@ interface WineFormProps {
   onOpenLocationManager: () => void;
   language: Language;
   isHistoryMode?: boolean;
+  fontSize?: AppFontSize;
 }
 
 export const WineForm: React.FC<WineFormProps> = ({ 
@@ -26,9 +27,16 @@ export const WineForm: React.FC<WineFormProps> = ({
   locationData,
   onOpenLocationManager,
   language, 
-  isHistoryMode = false 
+  isHistoryMode = false,
+  fontSize = 'medium'
 }) => {
   const t = (key: any) => getTranslation(language, key);
+
+  const formatToDisplay = (isoDate: string) => {
+    if (!isoDate) return '';
+    const [year, month, day] = isoDate.split('-');
+    return `${day}/${month}/${year}`;
+  };
 
   const [formData, setFormData] = useState<Omit<Wine, 'id'>>({
     name: initialData?.name || '',
@@ -53,6 +61,18 @@ export const WineForm: React.FC<WineFormProps> = ({
 
   const isEdit = !!initialData;
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const dateInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (isHistoryMode) return;
+    const diff = formData.recommendedYear - formData.year;
+    let newPotential = AgingPotential.MOYENNE;
+    if (diff <= 4) newPotential = AgingPotential.COURTE;
+    else if (diff > 8) newPotential = AgingPotential.LONGUE;
+    if (newPotential !== formData.agingPotential) {
+      setFormData(prev => ({ ...prev, agingPotential: newPotential }));
+    }
+  }, [formData.year, formData.recommendedYear, isHistoryMode]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
@@ -64,44 +84,46 @@ export const WineForm: React.FC<WineFormProps> = ({
     }));
   };
 
+  const handleQuantityChange = (newQty: number) => setFormData(prev => ({ ...prev, quantity: Math.max(1, newQty) }));
+
   const handleCountryChange = (newCountry: string) => {
-    // Si la région actuelle n'est pas dans le nouveau pays, on réinitialise
     const newRegions = locationData.regions[newCountry] || [];
     let newRegion = formData.region;
-    if (!newRegions.includes(formData.region)) {
-        newRegion = '';
-    }
+    if (!newRegions.includes(formData.region)) newRegion = '';
     setFormData(prev => ({ ...prev, country: newCountry, region: newRegion }));
   };
 
-  const handleRegionChange = (region: string) => {
-    setFormData(prev => ({ ...prev, region }));
-  };
+  const handleRegionChange = (region: string) => setFormData(prev => ({ ...prev, region }));
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
       const reader = new FileReader();
-      reader.onloadend = () => {
-        setFormData(prev => ({ ...prev, image: reader.result as string }));
-      };
+      reader.onloadend = () => setFormData(prev => ({ ...prev, image: reader.result as string }));
       reader.readAsDataURL(file);
     }
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    onSave(formData);
+  const handleSubmit = (e: React.FormEvent) => { e.preventDefault(); onSave(formData); };
+
+  const getFontSizeClasses = (size: AppFontSize) => {
+    switch(size) {
+      case 'small': return { base: 'text-xs', label: 'text-[9px]', lg: 'text-sm', xl: 'text-base' };
+      case 'large': return { base: 'text-base', label: 'text-[11px]', lg: 'text-lg', xl: 'text-xl' };
+      case 'medium':
+      default: return { base: 'text-sm', label: 'text-[10px]', lg: 'text-base', xl: 'text-lg' };
+    }
   };
 
-  const inputClass = "mt-1 block w-full rounded-lg border border-gray-300 dark:border-stone-700 bg-white dark:bg-stone-800 text-gray-900 dark:text-white shadow-sm focus:border-rose-500 focus:ring-rose-500 h-11 px-3 transition-all";
-  const textareaClass = "mt-1 block w-full rounded-lg border border-gray-300 dark:border-stone-700 bg-white dark:bg-stone-800 text-gray-900 dark:text-white shadow-sm focus:border-rose-500 focus:ring-rose-500 p-3 transition-all";
-  const labelClass = "block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1";
+  const fs = getFontSizeClasses(fontSize as AppFontSize);
+  const inputClass = `mt-1 block w-full rounded-lg border border-gray-300 dark:border-stone-700 bg-white dark:bg-stone-800 text-gray-900 dark:text-white shadow-sm focus:border-rose-500 focus:ring-rose-500 h-11 px-3 transition-all ${fs.base}`;
+  const textareaClass = `mt-1 block w-full rounded-lg border border-gray-300 dark:border-stone-700 bg-white dark:bg-stone-800 text-gray-900 dark:text-white shadow-sm focus:border-rose-500 focus:ring-rose-500 p-3 transition-all ${fs.base}`;
+  const labelClass = `block font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1 ${fs.label}`;
 
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-5 pb-24 p-4 bg-stone-100 dark:bg-black min-h-full transition-colors duration-300">
       <div className="flex justify-between items-center mb-2 bg-white dark:bg-stone-900 p-4 rounded-xl shadow-sm sticky top-0 z-10 transition-colors">
-        <h2 className="text-xl font-serif font-bold text-rose-900 dark:text-rose-100">
+        <h2 className={`font-serif font-bold text-rose-900 dark:text-rose-100 ${fs.xl}`}>
           {isHistoryMode ? t('personal_note') : (isEdit ? t('edit_bottle') : t('add_bottle'))}
         </h2>
         <button type="button" onClick={onCancel} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 bg-gray-100 dark:bg-stone-800 p-2 rounded-full transition-colors">
@@ -119,11 +141,11 @@ export const WineForm: React.FC<WineFormProps> = ({
           <div className="text-center w-full" onClick={() => fileInputRef.current?.click()}>
             <div className="mx-auto h-16 w-16 bg-rose-50 dark:bg-rose-900/20 text-rose-300 dark:text-rose-500 rounded-full flex items-center justify-center mb-3"><Camera size={32} /></div>
             <div className="flex flex-col text-sm text-gray-600 dark:text-gray-400">
-              <label htmlFor="file-upload" className="cursor-pointer font-medium text-rose-700 dark:text-rose-400 hover:text-rose-600">
+              <label htmlFor="file-upload" className={`cursor-pointer font-medium text-rose-700 dark:text-rose-400 hover:text-rose-600 ${fs.base}`}>
                 <span>{t('take_photo')}</span>
                 <input id="file-upload" name="file-upload" type="file" accept="image/*" capture="environment" className="sr-only" ref={fileInputRef} onChange={handleImageChange} />
               </label>
-              <span className="text-xs text-gray-400 mt-1">{t('gallery')}</span>
+              <span className={`text-gray-400 mt-1 ${fs.label}`}>{t('gallery')}</span>
             </div>
           </div>
         )}
@@ -132,7 +154,7 @@ export const WineForm: React.FC<WineFormProps> = ({
       {!isHistoryMode ? (
         <>
           <div className="bg-white dark:bg-stone-900 p-5 rounded-xl shadow-sm space-y-4 transition-colors">
-            <h3 className="text-sm font-bold text-rose-900 dark:text-rose-500 uppercase tracking-widest border-b border-gray-100 dark:border-stone-800 pb-2 mb-4">{t('info_main')}</h3>
+            <h3 className={`font-bold text-rose-900 dark:text-rose-500 uppercase tracking-widest border-b border-gray-100 dark:border-stone-800 pb-2 mb-4 ${fs.base}`}>{t('info_main')}</h3>
             <div className="space-y-4">
               <div>
                 <label className={labelClass}>{t('name')}</label>
@@ -153,6 +175,7 @@ export const WineForm: React.FC<WineFormProps> = ({
                   onEdit={onOpenLocationManager}
                   language={language}
                   className={inputClass}
+                  fontSize={fontSize as AppFontSize}
                 />
               </div>
               <div>
@@ -165,6 +188,7 @@ export const WineForm: React.FC<WineFormProps> = ({
                   onEdit={onOpenLocationManager}
                   language={language}
                   className={inputClass}
+                  fontSize={fontSize as AppFontSize}
                 />
               </div>
             </div>
@@ -183,7 +207,7 @@ export const WineForm: React.FC<WineFormProps> = ({
           </div>
 
           <div className="bg-white dark:bg-stone-900 p-5 rounded-xl shadow-sm space-y-4 transition-colors">
-            <h3 className="text-sm font-bold text-rose-900 dark:text-rose-500 uppercase tracking-widest border-b border-gray-100 dark:border-stone-800 pb-2 mb-4">{t('info_detail_bottle')}</h3>
+            <h3 className={`font-bold text-rose-900 dark:text-rose-500 uppercase tracking-widest border-b border-gray-100 dark:border-stone-800 pb-2 mb-4 ${fs.base}`}>{t('info_detail_bottle')}</h3>
             <div>
               <label className={labelClass}>{t('location')}</label>
               <select name="location" value={formData.location} onChange={handleChange} className={inputClass}>
@@ -197,19 +221,29 @@ export const WineForm: React.FC<WineFormProps> = ({
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className={labelClass}>{t('purchase_date')}</label>
-                <input type="date" name="purchaseDate" value={formData.purchaseDate} onChange={handleChange} className={inputClass} />
+                <div className="relative">
+                  <input type="text" readOnly value={formatToDisplay(formData.purchaseDate)} className={`${inputClass} cursor-pointer`} />
+                  <div className="absolute right-3 top-1/2 -translate-y-1/2 text-stone-400 pointer-events-none">
+                    <CalendarIcon size={18} />
+                  </div>
+                  <input type="date" name="purchaseDate" ref={dateInputRef} value={formData.purchaseDate} onChange={handleChange} className="absolute inset-0 opacity-0 cursor-pointer w-full h-full" />
+                </div>
               </div>
               <div>
                 <label className={labelClass}>{t('purchase_place')}</label>
                 <input type="text" name="purchasePlace" value={formData.purchasePlace} onChange={handleChange} className={inputClass} />
               </div>
             </div>
-            <div className="grid grid-cols-3 gap-4">
-              <div>
+            <div className="grid grid-cols-4 gap-4">
+              <div className="col-span-3">
                 <label className={labelClass}>{t('quantity')}</label>
-                <input required type="number" min="1" name="quantity" value={formData.quantity} onChange={handleChange} className={inputClass} />
+                <div className="flex items-center gap-2 mt-1">
+                  <button type="button" onClick={() => handleQuantityChange(formData.quantity - 1)} className="w-11 h-11 rounded-lg bg-stone-100 dark:bg-stone-800 flex items-center justify-center border border-stone-200 dark:border-stone-700 active:scale-90 transition-all"><Minus size={18} /></button>
+                  <div className={`flex-1 h-11 bg-white dark:bg-stone-800 border border-stone-200 dark:border-stone-700 rounded-lg flex items-center justify-center font-bold text-gray-900 dark:text-white ${fs.lg}`}>{formData.quantity}</div>
+                  <button type="button" onClick={() => handleQuantityChange(formData.quantity + 1)} className="w-11 h-11 rounded-lg bg-stone-100 dark:bg-stone-800 flex items-center justify-center border border-stone-200 dark:border-stone-700 active:scale-90 transition-all"><Plus size={18} /></button>
+                </div>
               </div>
-               <div className="col-span-2">
+               <div className="col-span-1">
                 <label className={labelClass}>{t('recommended_year')}</label>
                 <input required type="number" min="1900" max="2100" name="recommendedYear" value={formData.recommendedYear} onChange={handleChange} className={inputClass} />
               </div>
@@ -247,8 +281,8 @@ export const WineForm: React.FC<WineFormProps> = ({
       ) : (
         <div className="bg-white dark:bg-stone-900 p-5 rounded-xl shadow-sm space-y-4 transition-colors">
           <div className="pb-4 border-b border-gray-100 dark:border-stone-800">
-             <h3 className="font-bold text-lg text-stone-900 dark:text-white leading-tight">{formData.name}</h3>
-             <p className="text-sm text-stone-500 dark:text-stone-400 font-medium">{formData.appellation} - {formData.year}</p>
+             <h3 className={`font-bold text-stone-900 dark:text-white leading-tight ${fs.lg}`}>{formData.name}</h3>
+             <p className={`text-stone-500 dark:text-stone-400 font-medium ${fs.base}`}>{formData.appellation} - {formData.year}</p>
           </div>
           <div>
             <label className={labelClass}>{t('note')}</label>
@@ -261,7 +295,7 @@ export const WineForm: React.FC<WineFormProps> = ({
         </div>
       )}
 
-      <button type="submit" className="w-full sticky bottom-4 bg-rose-900 dark:bg-rose-700 text-white font-bold py-4 px-6 rounded-xl shadow-lg hover:bg-rose-800 dark:hover:bg-rose-600 active:scale-95 transition-all duration-200">{t('save')}</button>
+      <button type="submit" className={`w-full sticky bottom-4 bg-rose-900 dark:bg-rose-700 text-white font-bold py-4 px-6 rounded-xl shadow-lg hover:bg-rose-800 dark:hover:bg-rose-600 active:scale-95 transition-all duration-200 ${fs.lg}`}>{t('save')}</button>
     </form>
   );
 };

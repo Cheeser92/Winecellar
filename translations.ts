@@ -29,7 +29,24 @@ export const translations = {
     duplicate_bottle: "Copier la bouteille",
     target_location: "Vers l'étagère",
     copy_quantity: "Quantité à copier",
+    quantity_consumed: "Nombre de bouteilles",
     
+    // Multi-Cellar
+    manage_cellars: "Gestion des caves",
+    new_cellar: "Nouvelle cave",
+    edit_cellar: "Modifier la cave",
+    delete_cellar: "Supprimer la cave",
+    cellar_name: "Nom de la cave",
+    default_cellar_name: "Ma cave",
+    switch_cellar: "Changer de cave",
+    transfer: "Transférer",
+    transfer_bottle: "Transférer la bouteille",
+    transfer_to: "Transférer vers",
+    destroy_bottles_confirm: "Détruire définitivement les bouteilles restantes de cette cave",
+    delete_cellar_warning: "Cette action est irréversible.",
+    swipe_to_delete: "Glissez pour supprimer la cave",
+    cellar_photo: "Photo de la cave",
+
     // Form Labels
     name: "Nom du vin",
     appellation: "Appellation – Cépage",
@@ -67,6 +84,7 @@ export const translations = {
     consumed: "Consommées",
     total_cost: "Coût Total",
     avg_price: "Prix Moy.",
+    avg_rating_short: "Note Moy.",
     stats_color: "Répartition par Couleur (%)",
     stats_region: "Vins par Région & Couleur",
     stats_country: "Vins par Pays & Couleur",
@@ -92,7 +110,7 @@ export const translations = {
     theme: "Mode Sombre",
     language: "Langue",
     shelf_count: "Quantité d'étagères",
-    shelf_count_desc: "Les bouteilles sur les étagères supprimées seront déplacées 'Hors cave'.",
+    shelf_count_desc: "Les bouteilles sur les étagères supprimées seront déplacées dans 'Hors cave'",
     backup: "Sauvegarde / Restauration",
     export_data: "Exporter les données",
     import_data: "Importer les données",
@@ -129,10 +147,16 @@ export const translations = {
     about: "À propos",
     qty: "Qté",
     delete: "Supprimer",
+    all: "Toutes",
+    unknown: "Inconnu",
+    date_consumption: "Date de consommation",
+    added_to_history: "Ajouté à l'historique",
+    consumption: "Consommation",
+    ideal_in: "Idéal en",
 
     // Shelf Delete
     shelf_delete_title: "Supprimer l'étagère",
-    shelf_delete_msg: "Les bouteilles de l'étagère seront placées dans la partie hors cave.",
+    shelf_delete_msg: "Les bouteilles sur cette étagère seront déplacées dans 'Hors cave'",
     swipe_to_confirm: "Glissez pour confirmer",
 
     // New Float Modals
@@ -179,6 +203,23 @@ export const translations = {
     duplicate_bottle: "Duplicate Bottle",
     target_location: "To Shelf",
     copy_quantity: "Quantity to copy",
+    quantity_consumed: "Number of bottles",
+
+    // Multi-Cellar
+    manage_cellars: "Manage Cellars",
+    new_cellar: "New Cellar",
+    edit_cellar: "Edit Cellar",
+    delete_cellar: "Delete Cellar",
+    cellar_name: "Cellar Name",
+    default_cellar_name: "My Cellar",
+    switch_cellar: "Switch Cellar",
+    transfer: "Transfer",
+    transfer_bottle: "Transfer Bottle",
+    transfer_to: "Transfer to",
+    destroy_bottles_confirm: "Permanently destroy remaining bottles in this cellar",
+    delete_cellar_warning: "This action is irreversible.",
+    swipe_to_delete: "Swipe to delete cellar",
+    cellar_photo: "Cellar Photo",
 
     // Form Labels
     name: "Wine Name",
@@ -217,6 +258,7 @@ export const translations = {
     consumed: "Consumed",
     total_cost: "Total Cost",
     avg_price: "Avg Price",
+    avg_rating_short: "Avg Rating",
     stats_color: "Distribution by Color (%)",
     stats_region: "Wines by Region & Color",
     stats_country: "Wines by Country & Color",
@@ -242,7 +284,7 @@ export const translations = {
     theme: "Dark Mode",
     language: "Language",
     shelf_count: "Number of Shelves",
-    shelf_count_desc: "Bottles on removed shelves will be moved to 'Off-site'.",
+    shelf_count_desc: "Bottles on removed shelves will be moved to 'Off-site'",
     backup: "Backup / Restore",
     export_data: "Export Data",
     import_data: "Import Data",
@@ -279,10 +321,16 @@ export const translations = {
     about: "About",
     qty: "QTY",
     delete: "Delete",
+    all: "All",
+    unknown: "Unknown",
+    date_consumption: "Consumption Date",
+    added_to_history: "Added to history",
+    consumption: "Consumption",
+    ideal_in: "Ideal in",
 
     // Shelf Delete
     shelf_delete_title: "Delete Shelf",
-    shelf_delete_msg: "Bottles on this shelf will be moved to 'Off-site'.",
+    shelf_delete_msg: "Bottles on this shelf will be moved to 'Off-site'",
     swipe_to_confirm: "Swipe to confirm",
 
     // New Float Modals

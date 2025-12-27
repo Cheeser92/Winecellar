@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer, CartesianGrid, LabelList } from 'recharts';
-import { Wine, WineColor, Language, Theme, HistoryEntry } from '../types';
+import { Wine, WineColor, Language, Theme, HistoryEntry, AppFontSize } from '../types';
 import { getTranslation } from '../translations';
 import { ChevronDown, ChevronRight } from 'lucide-react';
 
@@ -10,6 +10,7 @@ interface StatsViewProps {
   history: HistoryEntry[];
   language: Language;
   theme: Theme;
+  fontSize?: AppFontSize;
 }
 
 const COLORS_MAP: Record<string, string> = {
@@ -20,21 +21,35 @@ const COLORS_MAP: Record<string, string> = {
 
 const PIE_COLORS = ['#881337', '#be123c', '#fb7185', '#f472b6', '#fbbf24', '#fcd34d', '#4ade80', '#22c55e', '#15803d', '#1e40af', '#3b82f6'];
 
-const ChartContainer = ({ title, children }: { title: string, children?: React.ReactNode }) => (
+const ChartContainer = ({ title, children, fontSizeClasses }: { title: string, children?: React.ReactNode, fontSizeClasses: any }) => (
   <div className="bg-white dark:bg-stone-900 p-4 rounded-2xl shadow-sm border border-stone-100 dark:border-stone-800 mb-4 transition-colors">
-    <h3 className="text-sm font-bold text-stone-700 dark:text-stone-300 uppercase tracking-wide mb-4 border-b border-stone-100 dark:border-stone-800 pb-2">{title}</h3>
-    <div className="h-64 w-full text-xs">
+    <h3 className={`font-bold text-stone-700 dark:text-stone-300 uppercase tracking-wide mb-4 border-b border-stone-100 dark:border-stone-800 pb-2 ${fontSizeClasses.title}`}>{title}</h3>
+    <div className="h-64 w-full">
       {children}
     </div>
   </div>
 );
 
-export const StatsView: React.FC<StatsViewProps> = ({ wines, history, language, theme }) => {
+export const StatsView: React.FC<StatsViewProps> = ({ wines, history, language, theme, fontSize = 'medium' }) => {
   const t = (key: any) => getTranslation(language, key);
   const isDark = theme === 'dark';
 
   const [showCellarStats, setShowCellarStats] = useState(true);
   const [showHistoryStats, setShowHistoryStats] = useState(true);
+
+  const getFontSizeClasses = (size: AppFontSize) => {
+    switch(size) {
+      case 'small':
+        return { section: 'text-base', title: 'text-[10px]', tick: 9, label: 9 };
+      case 'large':
+        return { section: 'text-2xl', title: 'text-base', tick: 13, label: 13 };
+      case 'medium':
+      default:
+        return { section: 'text-lg', title: 'text-sm', tick: 11, label: 11 };
+    }
+  };
+
+  const fs = getFontSizeClasses(fontSize as AppFontSize);
 
   // Common render helpers
   const renderCustomLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, percent }: any) => {
@@ -43,7 +58,7 @@ export const StatsView: React.FC<StatsViewProps> = ({ wines, history, language, 
     const y = cy + radius * Math.sin(-midAngle * Math.PI / 180);
   
     return percent > 0.05 ? (
-      <text x={x} y={y} fill="white" textAnchor={x > cx ? 'start' : 'end'} dominantBaseline="central" fontSize={11} fontWeight="bold" style={{ textShadow: '0px 0px 3px rgba(0,0,0,0.5)' }}>
+      <text x={x} y={y} fill="white" textAnchor={x > cx ? 'start' : 'end'} dominantBaseline="central" fontSize={fs.label} fontWeight="bold" style={{ textShadow: '0px 0px 3px rgba(0,0,0,0.5)' }}>
         {`${(percent * 100).toFixed(0)}%`}
       </text>
     ) : null;
@@ -54,22 +69,20 @@ export const StatsView: React.FC<StatsViewProps> = ({ wines, history, language, 
     borderColor: isDark ? '#292524' : '#fff',
     borderRadius: '8px',
     boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)',
-    color: isDark ? '#f5f5f4' : '#333'
+    color: isDark ? '#f5f5f4' : '#333',
+    fontSize: fs.tick
   };
 
   // --- CELLAR DATA PROCESSING ---
-
-  // 1. Color (Pie)
   const cellarColorData = Object.entries(wines.reduce((acc, wine) => {
     const qty = Number(wine.quantity);
     acc[wine.color] = (acc[wine.color] || 0) + qty;
     return acc;
-  }, {} as Record<string, number>)).map(([name, value]) => ({ name, value }));
+  }, {} as Record<string, number>)).map(([name, value]) => ({ name: t('color_' + name), value }));
 
-  // Helper for Stacked Bar Charts
   const processStackedData = (items: Wine[], key: keyof Wine) => {
     const rawData = items.reduce((acc, wine) => {
-      const groupKey = String(wine[key]) || 'Inconnu';
+      const groupKey = String(wine[key]) || t('unknown');
       if (!acc[groupKey]) {
         acc[groupKey] = { name: groupKey, [WineColor.ROUGE]: 0, [WineColor.BLANC]: 0, [WineColor.ROSE]: 0 };
       }
@@ -82,7 +95,6 @@ export const StatsView: React.FC<StatsViewProps> = ({ wines, history, language, 
   const cellarRegionData = processStackedData(wines, 'region');
   const cellarCountryData = processStackedData(wines, 'country');
 
-  // Logic for Purchase Year stacked by color
   const processCellarYearData = () => {
     const rawData = wines.reduce((acc, wine) => {
       if (!wine.purchaseDate) return acc;
@@ -99,14 +111,13 @@ export const StatsView: React.FC<StatsViewProps> = ({ wines, history, language, 
   const cellarYearData = processCellarYearData();
 
   // --- HISTORY DATA PROCESSING ---
-
   const histRegionColorData = processStackedData(history, 'region');
 
   const getAvgRatingByRegion = (color: string) => {
       const grouped = history
         .filter(h => h.color === color)
         .reduce((acc: Record<string, { sum: number; count: number }>, h) => {
-            const region = h.region || 'Inconnu';
+            const region = h.region || t('unknown');
             if (!acc[region]) {
               acc[region] = { sum: 0, count: 0 };
             }
@@ -133,7 +144,7 @@ export const StatsView: React.FC<StatsViewProps> = ({ wines, history, language, 
 
   const getPieData = (key: keyof HistoryEntry) => {
       const grouped = history.reduce((acc, h) => {
-          const val = String(h[key]) || 'Inconnu';
+          const val = String(h[key]) || t('unknown');
           const qty = Number(h.quantity);
           acc[val] = (acc[val] || 0) + qty;
           return acc;
@@ -141,7 +152,7 @@ export const StatsView: React.FC<StatsViewProps> = ({ wines, history, language, 
       return Object.entries(grouped).map(([name, value]) => ({ name, value }));
   };
 
-  const histColorData = getPieData('color');
+  const histColorData = getPieData('color').map(d => ({ ...d, name: t('color_' + d.name) }));
   const histRegionData = getPieData('region');
   const histYearData = getPieData('year'); 
   const histCountryData = getPieData('country');
@@ -151,26 +162,28 @@ export const StatsView: React.FC<StatsViewProps> = ({ wines, history, language, 
         onClick={toggle}
         className="w-full flex items-center justify-between p-4 bg-white dark:bg-stone-900 rounded-2xl shadow-sm border border-stone-100 dark:border-stone-800 mb-4 transition-colors"
     >
-        <span className="text-lg font-bold text-rose-950 dark:text-rose-100">{title}</span>
+        <span className={`font-bold text-rose-950 dark:text-rose-100 ${fs.section}`}>{title}</span>
         <div className="text-stone-400 dark:text-stone-500">
             {isOpen ? <ChevronDown size={24} /> : <ChevronRight size={24} />}
         </div>
     </button>
   );
 
+  const legendText = (value: string) => t('color_' + value);
+
   return (
     <div className="pb-24 p-4">
-        <h1 className="text-2xl font-serif font-bold text-rose-950 dark:text-rose-100 mb-6 px-2 pt-2">{t('stats')}</h1>
+        <h1 className={`font-serif font-bold text-rose-950 dark:text-rose-100 mb-6 px-2 pt-2 ${fs.section}`}>{t('stats')}</h1>
 
         {renderSectionHeader(t('section_cellar_stats'), showCellarStats, () => setShowCellarStats(!showCellarStats))}
         
         {showCellarStats && (
             <div className="animate-in slide-in-from-top-2 fade-in duration-300">
                 {wines.length === 0 ? (
-                    <div className="p-8 text-center text-stone-400 dark:text-stone-600 italic mb-6">{t('empty_cellar')}</div>
+                    <div className={`p-8 text-center text-stone-400 dark:text-stone-600 italic mb-6 ${fs.title}`}>{t('empty_cellar')}</div>
                 ) : (
                     <>
-                        <ChartContainer title={t('stats_color')}>
+                        <ChartContainer title={t('stats_color')} fontSizeClasses={fs}>
                             <ResponsiveContainer width="100%" height="100%">
                                 <PieChart>
                                     <Pie
@@ -184,16 +197,16 @@ export const StatsView: React.FC<StatsViewProps> = ({ wines, history, language, 
                                         dataKey="value"
                                     >
                                         {cellarColorData.map((entry, index) => (
-                                            <Cell key={`cell-${index}`} fill={COLORS_MAP[entry.name] || '#ccc'} stroke={isDark ? '#1c1917' : '#fff'}/>
+                                            <Cell key={`cell-${index}`} fill={COLORS_MAP[Object.keys(COLORS_MAP).find(k => t('color_'+k) === entry.name) || ''] || '#ccc'} stroke={isDark ? '#1c1917' : '#fff'}/>
                                         ))}
                                     </Pie>
                                     <Tooltip contentStyle={tooltipStyle} itemStyle={{color: isDark ? '#fff' : '#333'}}/>
-                                    <Legend verticalAlign="bottom" height={36}/>
+                                    <Legend verticalAlign="bottom" height={36} wrapperStyle={{ fontSize: fs.tick }}/>
                                 </PieChart>
                             </ResponsiveContainer>
                         </ChartContainer>
 
-                        <ChartContainer title={t('stats_region')}>
+                        <ChartContainer title={t('stats_region')} fontSizeClasses={fs}>
                             <ResponsiveContainer width="100%" height="100%">
                                 <BarChart
                                     layout="vertical"
@@ -202,65 +215,65 @@ export const StatsView: React.FC<StatsViewProps> = ({ wines, history, language, 
                                 >
                                     <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke={isDark ? '#44403c' : '#e5e5e5'}/>
                                     <XAxis type="number" hide />
-                                    <YAxis dataKey="name" type="category" width={80} tick={{fontSize: 10, fill: isDark ? '#a8a29e' : '#666'}} interval={0}/>
+                                    <YAxis dataKey="name" type="category" width={80} tick={{fontSize: fs.tick, fill: isDark ? '#a8a29e' : '#666'}} interval={0}/>
                                     <Tooltip cursor={{fill: 'transparent'}} contentStyle={tooltipStyle} itemStyle={{color: isDark ? '#fff' : '#333'}}/>
-                                    <Legend />
+                                    <Legend wrapperStyle={{ fontSize: fs.tick }} formatter={legendText}/>
                                     <Bar dataKey={WineColor.ROUGE} stackId="a" fill={COLORS_MAP[WineColor.ROUGE]} radius={[0, 3, 3, 0]}>
-                                      <LabelList dataKey={WineColor.ROUGE} position="center" fill="white" fontSize={10} formatter={(val: number) => val > 0 ? val : ''} />
+                                      <LabelList dataKey={WineColor.ROUGE} position="center" fill="white" fontSize={fs.label} formatter={(val: number) => val > 0 ? val : ''} />
                                     </Bar>
                                     <Bar dataKey={WineColor.BLANC} stackId="a" fill={COLORS_MAP[WineColor.BLANC]}>
-                                      <LabelList dataKey={WineColor.BLANC} position="center" fill="black" fontSize={10} formatter={(val: number) => val > 0 ? val : ''} />
+                                      <LabelList dataKey={WineColor.BLANC} position="center" fill="black" fontSize={fs.label} formatter={(val: number) => val > 0 ? val : ''} />
                                     </Bar>
                                     <Bar dataKey={WineColor.ROSE} stackId="a" fill={COLORS_MAP[WineColor.ROSE]}>
-                                      <LabelList dataKey={WineColor.ROSE} position="center" fill="white" fontSize={10} formatter={(val: number) => val > 0 ? val : ''} />
+                                      <LabelList dataKey={WineColor.ROSE} position="center" fill="white" fontSize={fs.label} formatter={(val: number) => val > 0 ? val : ''} />
                                     </Bar>
                                 </BarChart>
                             </ResponsiveContainer>
                         </ChartContainer>
 
-                        <ChartContainer title={t('stats_country')}>
+                        <ChartContainer title={t('stats_country')} fontSizeClasses={fs}>
                             <ResponsiveContainer width="100%" height="100%">
                                 <BarChart
                                     data={cellarCountryData}
                                     margin={{ top: 5, right: 5, left: -20, bottom: 5 }}
                                 >
                                     <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={isDark ? '#44403c' : '#e5e5e5'}/>
-                                    <XAxis dataKey="name" tick={{fontSize: 10, fill: isDark ? '#a8a29e' : '#666'}} interval={0}/>
-                                    <YAxis tick={{fontSize: 10, fill: isDark ? '#a8a29e' : '#666'}} allowDecimals={false}/>
+                                    <XAxis dataKey="name" tick={{fontSize: fs.tick, fill: isDark ? '#a8a29e' : '#666'}} interval={0}/>
+                                    <YAxis tick={{fontSize: fs.tick, fill: isDark ? '#a8a29e' : '#666'}} allowDecimals={false}/>
                                     <Tooltip cursor={{fill: isDark ? '#292524' : '#f5f5f4'}} contentStyle={tooltipStyle} itemStyle={{color: isDark ? '#fff' : '#333'}}/>
-                                    <Legend />
+                                    <Legend wrapperStyle={{ fontSize: fs.tick }} formatter={legendText}/>
                                     <Bar dataKey={WineColor.ROUGE} stackId="a" fill={COLORS_MAP[WineColor.ROUGE]} radius={[3, 3, 0, 0]}>
-                                      <LabelList dataKey={WineColor.ROUGE} position="center" fill="white" fontSize={10} formatter={(val: number) => val > 0 ? val : ''} />
+                                      <LabelList dataKey={WineColor.ROUGE} position="center" fill="white" fontSize={fs.label} formatter={(val: number) => val > 0 ? val : ''} />
                                     </Bar>
                                     <Bar dataKey={WineColor.BLANC} stackId="a" fill={COLORS_MAP[WineColor.BLANC]}>
-                                      <LabelList dataKey={WineColor.BLANC} position="center" fill="black" fontSize={10} formatter={(val: number) => val > 0 ? val : ''} />
+                                      <LabelList dataKey={WineColor.BLANC} position="center" fill="black" fontSize={fs.label} formatter={(val: number) => val > 0 ? val : ''} />
                                     </Bar>
                                     <Bar dataKey={WineColor.ROSE} stackId="a" fill={COLORS_MAP[WineColor.ROSE]}>
-                                      <LabelList dataKey={WineColor.ROSE} position="center" fill="white" fontSize={10} formatter={(val: number) => val > 0 ? val : ''} />
+                                      <LabelList dataKey={WineColor.ROSE} position="center" fill="white" fontSize={fs.label} formatter={(val: number) => val > 0 ? val : ''} />
                                     </Bar>
                                 </BarChart>
                             </ResponsiveContainer>
                         </ChartContainer>
 
-                        <ChartContainer title={t('stats_year')}>
+                        <ChartContainer title={t('stats_year')} fontSizeClasses={fs}>
                             <ResponsiveContainer width="100%" height="100%">
                                 <BarChart
                                     data={cellarYearData}
                                     margin={{ top: 20, right: 5, left: -20, bottom: 5 }}
                                 >
                                     <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={isDark ? '#44403c' : '#e5e5e5'}/>
-                                    <XAxis dataKey="year" tick={{fontSize: 10, fill: isDark ? '#a8a29e' : '#666'}}/>
-                                    <YAxis tick={{fontSize: 10, fill: isDark ? '#a8a29e' : '#666'}} allowDecimals={false}/>
+                                    <XAxis dataKey="year" tick={{fontSize: fs.tick, fill: isDark ? '#a8a29e' : '#666'}}/>
+                                    <YAxis tick={{fontSize: fs.tick, fill: isDark ? '#a8a29e' : '#666'}} allowDecimals={false}/>
                                     <Tooltip cursor={{fill: isDark ? '#292524' : '#f5f5f4'}} contentStyle={tooltipStyle} itemStyle={{color: isDark ? '#fff' : '#333'}}/>
-                                    <Legend />
+                                    <Legend wrapperStyle={{ fontSize: fs.tick }} formatter={legendText}/>
                                     <Bar dataKey={WineColor.ROUGE} stackId="a" fill={COLORS_MAP[WineColor.ROUGE]} radius={[4, 4, 0, 0]}>
-                                      <LabelList dataKey={WineColor.ROUGE} position="center" fill="white" fontSize={10} formatter={(val: number) => val > 0 ? val : ''} />
+                                      <LabelList dataKey={WineColor.ROUGE} position="center" fill="white" fontSize={fs.label} formatter={(val: number) => val > 0 ? val : ''} />
                                     </Bar>
                                     <Bar dataKey={WineColor.BLANC} stackId="a" fill={COLORS_MAP[WineColor.BLANC]}>
-                                      <LabelList dataKey={WineColor.BLANC} position="center" fill="black" fontSize={10} formatter={(val: number) => val > 0 ? val : ''} />
+                                      <LabelList dataKey={WineColor.BLANC} position="center" fill="black" fontSize={fs.label} formatter={(val: number) => val > 0 ? val : ''} />
                                     </Bar>
                                     <Bar dataKey={WineColor.ROSE} stackId="a" fill={COLORS_MAP[WineColor.ROSE]}>
-                                      <LabelList dataKey={WineColor.ROSE} position="center" fill="white" fontSize={10} formatter={(val: number) => val > 0 ? val : ''} />
+                                      <LabelList dataKey={WineColor.ROSE} position="center" fill="white" fontSize={fs.label} formatter={(val: number) => val > 0 ? val : ''} />
                                     </Bar>
                                 </BarChart>
                             </ResponsiveContainer>
@@ -275,10 +288,10 @@ export const StatsView: React.FC<StatsViewProps> = ({ wines, history, language, 
         {showHistoryStats && (
              <div className="animate-in slide-in-from-top-2 fade-in duration-300">
                 {history.length === 0 ? (
-                    <div className="p-8 text-center text-stone-400 dark:text-stone-600 italic mb-6">{t('empty_history')}</div>
+                    <div className={`p-8 text-center text-stone-400 dark:text-stone-600 italic mb-6 ${fs.title}`}>{t('empty_history')}</div>
                 ) : (
                     <>
-                        <ChartContainer title={t('stats_hist_region_color')}>
+                        <ChartContainer title={t('stats_hist_region_color')} fontSizeClasses={fs}>
                             <ResponsiveContainer width="100%" height="100%">
                                 <BarChart
                                     layout="vertical"
@@ -287,57 +300,57 @@ export const StatsView: React.FC<StatsViewProps> = ({ wines, history, language, 
                                 >
                                     <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke={isDark ? '#44403c' : '#e5e5e5'}/>
                                     <XAxis type="number" hide />
-                                    <YAxis dataKey="name" type="category" width={80} tick={{fontSize: 10, fill: isDark ? '#a8a29e' : '#666'}} interval={0}/>
+                                    <YAxis dataKey="name" type="category" width={80} tick={{fontSize: fs.tick, fill: isDark ? '#a8a29e' : '#666'}} interval={0}/>
                                     <Tooltip cursor={{fill: 'transparent'}} contentStyle={tooltipStyle} itemStyle={{color: isDark ? '#fff' : '#333'}}/>
-                                    <Legend />
+                                    <Legend wrapperStyle={{ fontSize: fs.tick }} formatter={legendText}/>
                                     <Bar dataKey={WineColor.ROUGE} stackId="a" fill={COLORS_MAP[WineColor.ROUGE]} radius={[0, 3, 3, 0]}>
-                                      <LabelList dataKey={WineColor.ROUGE} position="center" fill="white" fontSize={10} formatter={(val: number) => val > 0 ? val : ''} />
+                                      <LabelList dataKey={WineColor.ROUGE} position="center" fill="white" fontSize={fs.label} formatter={(val: number) => val > 0 ? val : ''} />
                                     </Bar>
                                     <Bar dataKey={WineColor.BLANC} stackId="a" fill={COLORS_MAP[WineColor.BLANC]}>
-                                      <LabelList dataKey={WineColor.BLANC} position="center" fill="black" fontSize={10} formatter={(val: number) => val > 0 ? val : ''} />
+                                      <LabelList dataKey={WineColor.BLANC} position="center" fill="black" fontSize={fs.label} formatter={(val: number) => val > 0 ? val : ''} />
                                     </Bar>
                                     <Bar dataKey={WineColor.ROSE} stackId="a" fill={COLORS_MAP[WineColor.ROSE]}>
-                                      <LabelList dataKey={WineColor.ROSE} position="center" fill="white" fontSize={10} formatter={(val: number) => val > 0 ? val : ''} />
+                                      <LabelList dataKey={WineColor.ROSE} position="center" fill="white" fontSize={fs.label} formatter={(val: number) => val > 0 ? val : ''} />
                                     </Bar>
                                 </BarChart>
                             </ResponsiveContainer>
                         </ChartContainer>
 
-                         <ChartContainer title={t('stats_hist_avg_rating_red')}>
+                         <ChartContainer title={t('stats_hist_avg_rating_red')} fontSizeClasses={fs}>
                             <ResponsiveContainer width="100%" height="100%">
                                 <BarChart
                                     data={histAvgRatingRed}
                                     margin={{ top: 20, right: 5, left: -20, bottom: 5 }}
                                 >
                                     <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={isDark ? '#44403c' : '#e5e5e5'}/>
-                                    <XAxis dataKey="name" tick={{fontSize: 10, fill: isDark ? '#a8a29e' : '#666'}} interval={0} />
-                                    <YAxis domain={[0, 5]} tick={{fontSize: 10, fill: isDark ? '#a8a29e' : '#666'}} />
+                                    <XAxis dataKey="name" tick={{fontSize: fs.tick, fill: isDark ? '#a8a29e' : '#666'}} interval={0} />
+                                    <YAxis domain={[0, 5]} tick={{fontSize: fs.tick, fill: isDark ? '#a8a29e' : '#666'}} />
                                     <Tooltip cursor={{fill: isDark ? '#292524' : '#f5f5f4'}} contentStyle={tooltipStyle} itemStyle={{color: isDark ? '#fff' : '#333'}}/>
-                                    <Bar dataKey="rating" name="Note Moy." fill={COLORS_MAP[WineColor.ROUGE]} radius={[4, 4, 0, 0]} barSize={40}>
-                                      <LabelList dataKey="rating" position="top" fill={isDark ? "#a8a29e" : "#44403c"} fontSize={10} />
+                                    <Bar dataKey="rating" name={t('avg_rating_short')} fill={COLORS_MAP[WineColor.ROUGE]} radius={[4, 4, 0, 0]} barSize={40}>
+                                      <LabelList dataKey="rating" position="top" fill={isDark ? "#a8a29e" : "#44403c"} fontSize={fs.label} />
                                     </Bar>
                                 </BarChart>
                             </ResponsiveContainer>
                         </ChartContainer>
 
-                        <ChartContainer title={t('stats_hist_avg_rating_white')}>
+                        <ChartContainer title={t('stats_hist_avg_rating_white')} fontSizeClasses={fs}>
                             <ResponsiveContainer width="100%" height="100%">
                                 <BarChart
                                     data={histAvgRatingWhite}
                                     margin={{ top: 20, right: 5, left: -20, bottom: 5 }}
                                 >
                                     <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={isDark ? '#44403c' : '#e5e5e5'}/>
-                                    <XAxis dataKey="name" tick={{fontSize: 10, fill: isDark ? '#a8a29e' : '#666'}} interval={0} />
-                                    <YAxis domain={[0, 5]} tick={{fontSize: 10, fill: isDark ? '#a8a29e' : '#666'}} />
+                                    <XAxis dataKey="name" tick={{fontSize: fs.tick, fill: isDark ? '#a8a29e' : '#666'}} interval={0} />
+                                    <YAxis domain={[0, 5]} tick={{fontSize: fs.tick, fill: isDark ? '#a8a29e' : '#666'}} />
                                     <Tooltip cursor={{fill: isDark ? '#292524' : '#f5f5f4'}} contentStyle={tooltipStyle} itemStyle={{color: isDark ? '#fff' : '#333'}}/>
-                                    <Bar dataKey="rating" name="Note Moy." fill={COLORS_MAP[WineColor.BLANC]} radius={[4, 4, 0, 0]} barSize={40}>
-                                      <LabelList dataKey="rating" position="top" fill={isDark ? "#a8a29e" : "#44403c"} fontSize={10} />
+                                    <Bar dataKey="rating" name={t('avg_rating_short')} fill={COLORS_MAP[WineColor.BLANC]} radius={[4, 4, 0, 0]} barSize={40}>
+                                      <LabelList dataKey="rating" position="top" fill={isDark ? "#a8a29e" : "#44403c"} fontSize={fs.label} />
                                     </Bar>
                                 </BarChart>
                             </ResponsiveContainer>
                         </ChartContainer>
 
-                        <ChartContainer title={t('stats_hist_cons_color')}>
+                        <ChartContainer title={t('stats_hist_cons_color')} fontSizeClasses={fs}>
                             <ResponsiveContainer width="100%" height="100%">
                                 <PieChart>
                                     <Pie
@@ -351,16 +364,16 @@ export const StatsView: React.FC<StatsViewProps> = ({ wines, history, language, 
                                         dataKey="value"
                                     >
                                         {histColorData.map((entry, index) => (
-                                            <Cell key={`cell-${index}`} fill={COLORS_MAP[entry.name] || '#ccc'} stroke={isDark ? '#1c1917' : '#fff'}/>
+                                            <Cell key={`cell-${index}`} fill={COLORS_MAP[Object.keys(COLORS_MAP).find(k => t('color_'+k) === entry.name) || ''] || '#ccc'} stroke={isDark ? '#1c1917' : '#fff'}/>
                                         ))}
                                     </Pie>
                                     <Tooltip contentStyle={tooltipStyle} itemStyle={{color: isDark ? '#fff' : '#333'}}/>
-                                    <Legend verticalAlign="bottom" height={36}/>
+                                    <Legend verticalAlign="bottom" height={36} wrapperStyle={{ fontSize: fs.tick }}/>
                                 </PieChart>
                             </ResponsiveContainer>
                         </ChartContainer>
 
-                        <ChartContainer title={t('stats_hist_cons_region')}>
+                        <ChartContainer title={t('stats_hist_cons_region')} fontSizeClasses={fs}>
                             <ResponsiveContainer width="100%" height="100%">
                                 <PieChart>
                                     <Pie
@@ -380,12 +393,12 @@ export const StatsView: React.FC<StatsViewProps> = ({ wines, history, language, 
                                         ))}
                                     </Pie>
                                     <Tooltip contentStyle={tooltipStyle} itemStyle={{color: isDark ? '#fff' : '#333'}}/>
-                                    <Legend verticalAlign="bottom" height={36}/>
+                                    <Legend verticalAlign="bottom" height={36} wrapperStyle={{ fontSize: fs.tick }}/>
                                 </PieChart>
                             </ResponsiveContainer>
                         </ChartContainer>
 
-                         <ChartContainer title={t('stats_hist_cons_year')}>
+                         <ChartContainer title={t('stats_hist_cons_year')} fontSizeClasses={fs}>
                             <ResponsiveContainer width="100%" height="100%">
                                 <PieChart>
                                     <Pie
@@ -403,12 +416,12 @@ export const StatsView: React.FC<StatsViewProps> = ({ wines, history, language, 
                                         ))}
                                     </Pie>
                                     <Tooltip contentStyle={tooltipStyle} itemStyle={{color: isDark ? '#fff' : '#333'}}/>
-                                    <Legend verticalAlign="bottom" height={36}/>
+                                    <Legend verticalAlign="bottom" height={36} wrapperStyle={{ fontSize: fs.tick }}/>
                                 </PieChart>
                             </ResponsiveContainer>
                         </ChartContainer>
 
-                         <ChartContainer title={t('stats_hist_cons_country')}>
+                         <ChartContainer title={t('stats_hist_cons_country')} fontSizeClasses={fs}>
                             <ResponsiveContainer width="100%" height="100%">
                                 <PieChart>
                                     <Pie
@@ -428,7 +441,7 @@ export const StatsView: React.FC<StatsViewProps> = ({ wines, history, language, 
                                         ))}
                                     </Pie>
                                     <Tooltip contentStyle={tooltipStyle} itemStyle={{color: isDark ? '#fff' : '#333'}}/>
-                                    <Legend verticalAlign="bottom" height={36}/>
+                                    <Legend verticalAlign="bottom" height={36} wrapperStyle={{ fontSize: fs.tick }}/>
                                 </PieChart>
                             </ResponsiveContainer>
                         </ChartContainer>

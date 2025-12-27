@@ -76,10 +76,18 @@ export interface LocationData {
   regions: Record<string, string[]>;
 }
 
-export interface BackupData {
+export interface Cellar {
+  id: string;
+  name: string;
+  image: string | null;
   wines: Wine[];
   history: HistoryEntry[];
   settings: AppSettings;
+}
+
+export interface BackupData {
+  cellars: Cellar[];
+  activeCellarId: string;
   locations?: LocationData;
   timestamp: string;
 }
