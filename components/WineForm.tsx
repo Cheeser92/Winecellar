@@ -1,11 +1,12 @@
 
 import React, { useState, useRef, useEffect } from 'react';
-import { Camera, X, Minus, Plus, Calendar as CalendarIcon, Pencil } from 'lucide-react';
+import { Camera, X, Minus, Plus, Calendar as CalendarIcon, Pencil, Loader2 } from 'lucide-react';
 import { Wine, WineColor, AgingPotential, Language, LocationData, AppFontSize } from '../types';
 import { COLORS, AGING_POTENTIALS, STRENGTHS } from '../constants';
 import { getTranslation } from '../translations';
 import { CountrySelect } from './CountrySelect';
 import { RegionSelect } from './RegionSelect';
+import { GoogleGenAI, Type } from "@google/genai";
 
 interface WineFormProps {
   onSave: (wine: Omit<Wine, 'id'>) => void;
@@ -59,6 +60,7 @@ export const WineForm: React.FC<WineFormProps> = ({
     location: initialData?.location || availableLocations[0],
   });
 
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
   const isEdit = !!initialData;
   const fileInputRef = useRef<HTMLInputElement>(null);
   const dateInputRef = useRef<HTMLInputElement>(null);
@@ -84,6 +86,49 @@ export const WineForm: React.FC<WineFormProps> = ({
     }));
   };
 
+  const analyzeLabel = async (base64Data: string) => {
+    if (isEdit) return; // Uniquement pour les nouvelles saisies
+
+    setIsAnalyzing(true);
+    try {
+      const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+      const base64Content = base64Data.split(',')[1];
+      
+      const response = await ai.models.generateContent({
+        model: 'gemini-3-flash-preview',
+        contents: [{
+          parts: [
+            { text: "Extract the wine name (domain and cuvée) and the vintage year from this bottle label. Return only JSON format with 'name' and 'year' keys. If the year is not found, use the current year." },
+            { inlineData: { mimeType: 'image/jpeg', data: base64Content } }
+          ]
+        }],
+        config: {
+          responseMimeType: "application/json",
+          responseSchema: {
+            type: Type.OBJECT,
+            properties: {
+              name: { type: Type.STRING },
+              year: { type: Type.INTEGER }
+            },
+            required: ["name", "year"]
+          }
+        }
+      });
+
+      const result = JSON.parse(response.text || '{}');
+      
+      setFormData(prev => ({
+        ...prev,
+        name: prev.name || result.name || '',
+        year: (!prev.name || prev.year === new Date().getFullYear()) ? (result.year || prev.year) : prev.year
+      }));
+    } catch (error) {
+      console.error("AI Analysis failed:", error);
+    } finally {
+      setIsAnalyzing(false);
+    }
+  };
+
   const handleQuantityChange = (newQty: number) => setFormData(prev => ({ ...prev, quantity: Math.max(1, newQty) }));
 
   const handleCountryChange = (newCountry: string) => {
@@ -99,7 +144,11 @@ export const WineForm: React.FC<WineFormProps> = ({
     const file = e.target.files?.[0];
     if (file) {
       const reader = new FileReader();
-      reader.onloadend = () => setFormData(prev => ({ ...prev, image: reader.result as string }));
+      reader.onloadend = () => {
+        const base64 = reader.result as string;
+        setFormData(prev => ({ ...prev, image: base64 }));
+        analyzeLabel(base64);
+      };
       reader.readAsDataURL(file);
     }
   };
@@ -142,6 +191,12 @@ export const WineForm: React.FC<WineFormProps> = ({
             <div className="absolute inset-0 bg-black/20 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
                <Pencil size={24} className="text-white" />
             </div>
+            {isAnalyzing && (
+              <div className="absolute inset-0 bg-black/40 flex flex-col items-center justify-center text-white backdrop-blur-sm transition-all rounded-lg">
+                <Loader2 size={32} className="animate-spin mb-2" />
+                <span className="font-bold text-sm uppercase tracking-widest">{t('analyzing_label')}</span>
+              </div>
+            )}
             <button 
               type="button" 
               onClick={(e) => { e.stopPropagation(); setFormData(prev => ({ ...prev, image: null })); }} 

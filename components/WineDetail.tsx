@@ -1,6 +1,6 @@
 
 import React, { useState, useRef } from 'react';
-import { ArrowLeft, Check, Calendar, Clock, Tag, Trash2, Star, Pencil, Copy, Eye, Camera, ShoppingBag, Wine as WineIcon, Minus, Plus, Move, Warehouse } from 'lucide-react';
+import { ArrowLeft, Check, Calendar, Clock, Tag, Trash2, Star, Pencil, Copy, Eye, Camera, ShoppingBag, Wine as WineIcon, Minus, Plus, Move, Warehouse, Map as MapIcon } from 'lucide-react';
 import { Wine, ConsumptionStatus, HistoryEntry, Language, AppFontSize, Cellar } from '../types';
 import { RATINGS, STRENGTHS } from '../constants';
 import { getTranslation } from '../translations';
@@ -98,6 +98,10 @@ export const WineDetail: React.FC<WineDetailProps> = ({ wine, cellars, currentCe
     [ConsumptionStatus.ORANGE]: t('ready_drink'),
     [ConsumptionStatus.GREEN]: t('wait'),
   };
+
+  // Generate Map Query
+  const mapSearchQuery = encodeURIComponent(`${wine.name} ${wine.region} ${wine.country}`);
+  const mapUrl = `https://maps.google.com/maps?q=${mapSearchQuery}&t=&z=13&ie=UTF8&iwloc=&output=embed`;
 
   return (
     <div className={`min-h-full relative ${wine.image ? 'bg-stone-900' : 'bg-stone-100 dark:bg-black'} transition-colors duration-300`}>
@@ -206,6 +210,26 @@ export const WineDetail: React.FC<WineDetailProps> = ({ wine, cellars, currentCe
 
                <div className="col-span-2 border-t border-stone-100 dark:border-stone-800 pt-4"><p className="text-stone-400 dark:text-stone-500 text-xs font-bold uppercase mb-2 flex items-center gap-1"><Tag size={12}/> {t('tag')}</p><div className="flex flex-wrap gap-2">{wine.tag ? wine.tag.split(',').map((tVal, i) => (<span key={i} className={`bg-stone-100 dark:bg-stone-800 text-stone-600 dark:text-stone-300 px-2.5 py-1 rounded-md font-medium border border-stone-200 dark:border-stone-700 ${fs.infoText}`}>{tVal.trim()}</span>)) : <span className="text-stone-300 dark:text-stone-600 italic">{t('no_tag')}</span>}</div></div>
                <div className="col-span-2 bg-amber-50/80 dark:bg-amber-900/10 p-4 rounded-xl border border-amber-100 dark:border-amber-900/30"><p className="text-amber-800 dark:text-amber-500 text-xs font-bold uppercase mb-1">{t('personal_note')}</p><p className={`text-stone-800 dark:text-stone-200 italic leading-relaxed ${fs.infoText}`}>"{wine.note || t('no_note')}"</p></div>
+          </div>
+
+          {/* Winery Location Map */}
+          <div className="space-y-3 pt-4 border-t border-stone-100 dark:border-stone-800">
+             <div className="flex items-center gap-2 text-rose-900 dark:text-rose-400">
+                <MapIcon size={18} />
+                <span className={`font-bold uppercase tracking-wider ${fs.infoText}`}>{t('winery_location')}</span>
+             </div>
+             <div className="w-full h-48 rounded-2xl overflow-hidden shadow-inner border border-stone-100 dark:border-stone-800">
+                <iframe 
+                  width="100%" 
+                  height="100%" 
+                  frameBorder="0" 
+                  scrolling="no" 
+                  marginHeight={0} 
+                  marginWidth={0} 
+                  src={mapUrl}
+                  className="grayscale dark:invert-[0.9] dark:hue-rotate-180 transition-all opacity-80 hover:opacity-100"
+                />
+             </div>
           </div>
 
           <div className="pt-4 flex gap-3">

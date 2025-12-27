@@ -69,6 +69,10 @@ export const translations = {
     image: "Image",
     take_photo: "Prendre une photo",
     gallery: "ou choisir depuis la galerie",
+    analyzing_label: "Analyse de l'étiquette...",
+    
+    // Map
+    winery_location: "Localisation du domaine",
     
     // Stats
     bottles: "Bouteilles",
@@ -224,6 +228,10 @@ export const translations = {
     image: "Image",
     take_photo: "Take a photo",
     gallery: "or choose from gallery",
+    analyzing_label: "Analyzing label...",
+    
+    // Map
+    winery_location: "Winery Location",
 
     bottles: "Bottles",
     consumed: "Consumed",
