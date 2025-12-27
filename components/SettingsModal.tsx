@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect, useRef } from 'react';
-import { X, Moon, Sun, Languages, Library, Check, Download, Upload, Database, AlertTriangle, Type } from 'lucide-react';
+import { X, Moon, Sun, Languages, Library, Check, Download, Upload, Database, AlertTriangle, Type, Info } from 'lucide-react';
 import { AppSettings, Language, Theme, BackupData, AppFontSize } from '../types';
 import { getTranslation } from '../translations';
 
@@ -49,7 +49,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, s
       try {
         const result = event.target?.result as string;
         const json = JSON.parse(result);
-        if (json && Array.isArray(json.wines) && Array.isArray(json.history) && json.settings) {
+        if (json && Array.isArray(json.cellars) && json.activeCellarId) {
             setPendingImportData(json as BackupData);
             setShowImportModal(true);
         } else {
@@ -95,31 +95,45 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, s
           <h2 className={`font-serif font-bold text-stone-900 dark:text-stone-100 ${fs.xl}`}>{t('settings')}</h2>
           <button onClick={onClose} className="text-stone-400 hover:text-stone-600 dark:hover:text-stone-200 bg-stone-100 dark:bg-stone-800 p-2 rounded-full transition-colors"><X size={20} /></button>
         </div>
-        <div className="p-6 space-y-8 overflow-y-auto no-scrollbar">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3"><div className="p-2.5 rounded-full bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400">{localSettings.theme === 'dark' ? <Moon size={20}/> : <Sun size={20}/>}</div><span className={`font-bold text-stone-800 dark:text-stone-200 ${fs.lg}`}>{t('theme')}</span></div>
-            <button onClick={() => setLocalSettings(prev => ({ ...prev, theme: prev.theme === 'dark' ? 'light' : 'dark' }))} className={`relative inline-flex h-7 w-12 items-center rounded-full transition-colors focus:outline-none ${localSettings.theme === 'dark' ? 'bg-indigo-600' : 'bg-stone-200'}`}><span className={`inline-block h-5 w-5 transform rounded-full bg-white transition-transform ${localSettings.theme === 'dark' ? 'translate-x-6' : 'translate-x-1'}`} /></button>
-          </div>
+        <div className="p-6 space-y-6 overflow-y-auto no-scrollbar">
           
-          <div className="flex items-center justify-between">
-             <div className="flex items-center gap-3"><div className="p-2.5 rounded-full bg-rose-50 dark:bg-rose-900/30 text-rose-600 dark:text-rose-400"><Languages size={20}/></div><span className={`font-bold text-stone-800 dark:text-stone-200 ${fs.lg}`}>{t('language')}</span></div>
-            <select value={localSettings.language} onChange={(e) => setLocalSettings(prev => ({ ...prev, language: e.target.value as Language }))} className={`bg-white dark:bg-stone-800 border border-stone-200 dark:border-stone-700 text-stone-800 dark:text-stone-200 rounded-lg focus:ring-rose-500 focus:border-rose-500 block p-2 ${fs.base}`}><option value="fr">Français</option><option value="en">English</option></select>
+          <div className="bg-stone-50 dark:bg-stone-800/40 p-3 rounded-xl border border-stone-100 dark:border-stone-800 flex items-start gap-3">
+             <Info size={18} className="text-rose-900 dark:text-rose-400 flex-shrink-0 mt-0.5" />
+             <p className={`text-stone-500 dark:text-stone-400 leading-tight ${fs.base}`}>{t('settings_scope_desc')}</p>
           </div>
 
-          <div className="space-y-3">
-             <div className="flex items-center gap-3"><div className="p-2.5 rounded-full bg-purple-50 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400"><Type size={20}/></div><span className={`font-bold text-stone-800 dark:text-stone-200 ${fs.lg}`}>{t('font_size')}</span></div>
-            <div className="flex gap-2 p-1 bg-white dark:bg-stone-800/50 rounded-xl border border-stone-100 dark:border-stone-800">
-                <button onClick={() => setFontSize('small')} className={`flex-1 py-2 text-xs font-semibold rounded-lg transition-all ${localSettings.fontSize === 'small' ? 'bg-stone-100 dark:bg-stone-700 shadow-sm text-rose-900 dark:text-white' : 'text-stone-500 dark:text-stone-400 hover:bg-stone-50/50 dark:hover:bg-stone-700/50'}`}>{t('font_small')}</button>
-                <button onClick={() => setFontSize('medium')} className={`flex-1 py-2 text-sm font-semibold rounded-lg transition-all ${(!localSettings.fontSize || localSettings.fontSize === 'medium') ? 'bg-stone-100 dark:bg-stone-700 shadow-sm text-rose-900 dark:text-white' : 'text-stone-500 dark:text-stone-400 hover:bg-stone-50/50 dark:hover:bg-stone-700/50'}`}>{t('font_medium')}</button>
-                <button onClick={() => setFontSize('large')} className={`flex-1 py-2 text-base font-semibold rounded-lg transition-all ${localSettings.fontSize === 'large' ? 'bg-stone-100 dark:bg-stone-700 shadow-sm text-rose-900 dark:text-white' : 'text-stone-500 dark:text-stone-400 hover:bg-stone-50/50 dark:hover:bg-stone-700/50'}`}>{t('font_large')}</button>
+          <section className="space-y-5">
+            <h3 className={`font-bold text-rose-900 dark:text-rose-400 uppercase tracking-widest border-b border-stone-100 dark:border-stone-800 pb-2 ${fs.label}`}>{t('global_settings')}</h3>
+            
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3"><div className="p-2.5 rounded-full bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400">{localSettings.theme === 'dark' ? <Moon size={20}/> : <Sun size={20}/>}</div><span className={`font-bold text-stone-800 dark:text-stone-200 ${fs.lg}`}>{t('theme')}</span></div>
+              <button onClick={() => setLocalSettings(prev => ({ ...prev, theme: prev.theme === 'dark' ? 'light' : 'dark' }))} className={`relative inline-flex h-7 w-12 items-center rounded-full transition-colors focus:outline-none ${localSettings.theme === 'dark' ? 'bg-indigo-600' : 'bg-stone-200'}`}><span className={`inline-block h-5 w-5 transform rounded-full bg-white transition-transform ${localSettings.theme === 'dark' ? 'translate-x-6' : 'translate-x-1'}`} /></button>
             </div>
-          </div>
+            
+            <div className="flex items-center justify-between">
+               <div className="flex items-center gap-3"><div className="p-2.5 rounded-full bg-rose-50 dark:bg-rose-900/30 text-rose-600 dark:text-rose-400"><Languages size={20}/></div><span className={`font-bold text-stone-800 dark:text-stone-200 ${fs.lg}`}>{t('language')}</span></div>
+              <select value={localSettings.language} onChange={(e) => setLocalSettings(prev => ({ ...prev, language: e.target.value as Language }))} className={`bg-white dark:bg-stone-800 border border-stone-200 dark:border-stone-700 text-stone-800 dark:text-stone-200 rounded-lg focus:ring-rose-500 focus:border-rose-500 block p-2 ${fs.base}`}><option value="fr">Français</option><option value="en">English</option></select>
+            </div>
 
-          <div className="space-y-3">
-             <div className="flex items-center gap-3"><div className="p-2.5 rounded-full bg-emerald-50 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400"><Library size={20}/></div><span className={`font-bold text-stone-800 dark:text-stone-200 ${fs.lg}`}>{t('shelf_count')}</span></div>
-            <div className="flex items-center gap-4 bg-white dark:bg-stone-800/50 p-4 rounded-xl border border-stone-100 dark:border-stone-800"><input type="range" min="0" max="10" value={localSettings.shelfCount} onChange={handleShelfChange} className="w-full h-2 bg-stone-200 dark:bg-stone-700 rounded-lg appearance-none cursor-pointer accent-rose-900 dark:accent-rose-500"/><div className={`w-12 h-10 flex items-center justify-center bg-white dark:bg-stone-700 rounded-lg shadow-sm border border-stone-200 dark:border-stone-600 font-bold text-stone-800 dark:text-stone-100 ${fs.lg}`}>{localSettings.shelfCount}</div></div>
-            <p className={`text-stone-500 dark:text-stone-400 px-1 leading-relaxed ${fs.base}`}>{t('shelf_count_desc')}</p>
-          </div>
+            <div className="space-y-3">
+               <div className="flex items-center gap-3"><div className="p-2.5 rounded-full bg-purple-50 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400"><Type size={20}/></div><span className={`font-bold text-stone-800 dark:text-stone-200 ${fs.lg}`}>{t('font_size')}</span></div>
+              <div className="flex gap-2 p-1 bg-white dark:bg-stone-800/50 rounded-xl border border-stone-100 dark:border-stone-800">
+                  <button onClick={() => setFontSize('small')} className={`flex-1 py-2 text-xs font-semibold rounded-lg transition-all ${localSettings.fontSize === 'small' ? 'bg-stone-100 dark:bg-stone-700 shadow-sm text-rose-900 dark:text-white' : 'text-stone-500 dark:text-stone-400 hover:bg-stone-50/50 dark:hover:bg-stone-700/50'}`}>{t('font_small')}</button>
+                  <button onClick={() => setFontSize('medium')} className={`flex-1 py-2 text-sm font-semibold rounded-lg transition-all ${(!localSettings.fontSize || localSettings.fontSize === 'medium') ? 'bg-stone-100 dark:bg-stone-700 shadow-sm text-rose-900 dark:text-white' : 'text-stone-500 dark:text-stone-400 hover:bg-stone-50/50 dark:hover:bg-stone-700/50'}`}>{t('font_medium')}</button>
+                  <button onClick={() => setFontSize('large')} className={`flex-1 py-2 text-base font-semibold rounded-lg transition-all ${localSettings.fontSize === 'large' ? 'bg-stone-100 dark:bg-stone-700 shadow-sm text-rose-900 dark:text-white' : 'text-stone-500 dark:text-stone-400 hover:bg-stone-50/50 dark:hover:bg-stone-700/50'}`}>{t('font_large')}</button>
+              </div>
+            </div>
+          </section>
+
+          <section className="space-y-5 pt-2">
+            <h3 className={`font-bold text-rose-900 dark:text-rose-400 uppercase tracking-widest border-b border-stone-100 dark:border-stone-800 pb-2 ${fs.label}`}>{t('cellar_specific_settings')}</h3>
+            
+            <div className="space-y-3">
+               <div className="flex items-center gap-3"><div className="p-2.5 rounded-full bg-emerald-50 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400"><Library size={20}/></div><span className={`font-bold text-stone-800 dark:text-stone-200 ${fs.lg}`}>{t('shelf_count')}</span></div>
+              <div className="flex items-center gap-4 bg-white dark:bg-stone-800/50 p-4 rounded-xl border border-stone-100 dark:border-stone-800"><input type="range" min="0" max="10" value={localSettings.shelfCount} onChange={handleShelfChange} className="w-full h-2 bg-stone-200 dark:bg-stone-700 rounded-lg appearance-none cursor-pointer accent-rose-900 dark:accent-rose-500"/><div className={`w-12 h-10 flex items-center justify-center bg-white dark:bg-stone-700 rounded-lg shadow-sm border border-stone-200 dark:border-stone-600 font-bold text-stone-800 dark:text-stone-100 ${fs.lg}`}>{localSettings.shelfCount}</div></div>
+              <p className={`text-stone-500 dark:text-stone-400 px-1 leading-relaxed ${fs.base}`}>{t('shelf_count_desc')}</p>
+            </div>
+          </section>
 
            <div className="space-y-3 pt-4 border-t border-stone-100 dark:border-stone-800">
              <div className="flex items-center gap-3"><div className="p-2.5 rounded-full bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400"><Database size={20}/></div><span className={`font-bold text-stone-800 dark:text-stone-200 ${fs.lg}`}>{t('backup')}</span></div>

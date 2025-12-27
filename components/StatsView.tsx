@@ -3,11 +3,13 @@ import React, { useState } from 'react';
 import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer, CartesianGrid, LabelList } from 'recharts';
 import { Wine, WineColor, Language, Theme, HistoryEntry, AppFontSize } from '../types';
 import { getTranslation } from '../translations';
-import { ChevronDown, ChevronRight } from 'lucide-react';
+import { ChevronDown, ChevronRight, RefreshCw } from 'lucide-react';
 
 interface StatsViewProps {
   wines: Wine[];
   history: HistoryEntry[];
+  activeCellarName: string;
+  onSelectCellar: () => void;
   language: Language;
   theme: Theme;
   fontSize?: AppFontSize;
@@ -30,7 +32,7 @@ const ChartContainer = ({ title, children, fontSizeClasses }: { title: string, c
   </div>
 );
 
-export const StatsView: React.FC<StatsViewProps> = ({ wines, history, language, theme, fontSize = 'medium' }) => {
+export const StatsView: React.FC<StatsViewProps> = ({ wines, history, activeCellarName, onSelectCellar, language, theme, fontSize = 'medium' }) => {
   const t = (key: any) => getTranslation(language, key);
   const isDark = theme === 'dark';
 
@@ -157,25 +159,35 @@ export const StatsView: React.FC<StatsViewProps> = ({ wines, history, language, 
   const histYearData = getPieData('year'); 
   const histCountryData = getPieData('country');
 
-  const renderSectionHeader = (title: string, isOpen: boolean, toggle: () => void) => (
-    <button 
-        onClick={toggle}
-        className="w-full flex items-center justify-between p-4 bg-white dark:bg-stone-900 rounded-2xl shadow-sm border border-stone-100 dark:border-stone-800 mb-4 transition-colors"
-    >
-        <span className={`font-bold text-rose-950 dark:text-rose-100 ${fs.section}`}>{title}</span>
-        <div className="text-stone-400 dark:text-stone-500">
-            {isOpen ? <ChevronDown size={24} /> : <ChevronRight size={24} />}
-        </div>
-    </button>
+  const renderSectionHeader = (title: string, isOpen: boolean, toggle: () => void, onAction?: () => void) => (
+    <div className="relative mb-4">
+      <button 
+          onClick={toggle}
+          className="w-full flex items-center justify-between p-4 bg-white dark:bg-stone-900 rounded-2xl shadow-sm border border-stone-100 dark:border-stone-800 transition-colors text-left"
+      >
+          <div className="flex items-center gap-2 pr-12">
+            <span className={`font-bold text-rose-950 dark:text-rose-100 ${fs.section}`}>{title}</span>
+          </div>
+          <div className="text-stone-400 dark:text-stone-500 flex-shrink-0">
+              {isOpen ? <ChevronDown size={24} /> : <ChevronRight size={24} />}
+          </div>
+      </button>
+      {onAction && (
+        <button 
+          onClick={(e) => { e.stopPropagation(); onAction(); }} 
+          className="absolute right-14 top-1/2 -translate-y-1/2 p-2.5 text-stone-300 hover:text-rose-900 dark:hover:text-rose-400 transition-all hover:bg-stone-50 dark:hover:bg-stone-800 rounded-full"
+        >
+          <RefreshCw size={18} />
+        </button>
+      )}
+    </div>
   );
 
   const legendText = (value: string) => t('color_' + value);
 
   return (
-    <div className="pb-24 p-4">
-        <h1 className={`font-serif font-bold text-rose-950 dark:text-rose-100 mb-6 px-2 pt-2 ${fs.section}`}>{t('stats')}</h1>
-
-        {renderSectionHeader(t('section_cellar_stats'), showCellarStats, () => setShowCellarStats(!showCellarStats))}
+    <div className="pb-12">
+        {renderSectionHeader(`${t('section_cellar_stats')} (${activeCellarName})`, showCellarStats, () => setShowCellarStats(!showCellarStats), onSelectCellar)}
         
         {showCellarStats && (
             <div className="animate-in slide-in-from-top-2 fade-in duration-300">
@@ -283,7 +295,7 @@ export const StatsView: React.FC<StatsViewProps> = ({ wines, history, language, 
             </div>
         )}
 
-        {renderSectionHeader(t('section_history_stats'), showHistoryStats, () => setShowHistoryStats(!showHistoryStats))}
+        {renderSectionHeader(`${t('section_history_stats')} (Global)`, showHistoryStats, () => setShowHistoryStats(!showHistoryStats))}
         
         {showHistoryStats && (
              <div className="animate-in slide-in-from-top-2 fade-in duration-300">

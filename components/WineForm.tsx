@@ -1,6 +1,6 @@
 
 import React, { useState, useRef, useEffect } from 'react';
-import { Camera, X, Minus, Plus, Calendar as CalendarIcon } from 'lucide-react';
+import { Camera, X, Minus, Plus, Calendar as CalendarIcon, Pencil } from 'lucide-react';
 import { Wine, WineColor, AgingPotential, Language, LocationData, AppFontSize } from '../types';
 import { COLORS, AGING_POTENTIALS, STRENGTHS } from '../constants';
 import { getTranslation } from '../translations';
@@ -117,11 +117,12 @@ export const WineForm: React.FC<WineFormProps> = ({
 
   const fs = getFontSizeClasses(fontSize as AppFontSize);
   const inputClass = `mt-1 block w-full rounded-lg border border-gray-300 dark:border-stone-700 bg-white dark:bg-stone-800 text-gray-900 dark:text-white shadow-sm focus:border-rose-500 focus:ring-rose-500 h-11 px-3 transition-all ${fs.base}`;
+  const requiredInputClass = `mt-1 block w-full rounded-lg border-2 border-red-500 dark:border-red-800 bg-white dark:bg-stone-800 text-gray-900 dark:text-white shadow-sm focus:border-rose-500 focus:ring-rose-500 h-11 px-3 transition-all ${fs.base}`;
   const textareaClass = `mt-1 block w-full rounded-lg border border-gray-300 dark:border-stone-700 bg-white dark:bg-stone-800 text-gray-900 dark:text-white shadow-sm focus:border-rose-500 focus:ring-rose-500 p-3 transition-all ${fs.base}`;
   const labelClass = `block font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1 ${fs.label}`;
 
   return (
-    <form onSubmit={handleSubmit} className="flex flex-col gap-5 pb-24 p-4 bg-stone-100 dark:bg-black min-h-full transition-colors duration-300">
+    <form onSubmit={handleSubmit} className="flex flex-col gap-5 pb-24 p-4 bg-stone-100 dark:bg-black min-h-full transition-colors duration-300 relative">
       <div className="flex justify-between items-center mb-2 bg-white dark:bg-stone-900 p-4 rounded-xl shadow-sm sticky top-0 z-10 transition-colors">
         <h2 className={`font-serif font-bold text-rose-900 dark:text-rose-100 ${fs.xl}`}>
           {isHistoryMode ? t('personal_note') : (isEdit ? t('edit_bottle') : t('add_bottle'))}
@@ -131,24 +132,38 @@ export const WineForm: React.FC<WineFormProps> = ({
         </button>
       </div>
 
-      <div className="flex flex-col items-center justify-center p-6 border-2 border-dashed border-gray-300 dark:border-stone-700 rounded-xl bg-white dark:bg-stone-900 shadow-sm transition-colors">
+      <div 
+        onClick={() => fileInputRef.current?.click()}
+        className="flex flex-col items-center justify-center p-6 border-2 border-dashed border-gray-300 dark:border-stone-700 rounded-xl bg-white dark:bg-stone-900 shadow-sm transition-colors cursor-pointer active:bg-gray-50 dark:active:bg-stone-800 relative overflow-hidden group"
+      >
         {formData.image ? (
           <div className="relative w-full h-56">
             <img src={formData.image} alt="Preview" className="w-full h-full object-contain rounded-lg shadow-md bg-white dark:bg-stone-800" />
-            <button type="button" onClick={() => setFormData(prev => ({ ...prev, image: null }))} className="absolute top-2 right-2 bg-red-600 text-white p-2 rounded-full shadow-lg hover:bg-red-700 transition"><X size={16} /></button>
+            <div className="absolute inset-0 bg-black/20 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+               <Pencil size={24} className="text-white" />
+            </div>
+            <button 
+              type="button" 
+              onClick={(e) => { e.stopPropagation(); setFormData(prev => ({ ...prev, image: null })); }} 
+              className="absolute top-2 right-2 bg-red-600 text-white p-2 rounded-full shadow-lg hover:bg-red-700 transition z-10"
+            >
+              <X size={16} />
+            </button>
           </div>
         ) : (
-          <div className="text-center w-full" onClick={() => fileInputRef.current?.click()}>
-            <div className="mx-auto h-16 w-16 bg-rose-50 dark:bg-rose-900/20 text-rose-300 dark:text-rose-500 rounded-full flex items-center justify-center mb-3"><Camera size={32} /></div>
+          <div className="text-center w-full">
+            <div className="mx-auto h-16 w-16 bg-rose-50 dark:bg-rose-900/20 text-rose-300 dark:text-rose-500 rounded-full flex items-center justify-center mb-3">
+              <Camera size={32} />
+            </div>
             <div className="flex flex-col text-sm text-gray-600 dark:text-gray-400">
-              <label htmlFor="file-upload" className={`cursor-pointer font-medium text-rose-700 dark:text-rose-400 hover:text-rose-600 ${fs.base}`}>
-                <span>{t('take_photo')}</span>
-                <input id="file-upload" name="file-upload" type="file" accept="image/*" capture="environment" className="sr-only" ref={fileInputRef} onChange={handleImageChange} />
-              </label>
+              <span className={`font-medium text-rose-700 dark:text-rose-400 ${fs.base}`}>
+                {t('take_photo')}
+              </span>
               <span className={`text-gray-400 mt-1 ${fs.label}`}>{t('gallery')}</span>
             </div>
           </div>
         )}
+        <input type="file" accept="image/*" className="hidden" ref={fileInputRef} onChange={handleImageChange} />
       </div>
 
       {!isHistoryMode ? (
@@ -158,11 +173,11 @@ export const WineForm: React.FC<WineFormProps> = ({
             <div className="space-y-4">
               <div>
                 <label className={labelClass}>{t('name')}</label>
-                <input required type="text" name="name" value={formData.name} onChange={handleChange} className={inputClass} placeholder={t('placeholder_wine_name')} />
+                <input required type="text" name="name" value={formData.name} onChange={handleChange} className={requiredInputClass} placeholder={t('placeholder_wine_name')} />
               </div>
               <div>
                 <label className={labelClass}>{t('appellation')}</label>
-                <input required type="text" name="appellation" value={formData.appellation} onChange={handleChange} className={inputClass} placeholder={t('placeholder_appellation')} />
+                <input required type="text" name="appellation" value={formData.appellation} onChange={handleChange} className={requiredInputClass} placeholder={t('placeholder_appellation')} />
               </div>
             </div>
             <div className="grid grid-cols-2 gap-4">
@@ -201,7 +216,7 @@ export const WineForm: React.FC<WineFormProps> = ({
               </div>
               <div>
                 <label className={labelClass}>{t('year')}</label>
-                <input required type="number" min="1900" max="2100" name="year" value={formData.year} onChange={handleChange} className={inputClass} />
+                <input required type="number" min="1900" max="2100" name="year" value={formData.year} onChange={handleChange} className={requiredInputClass} />
               </div>
             </div>
           </div>
@@ -238,14 +253,14 @@ export const WineForm: React.FC<WineFormProps> = ({
               <div className="col-span-3">
                 <label className={labelClass}>{t('quantity')}</label>
                 <div className="flex items-center gap-2 mt-1">
-                  <button type="button" onClick={() => handleQuantityChange(formData.quantity - 1)} className="w-11 h-11 rounded-lg bg-stone-100 dark:bg-stone-800 flex items-center justify-center border border-stone-200 dark:border-stone-700 active:scale-90 transition-all"><Minus size={18} /></button>
+                  <button type="button" onClick={() => handleQuantityChange(formData.quantity - 1)} className="w-11 h-11 rounded-lg bg-stone-100 dark:bg-stone-800 flex items-center justify-center border border-stone-200 dark:border-stone-700 active:scale-90 transition-all"><Minus size={18} className="text-stone-600 dark:text-stone-300" /></button>
                   <div className={`flex-1 h-11 bg-white dark:bg-stone-800 border border-stone-200 dark:border-stone-700 rounded-lg flex items-center justify-center font-bold text-gray-900 dark:text-white ${fs.lg}`}>{formData.quantity}</div>
-                  <button type="button" onClick={() => handleQuantityChange(formData.quantity + 1)} className="w-11 h-11 rounded-lg bg-stone-100 dark:bg-stone-800 flex items-center justify-center border border-stone-200 dark:border-stone-700 active:scale-90 transition-all"><Plus size={18} /></button>
+                  <button type="button" onClick={() => handleQuantityChange(formData.quantity + 1)} className="w-11 h-11 rounded-lg bg-stone-100 dark:bg-stone-800 flex items-center justify-center border border-stone-200 dark:border-stone-700 active:scale-90 transition-all"><Plus size={18} className="text-stone-600 dark:text-stone-300" /></button>
                 </div>
               </div>
                <div className="col-span-1">
                 <label className={labelClass}>{t('recommended_year')}</label>
-                <input required type="number" min="1900" max="2100" name="recommendedYear" value={formData.recommendedYear} onChange={handleChange} className={inputClass} />
+                <input required type="number" min="1900" max="2100" name="recommendedYear" value={formData.recommendedYear} onChange={handleChange} className={requiredInputClass} />
               </div>
             </div>
             <div className="grid grid-cols-2 gap-4">

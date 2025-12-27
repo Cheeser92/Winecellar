@@ -45,6 +45,7 @@ export interface Wine {
 export interface HistoryEntry extends Wine {
   consumedDate: string;
   consumptionRating: number;
+  originalCellarName?: string;
 }
 
 export interface SearchFilters {
@@ -81,13 +82,13 @@ export interface Cellar {
   name: string;
   image: string | null;
   wines: Wine[];
-  history: HistoryEntry[];
   settings: AppSettings;
 }
 
 export interface BackupData {
   cellars: Cellar[];
   activeCellarId: string;
+  globalHistory?: HistoryEntry[];
   locations?: LocationData;
   timestamp: string;
 }

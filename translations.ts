@@ -55,6 +55,7 @@ export const translations = {
     color: "Couleur",
     year: "Année",
     origin: "Origine",
+    original_cellar: "Cave d'origine",
     purchase_date: "Date d'achat",
     purchase_place: "Lieu d'achat",
     quantity: "Quantité",
@@ -68,16 +69,6 @@ export const translations = {
     image: "Image",
     take_photo: "Prendre une photo",
     gallery: "ou choisir depuis la galerie",
-    
-    // Form Placeholders
-    placeholder_wine_name: "Ex: Château Margaux",
-    placeholder_appellation: "Ex: Margaux, Cabernet Sauvignon",
-    placeholder_origin: "Ex: Cadeau de Pierre",
-    placeholder_note: "Racontez votre dégustation...",
-    placeholder_tag: "Ex: Bio, Grand Cru",
-    placeholder_contains: "Contient...",
-    placeholder_vintage: "Ex: 2020",
-    placeholder_drink_in: "Ex: 2025",
     
     // Stats
     bottles: "Bouteilles",
@@ -94,19 +85,13 @@ export const translations = {
     info_main: "Informations principales",
     info_detail_bottle: "Détail de la bouteille",
     section_cellar_stats: "Vins en cave",
-    section_history_stats: "Vins consommés",
-    
-    // History Specific Stats
-    stats_hist_region_color: "Répartition par Région & Couleur",
-    stats_hist_avg_rating_red: "Note moy. par Région (Rouge)",
-    stats_hist_avg_rating_white: "Note moy. par Région (Blanc)",
-    stats_hist_cons_color: "Consommation par Couleur",
-    stats_hist_cons_region: "Consommation par Région",
-    stats_hist_cons_year: "Consommation par Année (Millésime)",
-    stats_hist_cons_country: "Consommation par Pays",
+    section_history_stats: "Historique",
     
     // Settings
     settings: "Paramètres",
+    global_settings: "Paramètres globaux",
+    cellar_specific_settings: "Paramètres de cette cave",
+    settings_scope_desc: "Le mode sombre, la langue et la taille de police s'appliquent à toutes les caves. La quantité d'étagères est spécifique à chaque cave.",
     theme: "Mode Sombre",
     language: "Langue",
     shelf_count: "Quantité d'étagères",
@@ -154,17 +139,13 @@ export const translations = {
     consumption: "Consommation",
     ideal_in: "Idéal en",
 
-    // Shelf Delete
     shelf_delete_title: "Supprimer l'étagère",
     shelf_delete_msg: "Les bouteilles sur cette étagère seront déplacées dans 'Hors cave'",
     swipe_to_confirm: "Glissez pour confirmer",
-
-    // New Float Modals
     priority_consumption: "Priorités de consommation",
     top_value_wines: "Valeurs de la cave",
+    history_value: "Valeur de l'historique",
     most_consumed_wines: "Vins les plus consommés",
-
-    // Location Management
     manage_locations: "Gérer Pays & Régions",
     add_country: "Ajouter un pays",
     add_region: "Ajouter une région",
@@ -174,7 +155,8 @@ export const translations = {
     new_country_placeholder: "Nom du nouveau pays...",
     new_region_placeholder: "Nom de la nouvelle région...",
     country_already_exists: "Ce pays existe déjà.",
-    region_already_exists: "Cette région existe déjà."
+    region_already_exists: "Cette région existe déjà.",
+    reverse_sort: "Inverser le tri"
   },
   en: {
     app_title: "My Wine Cellar",
@@ -205,7 +187,6 @@ export const translations = {
     copy_quantity: "Quantity to copy",
     quantity_consumed: "Number of bottles",
 
-    // Multi-Cellar
     manage_cellars: "Manage Cellars",
     new_cellar: "New Cellar",
     edit_cellar: "Edit Cellar",
@@ -221,7 +202,6 @@ export const translations = {
     swipe_to_delete: "Swipe to delete cellar",
     cellar_photo: "Cellar Photo",
 
-    // Form Labels
     name: "Wine Name",
     appellation: "Appellation – Grape",
     region: "Region",
@@ -229,6 +209,7 @@ export const translations = {
     color: "Color",
     year: "Vintage",
     origin: "Origin",
+    original_cellar: "Original Cellar",
     purchase_date: "Purchase Date",
     purchase_place: "Purchase Place",
     quantity: "Quantity",
@@ -243,17 +224,6 @@ export const translations = {
     take_photo: "Take a photo",
     gallery: "or choose from gallery",
 
-    // Form Placeholders
-    placeholder_wine_name: "e.g. Chateau Margaux",
-    placeholder_appellation: "e.g. Margaux, Cabernet Sauvignon",
-    placeholder_origin: "e.g. Gift from Pierre",
-    placeholder_note: "Tell us about your tasting...",
-    placeholder_tag: "e.g. Organic, Grand Cru",
-    placeholder_contains: "Contains...",
-    placeholder_vintage: "e.g. 2020",
-    placeholder_drink_in: "e.g. 2025",
-
-    // Stats
     bottles: "Bottles",
     consumed: "Consumed",
     total_cost: "Total Cost",
@@ -264,23 +234,15 @@ export const translations = {
     stats_country: "Wines by Country & Color",
     stats_year: "Quantity by Purchase Year",
 
-    // Section Headers
     info_main: "Main Information",
     info_detail_bottle: "Bottle Details",
     section_cellar_stats: "Wines in Cellar",
-    section_history_stats: "Consumed Wines",
+    section_history_stats: "History",
 
-    // History Specific Stats
-    stats_hist_region_color: "Distribution by Region & Color",
-    stats_hist_avg_rating_red: "Avg Rating by Region (Red)",
-    stats_hist_avg_rating_white: "Avg Rating by Region (White)",
-    stats_hist_cons_color: "Consumption by Color",
-    stats_hist_cons_region: "Consumption by Region",
-    stats_hist_cons_year: "Consumption by Vintage",
-    stats_hist_cons_country: "Consumption by Country",
-
-    // Settings
     settings: "Settings",
+    global_settings: "Global Settings",
+    cellar_specific_settings: "Settings for this cellar",
+    settings_scope_desc: "Dark mode, language, and font size apply to all cellars. Number of shelves is specific to each cellar.",
     theme: "Dark Mode",
     language: "Language",
     shelf_count: "Number of Shelves",
@@ -296,7 +258,6 @@ export const translations = {
     font_medium: "Medium",
     font_large: "Large",
 
-    // Enums
     aging_Longue: "Long",
     aging_Moyenne: "Average",
     aging_Courte: "Short",
@@ -304,7 +265,6 @@ export const translations = {
     color_Blanc: "White",
     color_Rosé: "Rosé",
 
-    // Misc
     shelf_prefix: "Shelf",
     off_site: "Off-site",
     years_old: "years",
@@ -328,17 +288,13 @@ export const translations = {
     consumption: "Consumption",
     ideal_in: "Ideal in",
 
-    // Shelf Delete
     shelf_delete_title: "Delete Shelf",
     shelf_delete_msg: "Bottles on this shelf will be moved to 'Off-site'",
     swipe_to_confirm: "Swipe to confirm",
-
-    // New Float Modals
     priority_consumption: "Consumption Priorities",
     top_value_wines: "Cellar Values",
+    history_value: "History Values",
     most_consumed_wines: "Most consumed wines",
-
-    // Location Management
     manage_locations: "Manage Countries & Regions",
     add_country: "Add country",
     add_region: "Add region",
@@ -348,10 +304,12 @@ export const translations = {
     new_country_placeholder: "New country name...",
     new_region_placeholder: "New region name...",
     country_already_exists: "Country already exists.",
-    region_already_exists: "Region already exists."
+    region_already_exists: "Region already exists.",
+    reverse_sort: "Reverse sort"
   }
 };
 
 export const getTranslation = (lang: Language, key: keyof typeof translations['fr']) => {
-  return translations[lang][key] || key;
+  const dictionary = translations[lang] || translations['fr'];
+  return dictionary[key] || key;
 };

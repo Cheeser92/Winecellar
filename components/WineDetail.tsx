@@ -55,6 +55,15 @@ export const WineDetail: React.FC<WineDetailProps> = ({ wine, cellars, currentCe
     }
   };
 
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file && onUpdateImage) {
+      const reader = new FileReader();
+      reader.onloadend = () => onUpdateImage(reader.result as string);
+      reader.readAsDataURL(file);
+    }
+  };
+
   const getFontSizeClasses = (size: AppFontSize) => {
     switch(size) {
       case 'small': return { title: 'text-lg', sub: 'text-xs', statsLabel: 'text-[8px]', statsValue: 'text-sm', infoText: 'text-xs', cellarBadge: 'text-[9px]' };
@@ -65,19 +74,34 @@ export const WineDetail: React.FC<WineDetailProps> = ({ wine, cellars, currentCe
   };
 
   const fs = getFontSizeClasses(fontSize as AppFontSize);
+
+  const purchaseDate = new Date(wine.purchaseDate);
+  const historyEntry = isHistory ? (wine as HistoryEntry) : null;
+  const endDate = historyEntry ? new Date(historyEntry.consumedDate) : new Date();
+  const yearsInCellar = Math.max(0, (endDate.getTime() - purchaseDate.getTime()) / (1000 * 60 * 60 * 24 * 365.25)).toFixed(1);
   const totalCost = wine.price * wine.quantity;
   const age = new Date().getFullYear() - wine.year;
 
+  let consumptionStatus: ConsumptionStatus = ConsumptionStatus.GREEN;
+  const curYear = new Date().getFullYear();
+  if (curYear > wine.recommendedYear) consumptionStatus = ConsumptionStatus.RED;
+  else if (curYear === wine.recommendedYear) consumptionStatus = ConsumptionStatus.ORANGE;
+
+  const statusColorMap = {
+    [ConsumptionStatus.RED]: 'bg-red-500',
+    [ConsumptionStatus.ORANGE]: 'bg-orange-500',
+    [ConsumptionStatus.GREEN]: 'bg-green-500',
+  };
+
+  const statusTextMap = {
+    [ConsumptionStatus.RED]: t('expired'),
+    [ConsumptionStatus.ORANGE]: t('ready_drink'),
+    [ConsumptionStatus.GREEN]: t('wait'),
+  };
+
   return (
     <div className={`min-h-full relative ${wine.image ? 'bg-stone-900' : 'bg-stone-100 dark:bg-black'} transition-colors duration-300`}>
-      <input type="file" accept="image/*" capture="environment" ref={fileInputRef} onChange={(e) => {
-        const file = e.target.files?.[0];
-        if (file && onUpdateImage) {
-          const reader = new FileReader();
-          reader.onloadend = () => onUpdateImage(reader.result as string);
-          reader.readAsDataURL(file);
-        }
-      }} className="hidden" />
+      <input type="file" accept="image/*" capture="environment" ref={fileInputRef} onChange={handleImageChange} className="hidden" />
       
       {wine.image && (
         <div className="absolute inset-0 z-0 bg-cover bg-center" style={{ backgroundImage: `url(${wine.image})` }}>
@@ -93,29 +117,47 @@ export const WineDetail: React.FC<WineDetailProps> = ({ wine, cellars, currentCe
           )}
           {onEdit && (<button onClick={onEdit} className="bg-white/90 dark:bg-black/50 backdrop-blur text-stone-800 dark:text-stone-200 p-2.5 rounded-full shadow-lg active:scale-95 transition"><Pencil size={20} /></button>)}
           
-          {!isHistory && (
+          {!isHistory ? (
             <div className="flex items-center gap-2 bg-black/50 backdrop-blur-md px-1 py-1 rounded-full border border-white/20 shadow-sm">
               <div className="w-7 h-7 rounded-full overflow-hidden border border-white/40 shadow-sm bg-stone-800 flex-shrink-0">
                 {currentCellar.image ? <img src={currentCellar.image} className="w-full h-full object-cover" /> : <Warehouse size={12} className="m-auto mt-1.5 text-white/50" />}
               </div>
-              <div className={`pr-3 text-white font-bold whitespace-nowrap ${fs.cellarBadge}`}>{activeCellarName(wine, currentCellar)} / {wine.location}</div>
+              <div className={`pr-3 text-white font-bold whitespace-nowrap ${fs.cellarBadge}`}>{currentCellar.name} / {wine.location}</div>
             </div>
+          ) : (
+            historyEntry?.originalCellarName && (
+              <div className="flex items-center gap-2 bg-black/50 backdrop-blur-md px-3 py-1.5 rounded-full border border-white/20 shadow-sm">
+                 <Warehouse size={14} className="text-white/60" />
+                 <div className={`text-white font-bold whitespace-nowrap ${fs.cellarBadge}`}>{historyEntry.originalCellarName}</div>
+              </div>
+            )
           )}
         </div>
       </div>
 
       <div className={`relative z-10 pb-20 px-1.5 transition-all duration-500 ${wine.image ? 'pt-48' : 'pt-4'}`}>
+        {isHistory && !wine.image && (
+           <div onClick={() => fileInputRef.current?.click()} className="mb-6 mx-2.5 flex flex-col items-center justify-center p-6 border-2 border-dashed border-gray-300 dark:border-stone-700 rounded-2xl bg-white/80 dark:bg-stone-900 shadow-sm transition-all hover:bg-white cursor-pointer">
+              <div className="mx-auto h-16 w-16 bg-rose-50 dark:bg-rose-900/20 text-rose-300 dark:text-rose-500 rounded-full flex items-center justify-center mb-3"><Camera size={32} /></div>
+              <div className="flex flex-col items-center text-center"><span className="text-sm font-bold text-rose-700 dark:text-rose-400">{t('take_photo')}</span><span className="text-[10px] font-bold text-gray-400 dark:text-stone-500 mt-1 uppercase tracking-wider">{t('gallery')}</span></div>
+           </div>
+        )}
+        
         <div className={`rounded-3xl p-6 shadow-2xl space-y-6 ${wine.image ? 'bg-white/90 dark:bg-stone-900/90 backdrop-blur-xl border border-white/40 dark:border-stone-800' : 'bg-white dark:bg-stone-900 border border-stone-100 dark:border-stone-800'} transition-colors duration-300`}>
           <div>
             <div className="flex justify-between items-start gap-4">
                 <h1 className={`font-serif font-bold text-gray-900 dark:text-white leading-tight ${fs.title}`}>{wine.name}</h1>
-                {isHistory && (wine as HistoryEntry).consumptionRating && (
+                {isHistory && historyEntry && (
                   <div className="flex items-center gap-1 bg-amber-100 dark:bg-amber-900/40 text-amber-600 dark:text-amber-400 px-2 py-1 rounded-lg border border-amber-200 dark:border-amber-900/50 shadow-sm">
-                    <span className="font-bold text-lg">{(wine as HistoryEntry).consumptionRating}</span><Star size={16} fill="currentColor" />
+                    <span className="font-bold text-lg">{historyEntry.consumptionRating}</span><Star size={16} fill="currentColor" />
                   </div>
                 )}
             </div>
             <p className={`text-gray-600 dark:text-gray-300 font-medium mt-1 ${fs.sub}`}>{wine.appellation} - {wine.year} {!isHistory && <span className="text-sm text-gray-400"> ({age} {t('years_old')})</span>}</p>
+            <div className="flex items-center gap-2 mt-3">
+              <span className={`inline-block w-3 h-3 rounded-full shadow-sm ring-1 ring-offset-1 ring-gray-200 dark:ring-stone-700 ${wine.color === 'Rouge' ? 'bg-red-800' : wine.color === 'Blanc' ? 'bg-yellow-200' : 'bg-pink-300'}`}></span>
+              <span className={`text-stone-500 dark:text-stone-400 uppercase tracking-wide font-semibold ${fs.infoText}`}>{wine.region}, {wine.country}</span>
+            </div>
           </div>
 
           <div className="grid grid-cols-3 gap-2 bg-stone-50/50 dark:bg-stone-800/50 p-4 rounded-2xl border border-stone-200/60 dark:border-stone-800">
@@ -133,9 +175,41 @@ export const WineDetail: React.FC<WineDetailProps> = ({ wine, cellars, currentCe
             </div>
           </div>
 
+          <div className="space-y-3">
+            <div className="flex items-center justify-between p-3 rounded-xl bg-white dark:bg-stone-800 border border-stone-100 dark:border-stone-700 shadow-sm transition-colors">
+              <div className="flex items-center gap-3">
+                <div className={`p-2 ${isHistory ? 'bg-indigo-50 dark:bg-indigo-900/30 text-indigo-500 dark:text-indigo-300' : 'bg-blue-50 dark:bg-blue-900/30 text-blue-500 dark:text-blue-300'} rounded-full`}>{isHistory ? <ShoppingBag size={18} /> : <Clock size={18} />}</div>
+                <div><p className={`font-bold text-stone-800 dark:text-stone-200 ${fs.infoText}`}>{isHistory ? t('purchase_date') : t('time_in_cellar')}</p><p className="text-[10px] text-stone-500 dark:text-stone-400">{isHistory ? new Date(wine.purchaseDate).toLocaleDateString() : `${t('purchase_date')}: ${new Date(wine.purchaseDate).toLocaleDateString()}`}</p></div>
+              </div>
+              {!isHistory && (<span className={`font-bold text-blue-900 dark:text-blue-200 ${fs.infoText}`}>{yearsInCellar} {t('years_old')}</span>)}
+            </div>
+            {isHistory && historyEntry ? (
+                 <div className="flex items-center justify-between p-3 rounded-xl bg-amber-50 dark:bg-amber-900/20 border border-amber-100 dark:border-amber-900/30 shadow-sm transition-colors">
+                    <div className="flex items-center gap-3"><div className="p-2 bg-amber-100 dark:bg-amber-900/40 text-amber-600 dark:text-amber-400 rounded-full"><Check size={18} /></div><div><p className={`font-bold text-stone-800 dark:text-stone-200 ${fs.infoText}`}>{t('date_consumption')}</p><p className="text-[10px] text-stone-500 dark:text-stone-400">{t('added_to_history')}</p></div></div>
+                    <span className={`font-bold text-amber-900 dark:text-amber-200 ${fs.infoText}`}>{new Date(historyEntry.consumedDate).toLocaleDateString()}</span>
+                 </div>
+            ) : (
+                <div className="flex items-center justify-between p-3 rounded-xl bg-white dark:bg-stone-800 border border-stone-100 dark:border-stone-700 shadow-sm transition-colors">
+                <div className="flex items-center gap-3"><div className="p-2 bg-purple-50 dark:bg-purple-900/30 text-purple-500 dark:text-purple-300 rounded-full"><Calendar size={18} /></div><div><p className={`font-bold text-stone-800 dark:text-stone-200 ${fs.infoText}`}>{t('consumption')}</p><p className="text-[10px] text-stone-500 dark:text-stone-400">{t('ideal_in')} {wine.recommendedYear}</p></div></div>
+                <div className="flex items-center gap-2 px-2 py-1 bg-stone-50 dark:bg-stone-700 rounded-lg border border-stone-100 dark:border-stone-600"><div className={`w-3 h-3 rounded-full ${statusColorMap[consumptionStatus]}`}></div><span className={`font-bold text-stone-600 dark:text-stone-300 ${fs.infoText}`}>{statusTextMap[consumptionStatus]}</span></div>
+                </div>
+            )}
+          </div>
+
           <div className="grid grid-cols-2 gap-y-6 gap-x-4 text-sm pt-2">
-               <div><p className="text-stone-400 dark:text-stone-500 text-xs font-bold uppercase mb-1">{t('region')}</p><p className={`text-stone-800 dark:text-stone-200 font-medium ${fs.infoText}`}>{wine.region}, {wine.country}</p></div>
+               <div><p className="text-stone-400 dark:text-stone-500 text-xs font-bold uppercase mb-1">{t('origin')}</p><p className={`text-stone-800 dark:text-stone-200 font-medium ${fs.infoText}`}>{wine.origin || 'N/A'}</p></div>
+               <div><p className="text-stone-400 dark:text-stone-500 text-xs font-bold uppercase mb-1">{t('purchase_place')}</p><p className={`text-stone-800 dark:text-stone-200 font-medium ${fs.infoText}`}>{wine.purchasePlace || 'N/A'}</p></div>
                <div><p className="text-stone-400 dark:text-stone-500 text-xs font-bold uppercase mb-1">{t('strength')}</p><div className="flex items-center gap-2"><div className="flex-1 bg-stone-200 dark:bg-stone-700 rounded-full h-2"><div className="bg-rose-900 dark:bg-rose-500 h-2 rounded-full transition-all duration-1000" style={{ width: `${wine.strength}%` }}></div></div><span className={`font-bold text-rose-900 dark:text-rose-400 ${fs.infoText}`}>{wine.strength}%</span></div></div>
+               {!isHistory && (<div><p className="text-stone-400 dark:text-stone-500 text-xs font-bold uppercase mb-1">{t('aging')}</p><p className={`text-stone-800 dark:text-stone-200 font-medium ${fs.infoText}`}>{t('aging_' + wine.agingPotential)}</p></div>)}
+               
+               {isHistory && historyEntry?.originalCellarName && (
+                 <div className="col-span-2 border-t border-stone-100 dark:border-stone-800 pt-4">
+                    <p className="text-stone-400 dark:text-stone-500 text-xs font-bold uppercase mb-1">{t('original_cellar')}</p>
+                    <p className={`text-stone-800 dark:text-stone-200 font-bold ${fs.infoText}`}>{historyEntry.originalCellarName}</p>
+                 </div>
+               )}
+
+               <div className="col-span-2 border-t border-stone-100 dark:border-stone-800 pt-4"><p className="text-stone-400 dark:text-stone-500 text-xs font-bold uppercase mb-2 flex items-center gap-1"><Tag size={12}/> {t('tag')}</p><div className="flex flex-wrap gap-2">{wine.tag ? wine.tag.split(',').map((tVal, i) => (<span key={i} className={`bg-stone-100 dark:bg-stone-800 text-stone-600 dark:text-stone-300 px-2.5 py-1 rounded-md font-medium border border-stone-200 dark:border-stone-700 ${fs.infoText}`}>{tVal.trim()}</span>)) : <span className="text-stone-300 dark:text-stone-600 italic">{t('no_tag')}</span>}</div></div>
                <div className="col-span-2 bg-amber-50/80 dark:bg-amber-900/10 p-4 rounded-xl border border-amber-100 dark:border-amber-900/30"><p className="text-amber-800 dark:text-amber-500 text-xs font-bold uppercase mb-1">{t('personal_note')}</p><p className={`text-stone-800 dark:text-stone-200 italic leading-relaxed ${fs.infoText}`}>"{wine.note || t('no_note')}"</p></div>
           </div>
 
@@ -144,6 +218,7 @@ export const WineDetail: React.FC<WineDetailProps> = ({ wine, cellars, currentCe
                  <Trash2 size={20} />
                  {isHistory && <span className="font-bold">{t('delete')}</span>}
               </button>
+              {isHistory && (<button type="button" onClick={() => fileInputRef.current?.click()} className="flex-1 flex items-center justify-center gap-2 bg-stone-100 dark:bg-stone-800 text-stone-800 dark:text-stone-100 font-bold py-4 px-6 rounded-xl hover:bg-stone-200 dark:hover:bg-stone-700 transition active:scale-95 cursor-pointer"><Camera size={20} /><span>{t('take_photo')}</span></button>)}
               {!isHistory && (
                 <>
                 <button type="button" onClick={() => handleTransferClick(false)} className="flex-none p-4 rounded-xl border border-indigo-200 dark:border-indigo-900/50 text-indigo-500 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-900/10 hover:bg-indigo-100 transition cursor-pointer"><Copy size={20} /></button>
@@ -159,7 +234,6 @@ export const WineDetail: React.FC<WineDetailProps> = ({ wine, cellars, currentCe
         </div>
       </div>
 
-      {/* --- MODAL CONSOMMATION --- */}
       {showConsumeModal && (
         <div className="fixed inset-0 z-[300] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
            <div className="relative bg-white dark:bg-stone-900 rounded-3xl w-full max-w-sm p-6 shadow-2xl max-h-[90vh] overflow-y-auto">
@@ -167,9 +241,9 @@ export const WineDetail: React.FC<WineDetailProps> = ({ wine, cellars, currentCe
             <div className="mb-6">
               <label className="block text-xs font-bold text-stone-500 uppercase mb-3">{t('quantity_consumed')}</label>
               <div className="flex items-center gap-3">
-                <button onClick={() => setConsumeQty(prev => Math.max(1, prev - 1))} className="w-12 h-12 rounded-xl bg-stone-100 dark:bg-stone-800 text-stone-600 dark:text-stone-300 flex items-center justify-center border border-stone-200 active:scale-90 transition-all"><Minus size={20} /></button>
+                <button onClick={() => setConsumeQty(prev => Math.max(1, prev - 1))} className="w-12 h-12 rounded-xl bg-stone-100 dark:bg-stone-800 text-stone-600 dark:text-stone-300 flex items-center justify-center border border-stone-200 active:scale-90 transition-all"><Minus size={20} className="text-stone-600 dark:text-stone-300" /></button>
                 <div className="flex-1 h-12 bg-stone-50 dark:bg-stone-900 border border-stone-200 rounded-xl flex items-center justify-center font-bold text-lg text-stone-900 dark:text-white">{consumeQty}</div>
-                <button onClick={() => setConsumeQty(prev => Math.min(wine.quantity, prev + 1))} className="w-12 h-12 rounded-xl bg-stone-100 dark:bg-stone-800 text-stone-600 dark:text-stone-300 flex items-center justify-center border border-stone-200 active:scale-90 transition-all"><Plus size={20} /></button>
+                <button onClick={() => setConsumeQty(prev => Math.min(wine.quantity, prev + 1))} className="w-12 h-12 rounded-xl bg-stone-100 dark:bg-stone-800 text-stone-600 dark:text-stone-300 flex items-center justify-center border border-stone-200 active:scale-90 transition-all"><Plus size={20} className="text-stone-600 dark:text-stone-300" /></button>
               </div>
             </div>
             <div className="mb-6"><label className="block text-xs font-bold text-stone-500 uppercase mb-3">Note</label><div className="flex justify-between px-2">{RATINGS.map(r => (<button key={r} onClick={() => setRating(r)} className={`w-10 h-10 rounded-xl flex items-center justify-center text-lg font-bold transition-all ${rating === r ? 'bg-rose-900 dark:bg-rose-700 text-white scale-110 shadow-lg' : 'bg-stone-100 dark:bg-stone-800 text-stone-400'}`}>{r}</button>))}</div></div>
@@ -178,7 +252,6 @@ export const WineDetail: React.FC<WineDetailProps> = ({ wine, cellars, currentCe
         </div>
       )}
 
-      {/* --- MODAL TRANSFERT / COPIE --- */}
       {transferModal.isOpen && (
         <div className="fixed inset-0 z-[300] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
            <div className="relative bg-white dark:bg-stone-900 rounded-3xl w-full max-w-sm p-6 shadow-2xl overflow-y-auto no-scrollbar max-h-[90vh]">
@@ -195,24 +268,22 @@ export const WineDetail: React.FC<WineDetailProps> = ({ wine, cellars, currentCe
                   </div>
                 ))}
               </div>
-
               <div className="space-y-4">
                 <div>
                   <label className="block text-xs font-bold text-stone-500 uppercase mb-2">{t('target_location')}</label>
                   <select value={targetLocation} onChange={(e) => setTargetLocation(e.target.value)} className="w-full p-4 rounded-xl bg-stone-50 dark:bg-stone-800 border border-stone-200 dark:border-stone-700 text-stone-800 dark:text-white">
-                    {getCellarShelves(targetCellar, language).map(l => <option key={l} value={l}>{l}</option>)}
+                    {getCellarShelves(targetCellar).map(l => <option key={l} value={l}>{l}</option>)}
                   </select>
                 </div>
                 <div>
                   <label className="block text-xs font-bold text-stone-500 uppercase mb-2">{transferModal.isMove ? t('transfer_to') : t('copy_quantity')}</label>
                   <div className="flex items-center gap-3">
-                    <button onClick={() => setTransferQty(prev => Math.max(1, prev - 1))} className="w-12 h-12 rounded-xl bg-stone-100 dark:bg-stone-800 text-stone-600 dark:text-stone-300 flex items-center justify-center border active:scale-90 transition-all"><Minus size={20} /></button>
+                    <button onClick={() => setTransferQty(prev => Math.max(1, prev - 1))} className="w-12 h-12 rounded-xl bg-stone-100 dark:bg-stone-800 text-stone-600 dark:text-stone-300 flex items-center justify-center border active:scale-90 transition-all"><Minus size={20} className="text-stone-600 dark:text-stone-300" /></button>
                     <div className="flex-1 h-12 bg-stone-50 dark:bg-stone-900 border rounded-xl flex items-center justify-center font-bold text-lg text-stone-900 dark:text-white">{transferQty}</div>
-                    <button onClick={() => setTransferQty(prev => Math.min(transferModal.isMove ? wine.quantity : 100, prev + 1))} className="w-12 h-12 rounded-xl bg-stone-100 dark:bg-stone-800 text-stone-600 dark:text-stone-300 flex items-center justify-center border active:scale-90 transition-all"><Plus size={20} /></button>
+                    <button onClick={() => setTransferQty(prev => Math.min(transferModal.isMove ? (wine as Wine).quantity : 100, prev + 1))} className="w-12 h-12 rounded-xl bg-stone-100 dark:bg-stone-800 text-stone-600 dark:text-stone-300 flex items-center justify-center border active:scale-90 transition-all"><Plus size={20} className="text-stone-600 dark:text-stone-300" /></button>
                   </div>
                 </div>
               </div>
-
               <div className="flex gap-3 pt-4">
                 <button onClick={() => setTransferModal({ isOpen: false, isMove: false })} className="flex-1 py-3 rounded-xl border text-stone-600 dark:text-stone-300 font-bold">{t('cancel')}</button>
                 <button onClick={confirmTransfer} className="flex-1 py-3 rounded-xl bg-rose-900 dark:bg-rose-700 text-white font-bold shadow-lg">{t('confirm')}</button>
@@ -235,11 +306,7 @@ export const WineDetail: React.FC<WineDetailProps> = ({ wine, cellars, currentCe
   );
 };
 
-function activeCellarName(wine: Wine | HistoryEntry, currentCellar: Cellar) {
-  return currentCellar.name;
-}
-
-function getCellarShelves(cellar: Cellar, language: Language) {
+function getCellarShelves(cellar: Cellar) {
   const prefix = getTranslation(cellar.settings.language, 'shelf_prefix');
   const shelves = Array.from({ length: cellar.settings.shelfCount }, (_, i) => `${prefix} ${i + 1}`);
   return [...shelves, getTranslation(cellar.settings.language, 'off_site')];
