@@ -259,6 +259,7 @@ function App() {
       if (searchFilters.year !== undefined && item.year !== searchFilters.year) return false;
       if (searchFilters.origin && !item.origin?.toLowerCase().includes(searchFilters.origin.toLowerCase())) return false;
       if (searchFilters.strength !== undefined && item.strength !== searchFilters.strength) return false;
+      if (searchFilters.tag && !item.tag?.toLowerCase().includes(searchFilters.tag.toLowerCase())) return false;
       if (!isHistoryList) {
         if (searchFilters.recommendedYear !== undefined && item.recommendedYear !== searchFilters.recommendedYear) return false;
         if (searchFilters.agingPotential && item.agingPotential !== searchFilters.agingPotential) return false;
@@ -279,14 +280,13 @@ function App() {
 
   const handleEditWine = (wineData: Omit<Wine, 'id'>) => {
     if (selectedWine) {
-        const updatedWine: any = { ...wineData, id: selectedWine.id };
+        const updatedWine: any = { ...selectedWine, ...wineData };
         if (activeTab === 'history') {
           setGlobalHistory(prev => prev.map(h => h.id === selectedWine.id ? updatedWine : h));
-          setSelectedWine(updatedWine);
         } else {
           updateActiveCellar({ wines: wines.map(w => w.id === selectedWine.id ? updatedWine : w) });
-          setSelectedWine(updatedWine);
         }
+        setSelectedWine(updatedWine);
         setView('detail');
     }
   };
@@ -428,12 +428,41 @@ function App() {
     if (view === 'add') return <WineForm onSave={handleAddWine} onCancel={() => setView('list')} availableLocations={availableLocations} locationData={locationData} onOpenLocationManager={() => setIsLocationManagerOpen(true)} language={settings.language} fontSize={settings.fontSize} />;
     if (view === 'edit' && selectedWine) return <WineForm initialData={selectedWine} onSave={handleEditWine} onCancel={() => setView('detail')} availableLocations={availableLocations} locationData={locationData} onOpenLocationManager={() => setIsLocationManagerOpen(true)} language={settings.language} isHistoryMode={activeTab === 'history'} fontSize={settings.fontSize} />;
     if (view === 'detail' && selectedWine) return <WineDetail wine={selectedWine} cellars={cellars} currentCellarId={activeCellarId} onBack={() => setView('list')} onConsume={activeTab === 'history' ? undefined : handleConsumeWine} onDelete={activeTab === 'history' ? handleDeleteHistory : handleDeleteWine} onEdit={() => setView('edit')} onTransfer={handleTransferWine} onUpdateImage={async (img) => { const compressed = await compressImage(img); if (activeTab === 'history') { setGlobalHistory(prev => prev.map(x => x.id === selectedWine.id ? { ...x, image: compressed } : x)); } else { updateActiveCellar({ wines: wines.map(x => x.id === selectedWine.id ? { ...x, image: compressed } : x) }); } }} onEnlargeImage={setLargeImage} availableLocations={availableLocations} isHistory={activeTab === 'history'} language={settings.language} fontSize={settings.fontSize} />;
-    if (activeTab === 'stats') return <div className="pb-24 px-2 py-4"><div className="px-1 mb-3"><h1 className={`font-serif font-bold text-rose-950 dark:text-rose-100 ${fontClasses.header}`}>{t('stats')}</h1></div><StatsView wines={wines} history={history} activeCellarName={activeCellar.name} onSelectCellar={() => setIsCellarSelectorOpen(true)} language={settings.language} theme={settings.theme} fontSize={settings.fontSize} /></div>;
+    
+    if (activeTab === 'stats') return (
+      <div className="pb-24 px-2 py-4">
+        <div className="flex justify-between items-center mb-3 px-1">
+          <div>
+            <h1 className={`font-serif font-bold text-rose-950 dark:text-rose-100 ${fontClasses.header}`}>{t('stats')}</h1>
+            <div className="flex items-center gap-2">
+              <span className={`font-bold text-stone-400 dark:text-stone-500 uppercase tracking-widest ${fontClasses.cellarSub}`}>{activeCellar.name}</span>
+            </div>
+          </div>
+          <div className="flex gap-2">
+            <button onClick={() => setIsSettingsOpen(true)} className="p-2 rounded-full bg-white dark:bg-stone-800 text-stone-400 shadow-sm"><SettingsIcon size={22} /></button>
+            <button onClick={() => setIsInfoOpen(true)} className="p-2 rounded-full bg-white dark:bg-stone-800 text-stone-400 shadow-sm"><Info size={22} /></button>
+          </div>
+        </div>
+        <StatsView wines={wines} history={history} activeCellarName={activeCellar.name} onSelectCellar={() => setIsCellarSelectorOpen(true)} language={settings.language} theme={settings.theme} fontSize={settings.fontSize} />
+      </div>
+    );
+
     if (activeTab === 'cellar') return (
       <div className="pb-24 px-2 py-4 space-y-3">
         <div className="flex justify-between items-center mb-1 px-1">
-          <div><h1 className={`font-serif font-bold text-rose-950 dark:text-rose-100 ${fontClasses.header}`}>{t('app_title')}</h1><button onClick={() => setIsCellarSelectorOpen(true)} className="flex items-center gap-2 group"><span className={`font-bold text-stone-400 dark:text-stone-500 uppercase tracking-widest ${fontClasses.cellarSub}`}>{activeCellar.name}</span><RefreshCw size={14} className="text-stone-300 group-hover:rotate-180 transition-transform duration-500"/></button></div>
-          <div className="flex gap-2"><button onClick={() => setIsCellarManagerOpen(true)} className="p-2 rounded-full bg-white dark:bg-stone-800 text-stone-400 shadow-sm"><Warehouse size={22}/></button><button onClick={() => setIsSearchOpen(true)} className={`p-2 rounded-full transition-all ${isFiltering ? 'bg-rose-100 dark:bg-rose-900 text-rose-900 shadow-sm' : 'bg-white dark:bg-stone-800 text-stone-400 shadow-sm'}`}><Search size={22} /></button><button onClick={() => setIsSettingsOpen(true)} className="p-2 rounded-full bg-white dark:bg-stone-800 text-stone-400 shadow-sm"><SettingsIcon size={22} /></button><button onClick={() => setIsInfoOpen(true)} className="p-2 rounded-full bg-white dark:bg-stone-800 text-stone-400 shadow-sm"><Info size={22} /></button></div>
+          <div onClick={() => setIsCellarSelectorOpen(true)} className="cursor-pointer active:opacity-70 transition-opacity">
+            <h1 className={`font-serif font-bold text-rose-950 dark:text-rose-100 ${fontClasses.header}`}>{t('app_title')}</h1>
+            <div className="flex items-center gap-2 group">
+              <span className={`font-bold text-stone-400 dark:text-stone-500 uppercase tracking-widest ${fontClasses.cellarSub}`}>{activeCellar.name}</span>
+              <RefreshCw size={14} className="text-stone-300 group-hover:rotate-180 transition-transform duration-500"/>
+            </div>
+          </div>
+          <div className="flex gap-2">
+            <button onClick={() => setIsCellarManagerOpen(true)} className="p-2 rounded-full bg-white dark:bg-stone-800 text-stone-400 shadow-sm"><Warehouse size={22}/></button>
+            <button onClick={() => setIsSearchOpen(true)} className={`p-2 rounded-full transition-all ${isFiltering ? 'bg-rose-100 dark:bg-rose-900 text-rose-900 shadow-sm' : 'bg-white dark:bg-stone-800 text-stone-400 shadow-sm'}`}><Search size={22} /></button>
+            <button onClick={() => setIsSettingsOpen(true)} className="p-2 rounded-full bg-white dark:bg-stone-800 text-stone-400 shadow-sm"><SettingsIcon size={22} /></button>
+            <button onClick={() => setIsInfoOpen(true)} className="p-2 rounded-full bg-white dark:bg-stone-800 text-stone-400 shadow-sm"><Info size={22} /></button>
+          </div>
         </div>
         {renderStatsBar(filteredWines)}
         {availableLocations.map(shelfName => {
@@ -453,7 +482,7 @@ function App() {
                     {shelfColorCounts[WineColor.BLANC] > 0 && <div className="flex items-center gap-1"><div className="w-3 h-3 rounded-full bg-yellow-400 dark:bg-yellow-500 shadow-sm"></div><span className={`font-bold text-stone-600 dark:text-stone-300 ${fontClasses.shelfColorCount}`}>{shelfColorCounts[WineColor.BLANC]}</span></div>}
                     {shelfColorCounts[WineColor.ROSE] > 0 && <div className="flex items-center gap-1"><div className="w-3 h-3 rounded-full bg-pink-400 dark:bg-pink-500 shadow-sm"></div><span className={`font-bold text-stone-600 dark:text-stone-300 ${fontClasses.shelfColorCount}`}>{shelfColorCounts[WineColor.ROSE]}</span></div>}
                   </div>
-                  <span className={`text-stone-400 dark:text-stone-500 font-bold uppercase transition-all ${fontClasses.shelfCost}`}>{shelfTotalCost.toLocaleString(settings.language, { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 })}</span>
+                  <span className={`text-stone-400 dark:text-stone-500 font-bold uppercase tracking-wide transition-all ${fontClasses.shelfCost}`}>{shelfTotalCost.toLocaleString(settings.language, { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 })}</span>
                   <span className={`bg-gray-100 dark:bg-stone-800 text-gray-600 dark:text-stone-300 font-bold px-2 py-0.5 rounded-full border border-gray-200 dark:border-stone-700 transition-all ${fontClasses.shelfCount}`}>{shelfQty}</span>
                   {shelfName !== t('off_site') && <button onClick={(e) => { e.stopPropagation(); setShelfToDelete(shelfName); }} className="p-1.5 text-stone-300 hover:text-red-500 transition"><Trash2 size={18} /></button>}
                 </div>
@@ -470,9 +499,22 @@ function App() {
         })}
       </div>
     );
+
     if (activeTab === 'history') return (
       <div className="pb-24 px-2 py-4">
-        <div className="px-1 mb-4"><h1 className={`font-serif font-bold text-stone-800 dark:text-stone-100 ${fontClasses.header}`}>{t('history')}</h1><button onClick={() => setIsCellarSelectorOpen(true)} className="flex items-center gap-2 group"><span className={`font-bold text-stone-400 dark:text-stone-500 uppercase tracking-widest ${fontClasses.cellarSub}`}>{activeCellar.name}</span><RefreshCw size={14} className="text-stone-300 group-hover:rotate-180 transition-transform duration-500"/></button></div>
+        <div className="flex justify-between items-center mb-4 px-1">
+          <div>
+            <h1 className={`font-serif font-bold text-stone-800 dark:text-stone-100 ${fontClasses.header}`}>{t('history')}</h1>
+            <div className="flex items-center gap-2">
+              <span className={`font-bold text-stone-400 dark:text-stone-500 uppercase tracking-widest ${fontClasses.cellarSub}`}>{t('global')}</span>
+            </div>
+          </div>
+          <div className="flex gap-2">
+            <button onClick={() => setIsSearchOpen(true)} className={`p-2 rounded-full transition-all ${isFiltering ? 'bg-rose-100 dark:bg-rose-900 text-rose-900 shadow-sm' : 'bg-white dark:bg-stone-800 text-stone-400 shadow-sm'}`}><Search size={22} /></button>
+            <button onClick={() => setIsSettingsOpen(true)} className="p-2 rounded-full bg-white dark:bg-stone-800 text-stone-400 shadow-sm"><SettingsIcon size={22} /></button>
+            <button onClick={() => setIsInfoOpen(true)} className="p-2 rounded-full bg-white dark:bg-stone-800 text-stone-400 shadow-sm"><Info size={22} /></button>
+          </div>
+        </div>
         {renderStatsBar(filteredHistory as any)}
         <div className="space-y-3">{filteredHistory.map((entry) => (
           <div key={entry.id} onClick={() => { setSelectedWine(entry); setView('detail'); }} className={`flex gap-3 p-2.5 rounded-xl cursor-pointer shadow-sm border-l-4 ${getColorTheme(entry.color)}`}>
@@ -620,7 +662,7 @@ const CellarManager = ({ cellars, activeCellarId, onSelect, isOpen, onClose, onA
               </div>
               <div className="space-y-2">
                 <label className="text-xs font-bold text-stone-400 uppercase tracking-widest pl-1">{t('cellar_name')}</label>
-                <input autoFocus value={name} onChange={(e) => setName(e.target.value)} placeholder={t('default_cellar_name')} className={`w-full p-4 rounded-2xl bg-stone-50 dark:bg-stone-800 border-2 border-red-500 dark:border-red-800 outline-none focus:ring-2 focus:ring-rose-900/20 text-stone-800 dark:text-stone-100 ${fs.base}`} />
+                <input autoFocus value={name} onChange={(e) => setName(e.target.value)} placeholder={t('default_cellar_name')} className={`w-full p-4 rounded-2xl bg-stone-50 dark:bg-stone-800 border-2 border-red-500 outline-none focus:ring-2 focus:ring-rose-900/20 text-stone-800 dark:text-stone-100 ${fs.base}`} />
               </div>
               <div className="flex gap-3 pt-4 border-t border-stone-100 dark:border-stone-800">
                 <button onClick={reset} className="flex-1 py-4 font-bold text-stone-400 hover:text-stone-600 transition-colors">{t('cancel')}</button>

@@ -136,12 +136,6 @@ export const WineDetail: React.FC<WineDetailProps> = ({ wine, cellars, currentCe
       </div>
 
       <div className={`relative z-10 pb-20 px-1.5 transition-all duration-500 ${wine.image ? 'pt-48' : 'pt-4'}`}>
-        {isHistory && !wine.image && (
-           <div onClick={() => fileInputRef.current?.click()} className="mb-6 mx-2.5 flex flex-col items-center justify-center p-6 border-2 border-dashed border-gray-300 dark:border-stone-700 rounded-2xl bg-white/80 dark:bg-stone-900 shadow-sm transition-all hover:bg-white cursor-pointer">
-              <div className="mx-auto h-16 w-16 bg-rose-50 dark:bg-rose-900/20 text-rose-300 dark:text-rose-500 rounded-full flex items-center justify-center mb-3"><Camera size={32} /></div>
-              <div className="flex flex-col items-center text-center"><span className="text-sm font-bold text-rose-700 dark:text-rose-400">{t('take_photo')}</span><span className="text-[10px] font-bold text-gray-400 dark:text-stone-500 mt-1 uppercase tracking-wider">{t('gallery')}</span></div>
-           </div>
-        )}
         
         <div className={`rounded-3xl p-6 shadow-2xl space-y-6 ${wine.image ? 'bg-white/90 dark:bg-stone-900/90 backdrop-blur-xl border border-white/40 dark:border-stone-800' : 'bg-white dark:bg-stone-900 border border-stone-100 dark:border-stone-800'} transition-colors duration-300`}>
           <div>
@@ -218,7 +212,6 @@ export const WineDetail: React.FC<WineDetailProps> = ({ wine, cellars, currentCe
                  <Trash2 size={20} />
                  {isHistory && <span className="font-bold">{t('delete')}</span>}
               </button>
-              {isHistory && (<button type="button" onClick={() => fileInputRef.current?.click()} className="flex-1 flex items-center justify-center gap-2 bg-stone-100 dark:bg-stone-800 text-stone-800 dark:text-stone-100 font-bold py-4 px-6 rounded-xl hover:bg-stone-200 dark:hover:bg-stone-700 transition active:scale-95 cursor-pointer"><Camera size={20} /><span>{t('take_photo')}</span></button>)}
               {!isHistory && (
                 <>
                 <button type="button" onClick={() => handleTransferClick(false)} className="flex-none p-4 rounded-xl border border-indigo-200 dark:border-indigo-900/50 text-indigo-500 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-900/10 hover:bg-indigo-100 transition cursor-pointer"><Copy size={20} /></button>
@@ -257,16 +250,17 @@ export const WineDetail: React.FC<WineDetailProps> = ({ wine, cellars, currentCe
            <div className="relative bg-white dark:bg-stone-900 rounded-3xl w-full max-w-sm p-6 shadow-2xl overflow-y-auto no-scrollbar max-h-[90vh]">
             <h3 className="text-xl font-bold text-stone-900 dark:text-white mb-4">{transferModal.isMove ? t('transfer_bottle') : t('duplicate_bottle')}</h3>
             <div className="space-y-6">
-              <div className="space-y-4">
-                {cellars.map((c: Cellar) => (
-                  <div key={c.id} onClick={() => setTargetCellarId(c.id)} className={`p-3 rounded-2xl border transition-all cursor-pointer flex items-center gap-3 ${targetCellarId === c.id ? 'bg-rose-50 dark:bg-rose-900/10 border-rose-200 dark:border-rose-900/30' : 'bg-white dark:bg-stone-800 border-stone-100 dark:border-stone-700 shadow-sm'}`}>
-                    <div className="w-10 h-10 rounded-full overflow-hidden border border-white dark:border-stone-600 shadow-sm flex-shrink-0">
-                      {c.image ? <img src={c.image} className="w-full h-full object-cover" /> : <Warehouse size={16} className="m-auto mt-2.5 text-stone-300" />}
-                    </div>
-                    <span className={`font-bold flex-1 truncate ${targetCellarId === c.id ? 'text-rose-900 dark:text-rose-400' : 'text-stone-600 dark:text-stone-300'}`}>{c.name}</span>
-                    {targetCellarId === c.id && <Check size={18} className="text-rose-900 dark:text-rose-400" />}
-                  </div>
-                ))}
+              <div className="space-y-2">
+                <label className="block text-xs font-bold text-stone-500 uppercase mb-2">{t('switch_cellar')}</label>
+                <select 
+                  value={targetCellarId} 
+                  onChange={(e) => setTargetCellarId(e.target.value)}
+                  className="w-full p-4 rounded-xl bg-stone-50 dark:bg-stone-800 border-2 border-red-500 text-stone-800 dark:text-white outline-none focus:ring-2 focus:ring-rose-500/20"
+                >
+                  {cellars.map((c: Cellar) => (
+                    <option key={c.id} value={c.id}>{c.name}</option>
+                  ))}
+                </select>
               </div>
               <div className="space-y-4">
                 <div>

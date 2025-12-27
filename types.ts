@@ -59,6 +59,7 @@ export interface SearchFilters {
   recommendedYear?: number;
   strength?: number;
   agingPotential?: string;
+  tag?: string;
 }
 
 export type Language = 'fr' | 'en';

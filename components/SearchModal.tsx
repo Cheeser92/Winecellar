@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { X, Search, RotateCcw, Eraser } from 'lucide-react';
+import { X, Search, RotateCcw, Eraser, Tag as TagIcon } from 'lucide-react';
 import { SearchFilters, Language, LocationData, AppFontSize } from '../types';
 import { COLORS, AGING_POTENTIALS, STRENGTHS } from '../constants';
 import { getTranslation } from '../translations';
@@ -107,6 +107,15 @@ export const SearchModal: React.FC<SearchModalProps> = ({
             <div><label className={labelClass}>{t('year')}</label><div className="relative"><input type="number" name="year" value={filters.year || ''} onChange={handleChange} className={inputClass} placeholder={t('placeholder_vintage')} /><ClearButton onClick={() => resetField('year')} visible={filters.year !== undefined} /></div></div>
           </div>
           <div><label className={labelClass}>{t('origin')}</label><div className="relative"><input type="text" name="origin" value={filters.origin || ''} onChange={handleChange} className={inputClass} /><ClearButton onClick={() => resetField('origin')} visible={!!filters.origin} /></div></div>
+          
+          <div>
+            <label className={labelClass}>{t('tag')}</label>
+            <div className="relative">
+              <input type="text" name="tag" value={filters.tag || ''} onChange={handleChange} className={inputClass} placeholder={t('placeholder_contains')} />
+              <ClearButton onClick={() => resetField('tag')} visible={!!filters.tag} />
+            </div>
+          </div>
+
           <div className="grid grid-cols-2 gap-4">
              { !isHistoryMode && (<div><label className={labelClass}>{t('recommended_year')}</label><div className="relative"><input type="number" name="recommendedYear" value={filters.recommendedYear || ''} onChange={handleChange} className={inputClass} placeholder={t('placeholder_drink_in')} /><ClearButton onClick={() => resetField('recommendedYear')} visible={filters.recommendedYear !== undefined} /></div></div>) }
             <div className={isHistoryMode ? "col-span-2" : ""}>

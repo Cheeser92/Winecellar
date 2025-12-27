@@ -71,13 +71,39 @@ export const LocationManagerModal: React.FC<LocationManagerModalProps> = ({
           )}
           <div className="space-y-3">
             <div className="flex items-center gap-2 text-stone-400 dark:text-stone-500 mb-1"><Globe size={16}/><span className={`font-bold uppercase tracking-widest ${fs.label}`}>{t('add_country')}</span></div>
-            <div className="flex gap-2"><input type="text" value={newCountry} onChange={(e) => setNewCountry(e.target.value)} placeholder={t('new_country_placeholder')} className={`flex-1 bg-white dark:bg-stone-800 border-2 border-red-500 dark:border-red-800 rounded-xl px-4 py-3 shadow-sm focus:ring-rose-500 focus:border-rose-500 outline-none transition-all ${fs.base}`} /><button onClick={handleAddCountry} disabled={!newCountry.trim()} className="bg-rose-900 dark:bg-rose-700 text-white p-3 rounded-xl shadow-lg disabled:opacity-50 active:scale-95 transition-all"><Plus size={20}/></button></div>
+            <div className="flex gap-2">
+              <input 
+                type="text" 
+                value={newCountry} 
+                onChange={(e) => setNewCountry(e.target.value)} 
+                placeholder={t('new_country_placeholder')} 
+                className={`flex-1 bg-white dark:bg-stone-800 border-2 border-red-500 rounded-xl px-4 py-3 shadow-sm focus:ring-rose-500 focus:border-rose-500 outline-none transition-all ${fs.base}`} 
+              />
+              <button onClick={handleAddCountry} disabled={!newCountry.trim()} className="bg-rose-900 dark:bg-rose-700 text-white p-3 rounded-xl shadow-lg disabled:opacity-50 active:scale-95 transition-all"><Plus size={20}/></button>
+            </div>
           </div>
           <div className="space-y-3 pt-4 border-t border-stone-100 dark:border-stone-800">
             <div className="flex items-center gap-2 text-stone-400 dark:text-stone-500 mb-1"><MapPin size={16}/><span className={`font-bold uppercase tracking-widest ${fs.label}`}>{t('add_region')}</span></div>
             <div className="space-y-3">
-              <select value={selectedCountry} onChange={(e) => setSelectedCountry(e.target.value)} className={`w-full bg-white dark:bg-stone-800 border-2 border-red-500 dark:border-red-800 rounded-xl px-4 py-3 shadow-sm outline-none transition-all ${fs.base}`}><option value="">{t('select_country_first')}</option>{locationData.countries.map(c => <option key={c} value={c}>{c}</option>)}</select>
-              <div className="flex gap-2"><input type="text" value={newRegion} disabled={!selectedCountry} onChange={(e) => setNewRegion(e.target.value)} placeholder={t('new_region_placeholder')} className={`flex-1 bg-white dark:bg-stone-800 border-2 border-red-500 dark:border-red-800 rounded-xl px-4 py-3 shadow-sm focus:ring-rose-500 focus:border-rose-500 outline-none transition-all disabled:opacity-50 ${fs.base}`} /><button onClick={handleAddRegion} disabled={!newRegion.trim() || !selectedCountry} className="bg-rose-900 dark:bg-rose-700 text-white p-3 rounded-xl shadow-lg disabled:opacity-50 active:scale-95 transition-all"><Plus size={20}/></button></div>
+              <select 
+                value={selectedCountry} 
+                onChange={(e) => setSelectedCountry(e.target.value)} 
+                className={`w-full bg-white dark:bg-stone-800 border-2 border-red-500 rounded-xl px-4 py-3 shadow-sm outline-none transition-all ${fs.base}`}
+              >
+                <option value="">{t('select_country_first')}</option>
+                {locationData.countries.map(c => <option key={c} value={c}>{c}</option>)}
+              </select>
+              <div className="flex gap-2">
+                <input 
+                  type="text" 
+                  value={newRegion} 
+                  disabled={!selectedCountry} 
+                  onChange={(e) => setNewRegion(e.target.value)} 
+                  placeholder={t('new_region_placeholder')} 
+                  className={`flex-1 bg-white dark:bg-stone-800 border-2 border-red-500 rounded-xl px-4 py-3 shadow-sm focus:ring-rose-500 focus:border-rose-500 outline-none transition-all disabled:opacity-50 ${fs.base}`} 
+                />
+                <button onClick={handleAddRegion} disabled={!newRegion.trim() || !selectedCountry} className="bg-rose-900 dark:bg-rose-700 text-white p-3 rounded-xl shadow-lg disabled:opacity-50 active:scale-95 transition-all"><Plus size={20}/></button>
+              </div>
             </div>
           </div>
         </div>

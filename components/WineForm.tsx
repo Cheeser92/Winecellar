@@ -111,13 +111,13 @@ export const WineForm: React.FC<WineFormProps> = ({
       case 'small': return { base: 'text-xs', label: 'text-[9px]', lg: 'text-sm', xl: 'text-base' };
       case 'large': return { base: 'text-base', label: 'text-[11px]', lg: 'text-lg', xl: 'text-xl' };
       case 'medium':
-      default: return { base: 'text-sm', label: 'text-[10px]', lg: 'text-base', xl: 'text-lg' };
+      default: return { base: 'text-sm', label: 'text-[10px]', xl: 'text-lg', lg: 'text-base' };
     }
   };
 
   const fs = getFontSizeClasses(fontSize as AppFontSize);
   const inputClass = `mt-1 block w-full rounded-lg border border-gray-300 dark:border-stone-700 bg-white dark:bg-stone-800 text-gray-900 dark:text-white shadow-sm focus:border-rose-500 focus:ring-rose-500 h-11 px-3 transition-all ${fs.base}`;
-  const requiredInputClass = `mt-1 block w-full rounded-lg border-2 border-red-500 dark:border-red-800 bg-white dark:bg-stone-800 text-gray-900 dark:text-white shadow-sm focus:border-rose-500 focus:ring-rose-500 h-11 px-3 transition-all ${fs.base}`;
+  const requiredInputClass = `mt-1 block w-full rounded-lg border-2 border-red-500 bg-white dark:bg-stone-800 text-gray-900 dark:text-white shadow-sm focus:border-rose-500 focus:ring-rose-500 h-11 px-3 transition-all ${fs.base}`;
   const textareaClass = `mt-1 block w-full rounded-lg border border-gray-300 dark:border-stone-700 bg-white dark:bg-stone-800 text-gray-900 dark:text-white shadow-sm focus:border-rose-500 focus:ring-rose-500 p-3 transition-all ${fs.base}`;
   const labelClass = `block font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1 ${fs.label}`;
 
@@ -253,9 +253,13 @@ export const WineForm: React.FC<WineFormProps> = ({
               <div className="col-span-3">
                 <label className={labelClass}>{t('quantity')}</label>
                 <div className="flex items-center gap-2 mt-1">
-                  <button type="button" onClick={() => handleQuantityChange(formData.quantity - 1)} className="w-11 h-11 rounded-lg bg-stone-100 dark:bg-stone-800 flex items-center justify-center border border-stone-200 dark:border-stone-700 active:scale-90 transition-all"><Minus size={18} className="text-stone-600 dark:text-stone-300" /></button>
+                  <button type="button" onClick={() => handleQuantityChange(formData.quantity - 1)} className="w-11 h-11 rounded-lg bg-stone-100 dark:bg-stone-800 flex items-center justify-center border border-stone-200 dark:border-stone-700 active:scale-90 transition-all">
+                    <Minus size={18} className="text-stone-600 dark:text-stone-300" />
+                  </button>
                   <div className={`flex-1 h-11 bg-white dark:bg-stone-800 border border-stone-200 dark:border-stone-700 rounded-lg flex items-center justify-center font-bold text-gray-900 dark:text-white ${fs.lg}`}>{formData.quantity}</div>
-                  <button type="button" onClick={() => handleQuantityChange(formData.quantity + 1)} className="w-11 h-11 rounded-lg bg-stone-100 dark:bg-stone-800 flex items-center justify-center border border-stone-200 dark:border-stone-700 active:scale-90 transition-all"><Plus size={18} className="text-stone-600 dark:text-stone-300" /></button>
+                  <button type="button" onClick={() => handleQuantityChange(formData.quantity + 1)} className="w-11 h-11 rounded-lg bg-stone-100 dark:bg-stone-800 flex items-center justify-center border border-stone-200 dark:border-stone-700 active:scale-90 transition-all">
+                    <Plus size={18} className="text-stone-600 dark:text-stone-300" />
+                  </button>
                 </div>
               </div>
                <div className="col-span-1">

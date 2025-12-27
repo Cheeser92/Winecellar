@@ -156,7 +156,8 @@ export const translations = {
     new_region_placeholder: "Nom de la nouvelle région...",
     country_already_exists: "Ce pays existe déjà.",
     region_already_exists: "Cette région existe déjà.",
-    reverse_sort: "Inverser le tri"
+    reverse_sort: "Inverser le tri",
+    global: "Global"
   },
   en: {
     app_title: "My Wine Cellar",
@@ -305,7 +306,8 @@ export const translations = {
     new_region_placeholder: "New region name...",
     country_already_exists: "Country already exists.",
     region_already_exists: "Region already exists.",
-    reverse_sort: "Reverse sort"
+    reverse_sort: "Reverse sort",
+    global: "Global"
   }
 };
 
