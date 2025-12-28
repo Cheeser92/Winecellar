@@ -67,6 +67,7 @@ export type Language = 'fr' | 'en';
 export type Theme = 'light' | 'dark';
 export type AppFontSize = 'small' | 'medium' | 'large';
 export type ColorTheme = 'default' | 'blue' | 'red' | 'yellow' | 'mauve' | 'green';
+export type ImageCompression = 'low' | 'moderate' | 'strong';
 
 export interface AppSettings {
   language: Language;
@@ -74,6 +75,7 @@ export interface AppSettings {
   shelfCount: number;
   fontSize: AppFontSize;
   colorTheme?: ColorTheme;
+  imageCompression?: ImageCompression;
 }
 
 export interface LocationData {

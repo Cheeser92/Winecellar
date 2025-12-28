@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect, useRef, useMemo } from 'react';
-import { Plus, LayoutGrid, History, Wine as WineIcon, Search, ChevronDown, ChevronRight, Calculator, Coins, Hash, PieChart, Settings as SettingsIcon, Info, Clock, Calendar, ArrowRight, X, Trash2, ChevronsRight, Warehouse, Pencil, Camera, RefreshCw, Star, AlertTriangle, Eye, ArrowUpDown, MapPin, Globe } from 'lucide-react';
-import { Wine, HistoryEntry, WineColor, SearchFilters, AppSettings, BackupData, AppFontSize, LocationData, Cellar, ColorTheme } from './types';
+import { Plus, LayoutGrid, History, Wine as WineIcon, Search, ChevronDown, ChevronRight, Calculator, Coins, Hash, PieChart, Settings as SettingsIcon, Info, Clock, Calendar, ArrowRight, X, Trash2, ChevronsRight, Warehouse, Pencil, Camera, RefreshCw, Star, AlertTriangle, Eye, ArrowUpDown, MapPin, Globe, Loader2 } from 'lucide-react';
+import { Wine, HistoryEntry, WineColor, SearchFilters, AppSettings, BackupData, AppFontSize, LocationData, Cellar, ColorTheme, ImageCompression } from './types';
 import { WineForm } from './components/WineForm';
 import { WineDetail } from './components/WineDetail';
 import { SearchModal } from './components/SearchModal';
@@ -27,7 +27,8 @@ const DEFAULT_SETTINGS: AppSettings = {
   theme: 'light',
   shelfCount: 4,
   fontSize: 'medium',
-  colorTheme: 'default'
+  colorTheme: 'default',
+  imageCompression: 'strong' // FORCÉ À STRONG PAR DÉFAUT
 };
 
 const THEME_CONFIGS: Record<ColorTheme, { primary: string; primaryDark: string; bgSoft: string; border: string }> = {
@@ -39,7 +40,19 @@ const THEME_CONFIGS: Record<ColorTheme, { primary: string; primaryDark: string; 
   green: { primary: '#059669', primaryDark: '#065f46', bgSoft: '#ecfdf5', border: '#d1fae5' },
 };
 
-const compressImage = (base64: string, maxWidth = 800, quality = 0.7): Promise<string> => {
+const compressImage = (base64: string, compression: ImageCompression = 'strong'): Promise<string> => {
+  let maxWidth = 800;
+  let quality = 0.7;
+
+  if (compression === 'low') {
+    maxWidth = 1200;
+    quality = 0.85;
+  } else if (compression === 'strong') {
+    // Optimisation agressive : 320px et qualité basse pour ne peser que quelques ko
+    maxWidth = 320;
+    quality = 0.2;
+  }
+
   return new Promise((resolve) => {
     const img = new Image();
     img.src = base64;
@@ -57,6 +70,7 @@ const compressImage = (base64: string, maxWidth = 800, quality = 0.7): Promise<s
       ctx?.drawImage(img, 0, 0, width, height);
       resolve(canvas.toDataURL('image/jpeg', quality));
     };
+    img.onerror = () => resolve(base64); // Fallback si erreur
   });
 };
 
@@ -121,6 +135,9 @@ function App() {
   const [shelfToDelete, setShelfToDelete] = useState<string | null>(null);
   const [searchFilters, setSearchFilters] = useState<SearchFilters>({});
 
+  // Progression de la compression en masse
+  const [batchProgress, setBatchProgress] = useState<{ current: number, total: number } | null>(null);
+
   const [cellars, setCellars] = useState<Cellar[]>(() => {
     try {
       const saved = localStorage.getItem('my-wine-cellars-v3');
@@ -160,6 +177,18 @@ function App() {
   const wines = activeCellar.wines || [];
   const history = globalHistory || [];
 
+  const [locationData, setLocationData] = useState<LocationData>(() => {
+    try {
+      const saved = localStorage.getItem('my-wine-cellar-locations');
+      if (saved) return JSON.parse(saved);
+    } catch {}
+    const isFR = settings.language === 'fr';
+    return {
+      countries: isFR ? [...COUNTRIES_FR] : [...COUNTRIES_EN],
+      regions: isFR ? { ...REGIONS_BY_COUNTRY_FR } : { ...REGIONS_BY_COUNTRY_EN }
+    };
+  });
+
   // Suggestions calculées sur TOUS les vins (toutes les caves + historique)
   const suggestions = useMemo(() => {
     const allWines = [...cellars.flatMap(c => c.wines || []), ...globalHistory];
@@ -191,11 +220,11 @@ function App() {
       root.style.setProperty('--theme-bg-soft', config.bgSoft);
       root.style.setProperty('--theme-border', config.border);
     } else {
-      // Dark mode has standard colors to maintain readability
-      root.style.setProperty('--theme-primary', '#e11d48'); // rose-600
-      root.style.setProperty('--theme-primary-dark', '#9f1239'); // rose-800
-      root.style.setProperty('--theme-bg-soft', '#1c1917'); // stone-900
-      root.style.setProperty('--theme-border', '#44403c'); // stone-700
+      // Dark mode colors
+      root.style.setProperty('--theme-primary', '#e11d48'); 
+      root.style.setProperty('--theme-primary-dark', '#9f1239'); 
+      root.style.setProperty('--theme-bg-soft', '#1c1917'); 
+      root.style.setProperty('--theme-border', '#44403c'); 
     }
   }, [settings.theme, settings.colorTheme]);
 
@@ -204,77 +233,145 @@ function App() {
       localStorage.setItem('my-wine-cellars-v3', JSON.stringify(cellars));
       localStorage.setItem('active-cellar-id', activeCellarId);
       localStorage.setItem('global-wine-history-v3', JSON.stringify(globalHistory));
+      localStorage.setItem('my-wine-cellar-locations', JSON.stringify(locationData));
     } catch (e) { console.error("Storage error", e); }
-  }, [cellars, activeCellarId, globalHistory]);
+  }, [cellars, activeCellarId, globalHistory, locationData]);
 
   const updateActiveCellar = (updates: Partial<Cellar>) => {
     setCellars(prev => prev.map(c => c.id === activeCellarId ? { ...c, ...updates } : c));
   };
 
-  const [locationData, setLocationData] = useState<LocationData>(() => {
-    try {
-      const saved = localStorage.getItem('my-wine-cellar-locations');
-      if (saved) return JSON.parse(saved);
-    } catch {}
-    const isFR = settings.language === 'fr';
-    return {
-      countries: isFR ? [...COUNTRIES_FR] : [...COUNTRIES_EN],
-      regions: isFR ? { ...REGIONS_BY_COUNTRY_FR } : { ...REGIONS_BY_COUNTRY_EN }
-    };
-  });
-
   const [expandedShelves, setExpandedShelves] = useState<Record<string, boolean>>({});
   const t = (key: any) => getTranslation(settings.language, key);
 
-  useEffect(() => {
-    localStorage.setItem('my-wine-cellar-locations', JSON.stringify(locationData));
-  }, [locationData]);
+  // Fonction pour compresser en masse toutes les images existantes
+  const applyBatchCompression = async (level: ImageCompression) => {
+    const itemsToProcess: { type: 'wine' | 'history' | 'cellar', id: string, cellarId?: string, image: string }[] = [];
+    
+    // Collecte des images dans toutes les caves
+    cellars.forEach(c => {
+      if (c.image) itemsToProcess.push({ type: 'cellar', id: c.id, cellarId: c.id, image: c.image });
+      c.wines.forEach(w => {
+        if (w.image) itemsToProcess.push({ type: 'wine', id: w.id, cellarId: c.id, image: w.image });
+      });
+    });
 
-  const handleUpdateSettings = (newSettings: AppSettings) => {
+    // Collecte des images dans l'historique
+    globalHistory.forEach(h => {
+      if (h.image) itemsToProcess.push({ type: 'history', id: h.id, image: h.image });
+    });
+
+    if (itemsToProcess.length === 0) return;
+
+    setBatchProgress({ current: 0, total: itemsToProcess.length });
+    
+    // On travaille sur des copies locales pour faire une seule mise à jour de state à la fin
+    let updatedCellars = [...cellars];
+    let updatedHistory = [...globalHistory];
+
+    for (let i = 0; i < itemsToProcess.length; i++) {
+      const item = itemsToProcess[i];
+      const compressed = await compressImage(item.image, level);
+      
+      if (item.type === 'wine') {
+        updatedCellars = updatedCellars.map(c => {
+          if (c.id === item.cellarId) {
+            return {
+              ...c,
+              wines: c.wines.map(w => w.id === item.id ? { ...w, image: compressed } : w)
+            };
+          }
+          return c;
+        });
+      } else if (item.type === 'cellar') {
+        updatedCellars = updatedCellars.map(c => c.id === item.id ? { ...c, image: compressed } : c);
+      } else {
+        updatedHistory = updatedHistory.map(h => h.id === item.id ? { ...h, image: compressed } : h);
+      }
+
+      setBatchProgress({ current: i + 1, total: itemsToProcess.length });
+    }
+
+    setCellars(updatedCellars);
+    setGlobalHistory(updatedHistory);
+    setBatchProgress(null);
+  };
+
+  const handleUpdateSettings = async (newSettings: AppSettings) => {
+    const compressionChanged = newSettings.imageCompression !== settings.imageCompression;
+
     const globalChanged = 
       newSettings.language !== settings.language || 
       newSettings.theme !== settings.theme || 
       newSettings.fontSize !== settings.fontSize ||
-      newSettings.colorTheme !== settings.colorTheme;
+      newSettings.colorTheme !== settings.colorTheme ||
+      compressionChanged;
 
     setCellars(prev => prev.map(c => {
       let updatedCellar = { ...c };
+      
+      if (c.id === activeCellarId) {
+        const oldShelfCount = c.settings.shelfCount;
+        const newShelfCount = newSettings.shelfCount;
+        updatedCellar.settings = { ...c.settings, shelfCount: newShelfCount };
+        
+        if (newShelfCount < oldShelfCount) {
+          const prefix = translations[newSettings.language].shelf_prefix;
+          const offSite = translations[newSettings.language].off_site;
+          
+          updatedCellar.wines = c.wines.map(wine => {
+            for (let i = newShelfCount + 1; i <= oldShelfCount; i++) {
+              if (wine.location === `${prefix} ${i}`) {
+                return { ...wine, location: offSite };
+              }
+            }
+            return wine;
+          });
+        }
+      }
+
       if (globalChanged) {
         updatedCellar.settings = { 
-          ...c.settings, 
+          ...updatedCellar.settings, 
           language: newSettings.language,
           theme: newSettings.theme,
           fontSize: newSettings.fontSize,
-          colorTheme: newSettings.colorTheme
+          colorTheme: newSettings.colorTheme,
+          imageCompression: newSettings.imageCompression || 'strong'
         };
       }
-      if (c.id === activeCellarId) {
-        updatedCellar.settings.shelfCount = newSettings.shelfCount;
-      }
+
       if (newSettings.language !== settings.language) {
         const oldPrefix = translations[settings.language].shelf_prefix;
         const newPrefix = translations[newSettings.language].shelf_prefix;
         const oldOffsite = translations[settings.language].off_site;
         const newOffsite = translations[newSettings.language].off_site;
         
-        updatedCellar.wines = c.wines.map(wine => {
+        updatedCellar.wines = updatedCellar.wines.map(wine => {
           if (wine.location.startsWith(oldPrefix)) return { ...wine, location: wine.location.replace(oldPrefix, newPrefix) };
           if (wine.location === oldOffsite) return { ...wine, location: newOffsite };
           return wine;
         });
+        
         const isNewFR = newSettings.language === 'fr';
         setLocationData({
           countries: isNewFR ? [...COUNTRIES_FR] : [...COUNTRIES_EN],
           regions: isNewFR ? { ...REGIONS_BY_COUNTRY_FR } : { ...REGIONS_BY_COUNTRY_EN }
         });
       }
+      
       return updatedCellar;
     }));
+
+    // Si la compression a changé, on applique le changement sur tout le stock
+    if (compressionChanged && newSettings.imageCompression) {
+      setTimeout(() => applyBatchCompression(newSettings.imageCompression!), 100);
+    }
   };
 
   const availableLocations = useMemo(() => {
     const prefix = t('shelf_prefix');
-    const shelves = Array.from({ length: settings.shelfCount || 0 }, (_, i) => `${prefix} ${i + 1}`);
+    const shelves = Array.from({ length: (settings.shelfCount || 0) + 1 }, (_, i) => `${prefix} ${i}`);
     return [...shelves, t('off_site')];
   }, [settings.shelfCount, settings.language]);
 
@@ -315,7 +412,6 @@ function App() {
 
   const filteredWines = useMemo(() => {
     if (isGlobalSearch) {
-      // Recherche dans toutes les caves
       const allWines: SearchResultWine[] = [];
       cellars.forEach(cellar => {
         const cellarFilteredWines = filterList(cellar.wines || [], searchFilters, false);
@@ -325,21 +421,22 @@ function App() {
       });
       return allWines;
     }
-    // Recherche locale par défaut
     return filterList<Wine>(wines, searchFilters, false);
   }, [wines, cellars, searchFilters, isGlobalSearch]);
 
   const filteredHistory = useMemo(() => filterList<HistoryEntry>(history, searchFilters, true), [history, searchFilters]);
 
-  const handleAddWine = (wineData: Omit<Wine, 'id'>) => {
-    const newWine: Wine = { ...wineData, id: Date.now().toString() };
+  const handleAddWine = async (wineData: Omit<Wine, 'id'>) => {
+    const compressedImage = wineData.image ? await compressImage(wineData.image, 'strong') : null;
+    const newWine: Wine = { ...wineData, id: Date.now().toString(), image: compressedImage };
     updateActiveCellar({ wines: [...wines, newWine] });
     setView('list');
   };
 
-  const handleEditWine = (wineData: Omit<Wine, 'id'>) => {
+  const handleEditWine = async (wineData: Omit<Wine, 'id'>) => {
     if (selectedWine) {
-        const updatedWine: any = { ...selectedWine, ...wineData };
+        const compressedImage = wineData.image ? await compressImage(wineData.image, 'strong') : null;
+        const updatedWine: any = { ...selectedWine, ...wineData, image: compressedImage };
         if (activeTab === 'history') {
           setGlobalHistory(prev => prev.map(h => h.id === selectedWine.id ? updatedWine : h));
         } else {
@@ -509,8 +606,8 @@ function App() {
   };
 
   const handleAddCellar = async (name: string, image: string | null) => {
-    const compressedImage = image ? await compressImage(image) : null;
-    const newCellar: Cellar = { id: Date.now().toString(), name, image: compressedImage, wines: [], settings: { ...DEFAULT_SETTINGS, language: settings.language, theme: settings.theme, fontSize: settings.fontSize, colorTheme: settings.colorTheme } };
+    const compressedImage = image ? await compressImage(image, 'strong') : null;
+    const newCellar: Cellar = { id: Date.now().toString(), name, image: compressedImage, wines: [], settings: { ...DEFAULT_SETTINGS, language: settings.language, theme: settings.theme, fontSize: settings.fontSize, colorTheme: settings.colorTheme, imageCompression: 'strong' } };
     setCellars(prev => [...prev, newCellar]);
     setActiveCellarId(newCellar.id);
   };
@@ -518,7 +615,7 @@ function App() {
   const renderContent = () => {
     if (view === 'add') return <WineForm onSave={handleAddWine} onCancel={() => setView('list')} availableLocations={availableLocations} locationData={locationData} onOpenLocationManager={() => setIsLocationManagerOpen(true)} language={settings.language} fontSize={settings.fontSize} suggestions={suggestions} />;
     if (view === 'edit' && selectedWine) return <WineForm initialData={selectedWine} onSave={handleEditWine} onCancel={() => setView('detail')} availableLocations={availableLocations} locationData={locationData} onOpenLocationManager={() => setIsLocationManagerOpen(true)} language={settings.language} isHistoryMode={activeTab === 'history'} fontSize={settings.fontSize} suggestions={suggestions} />;
-    if (view === 'detail' && selectedWine) return <WineDetail wine={selectedWine} cellars={cellars} currentCellarId={activeCellarId} onBack={() => setView('list')} onConsume={activeTab === 'history' ? undefined : handleConsumeWine} onDelete={activeTab === 'history' ? handleDeleteHistory : handleDeleteWine} onEdit={() => setView('edit')} onTransfer={handleTransferWine} onUpdateImage={activeTab === 'history' ? undefined : async (img) => { const compressed = await compressImage(img); updateActiveCellar({ wines: wines.map(x => x.id === selectedWine.id ? { ...x, image: compressed } : x) }); }} onEnlargeImage={setLargeImage} availableLocations={availableLocations} isHistory={activeTab === 'history'} language={settings.language} fontSize={settings.fontSize} />;
+    if (view === 'detail' && selectedWine) return <WineDetail wine={selectedWine} cellars={cellars} currentCellarId={activeCellarId} onBack={() => setView('list')} onConsume={activeTab === 'history' ? undefined : handleConsumeWine} onDelete={activeTab === 'history' ? handleDeleteHistory : handleDeleteWine} onEdit={() => setView('edit')} onTransfer={handleTransferWine} onUpdateImage={activeTab === 'history' ? undefined : async (img) => { const compressed = await compressImage(img, 'strong'); updateActiveCellar({ wines: wines.map(x => x.id === selectedWine.id ? { ...x, image: compressed } : x) }); }} onEnlargeImage={setLargeImage} availableLocations={availableLocations} isHistory={activeTab === 'history'} language={settings.language} fontSize={settings.fontSize} />;
     
     if (activeTab === 'stats') return (
       <div className="pb-24 px-2 py-4">
@@ -557,90 +654,57 @@ function App() {
         </div>
         {renderStatsBar(filteredWines)}
 
-        {/* Global Search Specific View */}
-        {isFiltering && isGlobalSearch ? (
-          <div className="space-y-3 animate-in fade-in duration-500">
-            <div className="flex items-center gap-2 px-2 pb-1 border-b border-stone-200 dark:border-stone-800">
-              <Globe size={16} className="text-[var(--theme-primary)] dark:text-rose-400" />
-              <h2 className={`font-bold text-stone-800 dark:text-stone-100 uppercase tracking-wider ${fontClasses.sub}`}>{t('search_all_cellars')}</h2>
-            </div>
-            {(filteredWines as SearchResultWine[]).map(wine => (
-              <div key={wine.id} onClick={() => handleSelectWine(wine)} className={`flex gap-2.5 items-center p-3 rounded-xl cursor-pointer transition-all shadow-sm border-l-4 ${getColorTheme(wine.color)}`}>
-                <div className="w-14 h-14 rounded-full bg-white dark:bg-stone-800 flex-shrink-0 overflow-hidden border border-white dark:border-stone-700 relative shadow-sm">{wine.image ? <img src={wine.image} className="w-full h-full object-cover" alt="" /> : <WineIcon className="w-6 h-6 m-auto mt-4 text-stone-300"/>}</div>
-                <div className="flex-1 min-w-0">
-                  <p className={`font-bold text-gray-800 dark:text-gray-100 truncate leading-tight ${fontClasses.title}`}>{wine.name}</p>
-                  <div className="flex items-center gap-1.5 mt-0.5">
-                    <p className={`text-gray-500 dark:text-gray-400 truncate ${fontClasses.sub}`}>{wine.region} - {wine.year}</p>
-                    <div className={`w-1.5 h-1.5 rounded-full ${getConsumptionStatusColor(wine)} flex-shrink-0`}></div>
-                  </div>
-                  <div className="flex items-center gap-1 mt-1 text-[10px] text-[var(--theme-primary)]/60 dark:text-rose-400/60 font-bold uppercase tracking-tight">
-                    <MapPin size={10} />
-                    <span>{wine.cellarName} / {wine.location}</span>
-                  </div>
-                </div>
-                <div className="flex flex-col items-center justify-center w-9 h-9 rounded shadow-sm bg-white/50 dark:bg-stone-800 text-stone-600 dark:text-stone-300 flex-shrink-0"><span className={`uppercase font-bold opacity-60 leading-none ${fontClasses.badgeLabel}`}>{t('qty')}</span><span className={`font-bold leading-none mt-0.5 ${fontClasses.badgeValue}`}>{wine.quantity}</span></div>
-              </div>
-            ))}
-            {filteredWines.length === 0 && (
-              <div className="text-center py-10">
-                <p className="text-stone-400 italic">{t('no_results')}</p>
-              </div>
-            )}
-          </div>
-        ) : (
-          /* Normal Grouped Shelf View */
-          availableLocations.map(shelfName => {
-            const shelfWines = filteredWines.filter(w => w.location === shelfName);
-            if (shelfWines.length === 0) return null;
-            const isExpanded = expandedShelves[shelfName] || false;
-            const shelfQty = shelfWines.reduce((acc, w) => acc + (w.quantity || 0), 0);
-            const shelfTotalCost = shelfWines.reduce((acc, w) => acc + ((w?.price || 0) * (w?.quantity || 0)), 0);
-            const shelfColorCounts = shelfWines.reduce((acc, w) => { acc[w.color] = (acc[w.color] || 0) + (w.quantity || 0); return acc; }, { [WineColor.ROUGE]: 0, [WineColor.BLANC]: 0, [WineColor.ROSE]: 0 } as Record<WineColor, number>);
-            return (
-              <div key={shelfName} className="bg-white dark:bg-stone-900 rounded-xl shadow-sm border border-stone-100/80 dark:border-stone-800 overflow-hidden">
-                <div className={`w-full flex justify-between items-center ${isExpanded ? 'bg-stone-50 dark:bg-stone-800 border-b border-stone-100 dark:border-stone-800' : ''}`}>
-                  <button onClick={() => toggleShelf(shelfName)} className="flex-1 flex items-center justify-between p-4 gap-2.5 overflow-hidden text-left">
-                      <div className="flex items-center gap-2.5 overflow-hidden flex-1">
-                          <div className="text-stone-400 flex-shrink-0">{isExpanded ? <ChevronDown size={18} /> : <ChevronRight size={18} />}</div>
-                          <h2 className={`font-bold text-gray-800 dark:text-gray-100 truncate ${fontClasses.shelfTitle}`}>{shelfName}</h2>
-                      </div>
-                  </button>
-                  <div className="flex items-center gap-2 px-3">
-                    <div className="flex items-center gap-3 mr-1 text-stone-600 dark:text-stone-300">
-                      {shelfColorCounts[WineColor.ROUGE] > 0 && <div className="flex items-center gap-1"><div className="w-3 h-3 rounded-full bg-rose-950 dark:bg-rose-600 shadow-sm"></div><span className={`font-bold text-sm`}>{shelfColorCounts[WineColor.ROUGE]}</span></div>}
-                      {shelfColorCounts[WineColor.BLANC] > 0 && <div className="flex items-center gap-1"><div className="w-3 h-3 rounded-full bg-yellow-400 dark:bg-yellow-500 shadow-sm"></div><span className={`font-bold text-sm`}>{shelfColorCounts[WineColor.BLANC]}</span></div>}
-                      {shelfColorCounts[WineColor.ROSE] > 0 && <div className="flex items-center gap-1"><div className="w-3 h-3 rounded-full bg-pink-400 dark:bg-pink-500 shadow-sm"></div><span className={`font-bold text-sm`}>{shelfColorCounts[WineColor.ROSE]}</span></div>}
+        {availableLocations.map(shelfName => {
+          const shelfWines = filteredWines.filter(w => w.location === shelfName);
+          if (shelfWines.length === 0) return null;
+          const isExpanded = expandedShelves[shelfName] || false;
+          const shelfQty = shelfWines.reduce((acc, w) => acc + (w.quantity || 0), 0);
+          const shelfTotalCost = shelfWines.reduce((acc, w) => acc + ((w?.price || 0) * (w?.quantity || 0)), 0);
+          const shelfColorCounts = shelfWines.reduce((acc, w) => { acc[w.color] = (acc[w.color] || 0) + (w.quantity || 0); return acc; }, { [WineColor.ROUGE]: 0, [WineColor.BLANC]: 0, [WineColor.ROSE]: 0 } as Record<WineColor, number>);
+          return (
+            <div key={shelfName} className="bg-white dark:bg-stone-900 rounded-xl shadow-sm border border-stone-100/80 dark:border-stone-800 overflow-hidden">
+              <div className={`w-full flex justify-between items-center ${isExpanded ? 'bg-stone-50 dark:bg-stone-800 border-b border-stone-100 dark:border-stone-800' : ''}`}>
+                <button onClick={() => toggleShelf(shelfName)} className="flex-1 flex items-center justify-between p-4 gap-2.5 overflow-hidden text-left">
+                    <div className="flex items-center gap-2.5 overflow-hidden flex-1">
+                        <div className="text-stone-400 flex-shrink-0">{isExpanded ? <ChevronDown size={18} /> : <ChevronRight size={18} />}</div>
+                        <h2 className={`font-bold text-gray-800 dark:text-gray-100 truncate ${fontClasses.shelfTitle}`}>{shelfName}</h2>
                     </div>
-                    <span className={`text-stone-400 dark:text-stone-500 font-bold uppercase tracking-wide transition-all ${fontClasses.shelfCost}`}>{shelfTotalCost.toLocaleString(settings.language, { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 })}</span>
-                    <span className={`bg-gray-100 dark:bg-stone-800 text-gray-600 dark:text-stone-300 font-bold px-2 py-0.5 rounded-full border border-gray-200 dark:border-stone-700 transition-all ${fontClasses.shelfCount}`}>{shelfQty}</span>
-                    {shelfName !== t('off_site') && (
-                        <button 
-                            onClick={(e) => { e.stopPropagation(); setShelfToDelete(shelfName); }} 
-                            className="p-1.5 text-red-500 hover:text-red-700 transition-colors flex-shrink-0"
-                        >
-                            <Trash2 size={18} />
-                        </button>
+                </button>
+                <div className="flex items-center gap-2 px-3">
+                  <div className="flex items-center gap-3 mr-1 text-stone-600 dark:text-stone-300">
+                    {shelfColorCounts[WineColor.ROUGE] > 0 && <div className="flex items-center gap-1"><div className="w-3 h-3 rounded-full bg-rose-950 dark:bg-rose-600 shadow-sm"></div><span className={`font-bold text-sm`}>{shelfColorCounts[WineColor.ROUGE]}</span></div>}
+                    {shelfColorCounts[WineColor.BLANC] > 0 && <div className="flex items-center gap-1"><div className="w-3 h-3 rounded-full bg-yellow-400 dark:bg-yellow-500 shadow-sm"></div><span className={`font-bold text-sm`}>{shelfColorCounts[WineColor.BLANC]}</span></div>}
+                    {shelfColorCounts[WineColor.ROSE] > 0 && <div className="flex items-center gap-1"><div className="w-3 h-3 rounded-full bg-pink-400 dark:bg-pink-500 shadow-sm"></div><span className={`font-bold text-sm`}>{shelfColorCounts[WineColor.ROSE]}</span></div>}
+                  </div>
+                  <span className={`text-stone-400 dark:text-stone-500 font-bold uppercase tracking-wide transition-all ${fontClasses.shelfCost}`}>{shelfTotalCost.toLocaleString(settings.language, { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 })}</span>
+                  <span className={`bg-gray-100 dark:bg-stone-800 text-gray-600 dark:text-stone-300 font-bold px-2 py-0.5 rounded-full border border-gray-200 dark:border-stone-700 transition-all ${fontClasses.shelfCount}`}>{shelfQty}</span>
+                  {shelfName !== t('off_site') && shelfName !== `${t('shelf_prefix')} 0` && (
+                      <button 
+                          onClick={(e) => { e.stopPropagation(); setShelfToDelete(shelfName); }} 
+                          className="p-1.5 text-red-500 hover:text-red-700 transition-colors flex-shrink-0"
+                      >
+                          <Trash2 size={18} />
+                      </button>
+                  )}
+                </div>
+              </div>
+              {isExpanded && <div className="p-2 space-y-2">{shelfWines.map(wine => (
+                <div key={wine.id} onClick={() => handleSelectWine(wine)} className={`flex gap-2.5 items-center p-2 rounded-lg cursor-pointer transition-all shadow-sm border-l-4 ${getColorTheme(wine.color)}`}>
+                  <div className="w-12 h-12 rounded-full bg-white dark:bg-stone-800 flex-shrink-0 overflow-hidden border border-white dark:border-stone-700 relative">{wine.image ? <img src={wine.image} className="w-full h-full object-cover" alt="" /> : <WineIcon className="w-5 h-5 m-auto mt-3.5 text-stone-300"/>}</div>
+                  <div className="flex-1 min-w-0"><p className={`font-bold text-gray-800 dark:text-gray-100 truncate leading-tight ${fontClasses.title}`}>{wine.name}</p><div className="flex items-center gap-1.5 mt-0.5"><p className={`text-gray-500 dark:text-gray-400 truncate ${fontClasses.sub}`}>{wine.region} - {wine.year}</p><div className={`w-1.5 h-1.5 rounded-full ${getConsumptionStatusColor(wine)} flex-shrink-0`}></div></div></div>
+                  <div className="flex items-center gap-2">
+                    {wine.image && (
+                      <button onClick={(e) => { e.stopPropagation(); setLargeImage(wine.image); }} className="p-2 text-stone-400 hover:text-[var(--theme-primary)] transition-colors bg-white/50 dark:bg-stone-800 rounded-lg shadow-sm">
+                        <Eye size={18} />
+                      </button>
                     )}
+                    <div className={`flex flex-col items-center justify-center w-9 h-9 rounded shadow-sm bg-white/50 dark:bg-stone-800 text-stone-600 dark:text-stone-300`}><span className={`uppercase font-bold opacity-60 leading-none ${fontClasses.badgeLabel}`}>{t('qty')}</span><span className={`font-bold leading-none mt-0.5 ${fontClasses.badgeValue}`}>{wine.quantity}</span></div>
                   </div>
                 </div>
-                {isExpanded && <div className="p-2 space-y-2">{shelfWines.map(wine => (
-                  <div key={wine.id} onClick={() => handleSelectWine(wine)} className={`flex gap-2.5 items-center p-2 rounded-lg cursor-pointer transition-all shadow-sm border-l-4 ${getColorTheme(wine.color)}`}>
-                    <div className="w-12 h-12 rounded-full bg-white dark:bg-stone-800 flex-shrink-0 overflow-hidden border border-white dark:border-stone-700 relative">{wine.image ? <img src={wine.image} className="w-full h-full object-cover" alt="" /> : <WineIcon className="w-5 h-5 m-auto mt-3.5 text-stone-300"/>}</div>
-                    <div className="flex-1 min-w-0"><p className={`font-bold text-gray-800 dark:text-gray-100 truncate leading-tight ${fontClasses.title}`}>{wine.name}</p><div className="flex items-center gap-1.5 mt-0.5"><p className={`text-gray-500 dark:text-gray-400 truncate ${fontClasses.sub}`}>{wine.region} - {wine.year}</p><div className={`w-1.5 h-1.5 rounded-full ${getConsumptionStatusColor(wine)} flex-shrink-0`}></div></div></div>
-                    <div className="flex items-center gap-2">
-                      {wine.image && (
-                        <button onClick={(e) => { e.stopPropagation(); setLargeImage(wine.image); }} className="p-2 text-stone-400 hover:text-[var(--theme-primary)] transition-colors bg-white/50 dark:bg-stone-800 rounded-lg shadow-sm">
-                          <Eye size={18} />
-                        </button>
-                      )}
-                      <div className={`flex flex-col items-center justify-center w-9 h-9 rounded shadow-sm bg-white/50 dark:bg-stone-800 text-stone-600 dark:text-stone-300`}><span className={`uppercase font-bold opacity-60 leading-none ${fontClasses.badgeLabel}`}>{t('qty')}</span><span className={`font-bold leading-none mt-0.5 ${fontClasses.badgeValue}`}>{wine.quantity}</span></div>
-                    </div>
-                  </div>
-                ))}</div>}
-              </div>
-            );
-          })
-        )}
+              ))}</div>}
+            </div>
+          );
+        })}
       </div>
     );
 
@@ -698,34 +762,96 @@ function App() {
           {view === 'list' && activeTab === 'cellar' && <button onClick={() => setView('add')} className="absolute bottom-24 right-6 bg-[var(--theme-primary)] text-white p-4 rounded-full shadow-lg shadow-[var(--theme-primary)]/30 active:scale-95 z-30 transition-colors"><Plus size={28} /></button>}
           {view === 'list' && <div className="absolute bottom-0 left-0 right-0 bg-white/95 dark:bg-stone-900/95 backdrop-blur-md border-t border-stone-200 dark:border-stone-800 z-40 safe-area-bottom"><div className="flex justify-around items-center h-20 pb-2"><button onClick={() => { setActiveTab('cellar'); setView('list'); }} className={`flex flex-col items-center justify-center w-full h-full ${activeTab === 'cellar' ? 'text-[var(--theme-primary)]' : 'text-stone-400'}`}><LayoutGrid size={24} /><span className={`font-semibold ${fontClasses.tabLabel}`}>{t('cellar')}</span></button><button onClick={() => { setActiveTab('stats'); setView('list'); }} className={`flex flex-col items-center justify-center w-full h-full ${activeTab === 'stats' ? 'text-[var(--theme-primary)]' : 'text-stone-400'}`}><PieChart size={24} /><span className={`font-semibold ${fontClasses.tabLabel}`}>{t('stats')}</span></button><button onClick={() => { setActiveTab('history'); setView('list'); }} className={`flex flex-col items-center justify-center w-full h-full ${activeTab === 'history' ? 'text-[var(--theme-primary)]' : 'text-stone-400'}`}><History size={24} /><span className={`font-semibold ${fontClasses.tabLabel}`}>{t('history')}</span></button></div></div>}
         </main>
-        <CellarManager cellars={cellars} activeCellarId={activeCellarId} onSelect={(id: string) => setActiveCellarId(id)} isOpen={isCellarManagerOpen} onClose={() => setIsCellarManagerOpen(false)} onAdd={handleAddCellar} onDelete={(id: string) => { if (cellars.length <= 1) return; const next = cellars.filter(c => c.id !== id); setCellars(next); if (activeCellarId === id) setActiveCellarId(next[0].id); }} onUpdate={async (id: string, name: string, image: string | null) => { const compressed = image ? await compressImage(image) : null; setCellars(prev => prev.map(c => c.id === id ? { ...c, name, image: compressed } : c)); }} t={t} fs={fontClasses} />
+
+        {/* Barre de progression pour la compression en masse */}
+        {batchProgress && (
+          <div className="fixed inset-0 z-[600] flex items-center justify-center p-4 bg-black/60 backdrop-blur-md">
+            <div className="bg-white dark:bg-stone-900 rounded-3xl w-full max-w-sm p-8 shadow-2xl flex flex-col items-center text-center animate-in zoom-in-95 duration-200 border border-stone-100 dark:border-stone-800">
+              <div className="w-16 h-16 bg-[var(--theme-bg-soft)] dark:bg-rose-900/20 text-[var(--theme-primary)] dark:text-rose-500 rounded-2xl flex items-center justify-center mb-6 animate-pulse">
+                <RefreshCw size={32} className="animate-spin" />
+              </div>
+              <h3 className={`font-serif font-bold text-stone-900 dark:text-stone-100 mb-2 ${fontClasses.header}`}>{t('compressing_images')}</h3>
+              <p className={`text-stone-500 dark:text-stone-400 font-bold mb-6 ${fontClasses.base}`}>{t('processing')} : {batchProgress.current} / {batchProgress.total}</p>
+              
+              <div className="w-full h-3 bg-stone-100 dark:bg-stone-800 rounded-full overflow-hidden border border-stone-200 dark:border-stone-700">
+                <div 
+                  className="h-full bg-[var(--theme-primary)] transition-all duration-300 shadow-[0_0_8px_rgba(var(--theme-primary-rgb),0.5)]" 
+                  style={{ width: `${(batchProgress.current / batchProgress.total) * 100}%` }}
+                />
+              </div>
+            </div>
+          </div>
+        )}
+
+        <CellarManager cellars={cellars} activeCellarId={activeCellarId} onSelect={(id: string) => setActiveCellarId(id)} isOpen={isCellarManagerOpen} onClose={() => setIsCellarManagerOpen(false)} onAdd={handleAddCellar} onDelete={(id: string) => { if (cellars.length <= 1) return; const next = cellars.filter(c => c.id !== id); setCellars(next); if (activeCellarId === id) setActiveCellarId(next[0].id); }} onUpdate={async (id: string, name: string, image: string | null) => { const compressed = image ? await compressImage(image, 'strong') : null; setCellars(prev => prev.map(c => c.id === id ? { ...c, name, image: compressed } : c)); }} t={t} fs={fontClasses} />
         <CellarSelector cellars={cellars} isOpen={isCellarSelectorOpen} onClose={() => setIsCellarSelectorOpen(false)} onSelect={(id: string) => { setActiveCellarId(id); setIsCellarSelectorOpen(false); }} t={t} fs={fontClasses} />
         <SearchModal isOpen={isSearchOpen} onClose={() => setIsSearchOpen(false)} onSearch={setSearchFilters} currentFilters={searchFilters} onReset={() => setSearchFilters({})} locationData={locationData} language={settings.language} isHistoryMode={activeTab === 'history'} fontSize={settings.fontSize} />
-        <SettingsModal isOpen={isSettingsOpen} onClose={() => setIsSettingsOpen(false)} settings={settings} onUpdateSettings={handleUpdateSettings} onExport={() => { const backup: BackupData = { cellars, activeCellarId, locations: locationData, globalHistory: globalHistory, timestamp: new Date().toISOString() }; const blob = new Blob([JSON.stringify(backup, null, 2)], { type: 'application/json' }); const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = `wine_cellar_backup_${new Date().toISOString().split('T')[0]}.json`; a.click(); URL.revokeObjectURL(url); }} onImport={(data: BackupData) => { 
-          // Importation robuste de toutes les données
-          if (data.cellars && Array.isArray(data.cellars)) {
-            setCellars(data.cellars);
-            
-            // On vérifie que l'ID actif existe bien dans les données importées
-            if (data.activeCellarId && data.cellars.some(c => c.id === data.activeCellarId)) {
-              setActiveCellarId(data.activeCellarId);
-            } else {
-              setActiveCellarId(data.cellars[0].id);
-            }
-            
-            // Restauration des pays et régions personnalisés
-            if (data.locations) {
-              setLocationData(data.locations);
-            }
-            
-            // Restauration de l'historique de consommation
-            if (data.globalHistory) {
-              setGlobalHistory(data.globalHistory);
-            }
-            
-            alert(t('import_success'));
-          } else {
+        <SettingsModal isOpen={isSettingsOpen} onClose={() => setIsSettingsOpen(false)} settings={settings} onUpdateSettings={handleUpdateSettings} onExport={() => { const backup: BackupData = { cellars, activeCellarId, locations: locationData, globalHistory: globalHistory, timestamp: new Date().toISOString() }; const blob = new Blob([JSON.stringify(backup, null, 2)], { type: 'application/json' }); const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = `wine_cellar_backup_${new Date().toISOString().split('T')[0]}.json`; a.click(); URL.revokeObjectURL(url); }} onImport={async (data: BackupData) => { 
+          if (!data.cellars || !Array.isArray(data.cellars)) {
             alert(t('import_error'));
+            return;
+          }
+
+          // ÉTAPE DE COMPRESSION FORTE PRÉ-SAUVEGARDE
+          setBatchProgress({ current: 0, total: 1 }); // Affichage temporaire du loader
+          
+          const processItems = async (items: any[]) => {
+            for (let item of items) {
+              if (item.image && item.image.startsWith('data:image')) {
+                item.image = await compressImage(item.image, 'strong');
+              }
+            }
+          };
+
+          // On traite toutes les images du backup avant de l'enregistrer
+          for (let cellar of data.cellars) {
+             if (cellar.image) cellar.image = await compressImage(cellar.image, 'strong');
+             if (cellar.wines) await processItems(cellar.wines);
+          }
+          if (data.globalHistory) await processItems(data.globalHistory);
+
+          const newCellars = data.cellars;
+          const newActiveId = (data.activeCellarId && data.cellars.some(c => c.id === data.activeCellarId)) ? data.activeCellarId : data.cellars[0].id;
+          const newLocations = data.locations || locationData;
+          const newHistory = data.globalHistory || [];
+
+          try {
+            // LIBÉRATION DE L'ESPACE : Suppression explicite des anciennes clés
+            localStorage.removeItem('my-wine-cellars-v3');
+            localStorage.removeItem('active-cellar-id');
+            localStorage.removeItem('my-wine-cellar-locations');
+            localStorage.removeItem('global-wine-history-v3');
+
+            // SAUVEGARDE SYNCHRONE FORCÉE DES NOUVELLES DONNÉES
+            localStorage.setItem('my-wine-cellars-v3', JSON.stringify(newCellars));
+            localStorage.setItem('active-cellar-id', newActiveId);
+            localStorage.setItem('my-wine-cellar-locations', JSON.stringify(newLocations));
+            localStorage.setItem('global-wine-history-v3', JSON.stringify(newHistory));
+
+            setBatchProgress(null);
+            alert(t('import_success'));
+            window.location.reload();
+          } catch (err: any) {
+            setBatchProgress(null);
+            console.error("Storage write error during import:", err);
+            if (err.name === 'QuotaExceededError' || err.code === 22) {
+              const confirmClear = window.confirm("Le stockage reste saturé malgré le nettoyage. Souhaitez-vous vider entièrement le stockage du navigateur pour forcer l'importation ?");
+              if (confirmClear) {
+                localStorage.clear();
+                try {
+                  localStorage.setItem('my-wine-cellars-v3', JSON.stringify(newCellars));
+                  localStorage.setItem('active-cellar-id', newActiveId);
+                  localStorage.setItem('my-wine-cellar-locations', JSON.stringify(newLocations));
+                  localStorage.setItem('global-wine-history-v3', JSON.stringify(newHistory));
+                  alert(t('import_success'));
+                  window.location.reload();
+                } catch (retryErr) {
+                  alert(t('storage_full'));
+                }
+              }
+            } else {
+              alert(t('import_error'));
+            }
           }
         }} fontSize={settings.fontSize} />
         <InfoModal isOpen={isInfoOpen} onClose={() => setIsInfoOpen(false)} fontSize={settings.fontSize} />

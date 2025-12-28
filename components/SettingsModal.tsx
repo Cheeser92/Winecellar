@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
-import { X, Moon, Sun, Languages, Library, Check, Download, Upload, Database, AlertTriangle, Type, Info, Palette } from 'lucide-react';
-import { AppSettings, Language, Theme, BackupData, AppFontSize, ColorTheme } from '../types';
+import { X, Moon, Sun, Languages, Library, Check, Download, Upload, Database, AlertTriangle, Type, Info, Palette, Image as ImageIcon } from 'lucide-react';
+import { AppSettings, Language, Theme, BackupData, AppFontSize, ColorTheme, ImageCompression } from '../types';
 import { getTranslation } from '../translations';
 
 interface SettingsModalProps {
@@ -59,7 +59,6 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, s
         const result = event.target?.result as string;
         const json = JSON.parse(result);
         
-        // Validation plus stricte de la structure du backup
         if (json && Array.isArray(json.cellars) && json.cellars.length > 0) {
             setPendingImportData(json as BackupData);
             setShowImportModal(true);
@@ -70,11 +69,8 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, s
         console.error("Erreur lors du parsing JSON:", err);
         alert(t('import_error'));
       }
-      // Reset de l'input pour permettre de ré-importer le même fichier si besoin
       if (fileInputRef.current) fileInputRef.current.value = '';
     };
-    
-    // Correction CRITIQUE : Lire comme du texte et non comme DataURL
     reader.readAsText(file);
   };
 
@@ -92,6 +88,10 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, s
 
   const setColorTheme = (color: ColorTheme) => {
     setLocalSettings(prev => ({ ...prev, colorTheme: color }));
+  };
+
+  const setImageCompression = (level: ImageCompression) => {
+    setLocalSettings(prev => ({ ...prev, imageCompression: level }));
   };
 
   const getFontSizeClasses = (size: AppFontSize) => {
@@ -163,6 +163,18 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, s
                   <button onClick={() => setFontSize('large')} className={`flex-1 py-2 text-base font-semibold rounded-lg transition-all ${localSettings.fontSize === 'large' ? 'bg-stone-100 dark:bg-stone-700 shadow-sm text-[var(--theme-primary)] dark:text-white' : 'text-stone-500 dark:text-stone-400 hover:bg-stone-50/50 dark:hover:bg-stone-700/50'}`}>{t('font_large')}</button>
               </div>
             </div>
+
+            {/* OPTION DE COMPRESSION MASQUÉE (Masquée mais conservée) */}
+            {false && (
+            <div className="space-y-3">
+               <div className="flex items-center gap-3"><div className="p-2.5 rounded-full bg-emerald-50 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400"><ImageIcon size={20}/></div><span className={`font-bold text-stone-800 dark:text-stone-200 ${fs.lg}`}>{t('image_compression')}</span></div>
+              <div className="flex gap-2 p-1 bg-white dark:bg-stone-800/50 rounded-xl border border-stone-100 dark:border-stone-800">
+                  <button onClick={() => setImageCompression('low')} className={`flex-1 py-2 text-xs font-semibold rounded-lg transition-all ${localSettings.imageCompression === 'low' ? 'bg-stone-100 dark:bg-stone-700 shadow-sm text-[var(--theme-primary)] dark:text-white' : 'text-stone-500 dark:text-stone-400 hover:bg-stone-50/50 dark:hover:bg-stone-700/50'}`}>{t('compression_low')}</button>
+                  <button onClick={() => setImageCompression('moderate')} className={`flex-1 py-2 text-xs font-semibold rounded-lg transition-all ${(!localSettings.imageCompression || localSettings.imageCompression === 'moderate') ? 'bg-stone-100 dark:bg-stone-700 shadow-sm text-[var(--theme-primary)] dark:text-white' : 'text-stone-500 dark:text-stone-400 hover:bg-stone-50/50 dark:hover:bg-stone-700/50'}`}>{t('compression_moderate')}</button>
+                  <button onClick={() => setImageCompression('strong')} className={`flex-1 py-2 text-xs font-semibold rounded-lg transition-all ${localSettings.imageCompression === 'strong' ? 'bg-stone-100 dark:bg-stone-700 shadow-sm text-[var(--theme-primary)] dark:text-white' : 'text-stone-500 dark:text-stone-400 hover:bg-stone-50/50 dark:hover:bg-stone-700/50'}`}>{t('compression_strong')}</button>
+              </div>
+            </div>
+            )}
           </section>
 
           <section className="space-y-5 pt-2">

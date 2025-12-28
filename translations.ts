@@ -31,6 +31,10 @@ export const translations = {
     copy_quantity: "Quantité à copier",
     quantity_consumed: "Nombre de bouteilles",
     
+    // Progress
+    compressing_images: "Optimisation de la photothèque...",
+    processing: "Traitement",
+
     // Placeholders
     placeholder_wine_name: "Ex: Château Margaux",
     placeholder_appellation: "Ex: Cabernet Sauvignon",
@@ -136,13 +140,19 @@ export const translations = {
     export_data: "Exporter les données",
     import_data: "Importer les données",
     import_warning: "L'importation remplacera toutes les données actuelles. Continuer ?",
-    import_success: "Données importées avec succès !",
+    import_success: "Données importées avec succès ! L'application va redémarrer.",
     import_error: "Erreur : Format de fichier invalide.",
+    storage_full: "Erreur : Espace de stockage saturé. Impossible d'importer.",
     font_size: "Taille de police",
     font_small: "Petit",
     font_medium: "Moyen",
     font_large: "Grand",
     
+    image_compression: "Compression des images",
+    compression_low: "Faible",
+    compression_moderate: "Modérée",
+    compression_strong: "Forte",
+
     // Enums
     aging_Longue: "Longue",
     aging_Moyenne: "Moyenne",
@@ -223,6 +233,10 @@ export const translations = {
     target_location: "To Shelf",
     copy_quantity: "Quantity to copy",
     quantity_consumed: "Number of bottles",
+
+    // Progress
+    compressing_images: "Optimizing photo library...",
+    processing: "Processing",
 
     // Placeholders
     placeholder_wine_name: "e.g. Château Margaux",
@@ -327,12 +341,18 @@ export const translations = {
     export_data: "Export Data",
     import_data: "Import Data",
     import_warning: "Importing will overwrite all current data. Continue?",
-    import_success: "Data imported successfully!",
+    import_success: "Data imported successfully! The app will restart.",
     import_error: "Error: Invalid file format.",
+    storage_full: "Error: Storage full. Cannot import.",
     font_size: "Font Size",
     font_small: "Small",
     font_medium: "Medium",
     font_large: "Large",
+    
+    image_compression: "Image Compression",
+    compression_low: "Low",
+    compression_moderate: "Moderate",
+    compression_strong: "Strong",
 
     // Enums
     aging_Longue: "Long",
@@ -382,7 +402,7 @@ export const translations = {
     new_country_placeholder: "New country name...",
     new_region_placeholder: "New region name...",
     country_already_exists: "Country already exists.",
-    region_already_exists: "Region already exists.",
+    region_already_exists: "Cette région existe déjà.",
     reverse_sort: "Reverse sort",
     global: "Global"
   }

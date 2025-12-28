@@ -308,7 +308,7 @@ export const WineDetail: React.FC<WineDetailProps> = ({ wine, cellars, currentCe
                 <>
                 <button type="button" onClick={() => handleTransferClick(false)} className="flex-none h-[56px] w-[56px] flex items-center justify-center rounded-xl border border-indigo-200 dark:border-indigo-900/50 text-indigo-500 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-900/10 hover:bg-indigo-100 transition cursor-pointer"><Copy size={20} /></button>
                 {cellars.length > 1 && (
-                  <button type="button" onClick={() => handleTransferClick(true)} className="flex-none h-[56px] w-[56px] flex items-center justify-center rounded-xl border border-orange-200 dark:border-orange-900/50 text-orange-500 dark:text-orange-400 bg-orange-50 dark:bg-orange-900/10 hover:bg-orange-100 transition cursor-pointer"><Move size={20} /></button>
+                  <button type="button" onClick={() => handleTransferClick(true)} className="flex-none h-[56px] w-[56px] flex items-center justify-center rounded-xl border border-orange-200 dark:border-orange-900/50 text-orange-500 dark:text-orange-400 bg-orange-50 dark:bg-indigo-900/10 hover:bg-indigo-100 transition cursor-pointer"><Move size={20} /></button>
                 )}
                 <button type="button" onClick={() => setShowConsumeModal(true)} className={`flex-1 flex items-center justify-center h-[56px] gap-2 bg-gradient-to-r from-[var(--theme-primary)] to-[var(--theme-primary-dark)] text-white font-bold px-6 rounded-xl shadow-lg shadow-[var(--theme-primary)]/20 hover:shadow-xl transition transform active:scale-95 cursor-pointer`}>
                   <Check size={20} /><span>{t('consume_bottle')}</span>
@@ -394,6 +394,7 @@ export const WineDetail: React.FC<WineDetailProps> = ({ wine, cellars, currentCe
 
 function getCellarShelves(cellar: Cellar) {
   const prefix = getTranslation(cellar.settings.language, 'shelf_prefix');
-  const shelves = Array.from({ length: cellar.settings.shelfCount }, (_, i) => `${prefix} ${i + 1}`);
+  // Include shelf 0
+  const shelves = Array.from({ length: (cellar.settings.shelfCount || 0) + 1 }, (_, i) => `${prefix} ${i}`);
   return [...shelves, getTranslation(cellar.settings.language, 'off_site')];
 }
