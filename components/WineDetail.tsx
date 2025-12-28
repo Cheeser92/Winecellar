@@ -1,6 +1,6 @@
 
 import React, { useState, useRef, useEffect } from 'react';
-import { ArrowLeft, Check, Calendar, Clock, Tag, Trash2, Star, Pencil, Copy, Eye, Camera, ShoppingBag, Wine as WineIcon, Minus, Plus, Move, Warehouse, Map as MapIcon, Sparkles, Loader2, ExternalLink } from 'lucide-react';
+import { ArrowLeft, Check, Calendar, Clock, Tag, Trash2, Star, Pencil, Copy, Eye, Camera, ShoppingBag, Wine as WineIcon, Minus, Plus, Move, Warehouse, Map as MapIcon, Sparkles, Loader2, ExternalLink, Globe } from 'lucide-react';
 import { Wine, ConsumptionStatus, HistoryEntry, Language, AppFontSize, Cellar } from '../types';
 import { RATINGS, STRENGTHS } from '../constants';
 import { getTranslation } from '../translations';
@@ -23,6 +23,11 @@ interface WineDetailProps {
   fontSize?: AppFontSize;
 }
 
+interface AISource {
+  uri: string;
+  title: string;
+}
+
 export const WineDetail: React.FC<WineDetailProps> = ({ wine, cellars, currentCellarId, onBack, onConsume, onDelete, onEdit, onTransfer, onUpdateImage, onEnlargeImage, availableLocations, isHistory = false, language, fontSize = 'medium' }) => {
   const [showConsumeModal, setShowConsumeModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
@@ -37,6 +42,7 @@ export const WineDetail: React.FC<WineDetailProps> = ({ wine, cellars, currentCe
   const [targetLocation, setTargetLocation] = useState(isHistory ? availableLocations[0] : wine.location);
 
   const [aiSummary, setAiSummary] = useState<string | null>(null);
+  const [aiSources, setAiSources] = useState<AISource[]>([]);
   const [isSummarizing, setIsSummarizing] = useState(false);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -51,20 +57,48 @@ export const WineDetail: React.FC<WineDetailProps> = ({ wine, cellars, currentCe
       setIsSummarizing(true);
       try {
         const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-        const prompt = `Write a short, elegant and professional sommelier summary (max 100 words) for the following wine: ${wine.name}, ${wine.appellation}, ${wine.year}, ${wine.region}, ${wine.country}. 
-        Include: a brief mention of the estate's history or terroir, the typical aromatic profile for this vintage, and a suggested food pairing. 
-        Language: ${language === 'fr' ? 'French' : 'English'}. Keep it concise and inspiring.`;
+        const prompt = `Utilise l'outil de recherche Google pour trouver des informations réelles et vérifiées sur ce vin : ${wine.name}, ${wine.appellation}, millésime ${wine.year}, région ${wine.region}, pays ${wine.country}.
+        
+        Rédige une synthèse courte (max 100 mots) incluant :
+        1. L'histoire réelle du domaine ou du terroir.
+        2. Le profil aromatique typique trouvé pour ce vin exact.
+        3. Un accord mets-vins suggéré par des experts.
+
+        IMPORTANT : Si tu ne trouves AUCUNE donnée réelle sur ce vin spécifique sur internet via l'outil de recherche, réponds EXACTEMENT par : "Désolé, aucune information vérifiée n'a été trouvée pour ce vin spécifique." suivi seulement d'une brève description générale de l'appellation ${wine.appellation}. N'invente jamais d'informations.
+        
+        Langue : ${language === 'fr' ? 'Français' : 'Anglais'}.`;
 
         const response = await ai.models.generateContent({
           model: 'gemini-3-flash-preview',
           contents: [{ parts: [{ text: prompt }] }],
+          config: {
+            tools: [{ googleSearch: {} }]
+          }
         });
 
         if (response.text) {
           setAiSummary(response.text.trim());
+          
+          // Extraction des sources de grounding
+          const chunks = response.candidates?.[0]?.groundingMetadata?.groundingChunks;
+          if (chunks) {
+            const sources: AISource[] = [];
+            chunks.forEach((chunk: any) => {
+              if (chunk.web) {
+                sources.push({
+                  uri: chunk.web.uri,
+                  title: chunk.web.title
+                });
+              }
+            });
+            // Supprimer les doublons par URI
+            const uniqueSources = sources.filter((v, i, a) => a.findIndex(t => t.uri === v.uri) === i);
+            setAiSources(uniqueSources);
+          }
         }
       } catch (error) {
         console.error("AI Summary generation failed:", error);
+        setAiSummary(language === 'fr' ? "Erreur lors de la récupération des données réelles." : "Error retrieving real-world data.");
       } finally {
         setIsSummarizing(false);
       }
@@ -287,11 +321,33 @@ export const WineDetail: React.FC<WineDetailProps> = ({ wine, cellars, currentCe
                   <span className={`italic font-medium ${fs.infoText}`}>{t('generating_synthesis')}</span>
                 </div>
               ) : aiSummary ? (
-                <div className="relative">
+                <div className="relative space-y-4">
                   <div className="absolute -left-1 -top-1 opacity-10"><WineIcon size={40} className="text-[var(--theme-primary)] dark:text-rose-500" /></div>
                   <p className={`text-stone-700 dark:text-stone-300 italic leading-relaxed relative z-10 ${fs.infoText}`}>
                     {aiSummary}
                   </p>
+                  
+                  {aiSources.length > 0 && (
+                    <div className="pt-3 border-t border-stone-200 dark:border-stone-700 relative z-10">
+                      <p className="text-[10px] font-bold text-stone-400 dark:text-stone-500 uppercase tracking-widest mb-2 flex items-center gap-1">
+                        <Globe size={10} /> Sources vérifiées
+                      </p>
+                      <div className="flex flex-col gap-1.5">
+                        {aiSources.map((source, idx) => (
+                          <a 
+                            key={idx} 
+                            href={source.uri} 
+                            target="_blank" 
+                            rel="noopener noreferrer"
+                            className="text-[10px] font-medium text-[var(--theme-primary)] dark:text-rose-400 hover:underline flex items-center gap-1 truncate"
+                          >
+                            <ExternalLink size={8} className="flex-shrink-0" />
+                            <span className="truncate">{source.title || source.uri}</span>
+                          </a>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
               ) : (
                 <p className={`text-stone-400 italic text-center ${fs.infoText}`}>{t('no_note')}</p>
