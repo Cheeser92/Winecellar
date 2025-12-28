@@ -311,7 +311,7 @@ export const WineForm: React.FC<WineFormProps> = ({
                   <button type="button" onClick={() => handleQuantityChange(formData.quantity - 1)} className="w-11 h-11 rounded-lg bg-stone-100 dark:bg-stone-800 flex items-center justify-center border border-stone-200 dark:border-stone-700 active:scale-90 transition-all">
                     <Minus size={18} className="text-stone-600 dark:text-stone-300" />
                   </button>
-                  <div className={`flex-1 h-11 bg-white dark:bg-stone-800 border border-stone-200 dark:border-stone-700 rounded-lg flex items-center justify-center font-bold text-gray-900 dark:text-white ${fs.lg}`}>{formData.quantity}</div>
+                  <div className={`flex-1 h-11 bg-[var(--theme-bg-soft)] dark:bg-stone-800 border-2 border-[var(--theme-border)] rounded-lg flex items-center justify-center font-bold text-gray-900 dark:text-white ${fs.lg}`}>{formData.quantity}</div>
                   <button type="button" onClick={() => handleQuantityChange(formData.quantity + 1)} className="w-11 h-11 rounded-lg bg-stone-100 dark:bg-stone-800 flex items-center justify-center border border-stone-200 dark:border-stone-700 active:scale-90 transition-all">
                     <Plus size={18} className="text-stone-600 dark:text-stone-300" />
                   </button>

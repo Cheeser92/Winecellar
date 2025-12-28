@@ -16,7 +16,7 @@ export const COUNTRIES_EN = [
 
 export const REGIONS_BY_COUNTRY_FR: Record<string, string[]> = {
   "France": [
-    "Alsace", "Beaujolais", "Bordeaux", "Bourgogne", "Champagne", "Corse", "Jura", "Languedoc", "Roussillon", "Loire", "Provence", "Rhône", "Savoie", "Sud-Ouest"
+    "Alsace", "Beaujolais", "Bordeaux", "Bourgogne", "Champagne", "Corse", "Jura", "Languedoc-Roussillon", "Loire", "Provence", "Rhône", "Savoie", "Sud-Ouest"
   ],
   "Italie": [
     "Abruzzes", "Basilicata", "Calabre", "Campanie", "Émilie-Romagne", "Frioul-Vénétie Julienne", "Latium", "Ligurie", "Lombardie", "Marches", "Molise", "Piémont", "Pouilles", "Sardaigne", "Sicile", "Toscane", "Trentin-Haut-Adige", "Ombrie", "Vallée d'Aoste", "Vénétie"
@@ -38,7 +38,7 @@ export const REGIONS_BY_COUNTRY_FR: Record<string, string[]> = {
 
 export const REGIONS_BY_COUNTRY_EN: Record<string, string[]> = {
   "France": [
-    "Alsace", "Beaujolais", "Bordeaux", "Burgundy", "Champagne", "Corsica", "Jura", "Languedoc", "Roussillon", "Loire", "Provence", "Rhône", "Savoy", "South West"
+    "Alsace", "Beaujolais", "Bordeaux", "Burgundy", "Champagne", "Corsica", "Jura", "Languedoc-Roussillon", "Loire", "Provence", "Rhône", "Savoy", "South West"
   ],
   "Italy": [
     "Abruzzo", "Basilicata", "Calabria", "Campania", "Emilia-Romagna", "Friuli-Venezia Giulia", "Lazio", "Liguria", "Lombardy", "Marche", "Molise", "Piedmont", "Puglia", "Sardinia", "Sicily", "Tuscany", "Trentino-Alto Adige", "Umbria", "Aosta Valley", "Veneto"
