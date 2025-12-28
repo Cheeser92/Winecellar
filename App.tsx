@@ -160,6 +160,24 @@ function App() {
   const wines = activeCellar.wines || [];
   const history = globalHistory || [];
 
+  // Suggestions calculées sur TOUS les vins (toutes les caves + historique)
+  const suggestions = useMemo(() => {
+    const allWines = [...cellars.flatMap(c => c.wines || []), ...globalHistory];
+    
+    const extractUnique = (field: keyof Wine) => {
+      const values = allWines
+        .map(w => w[field])
+        .filter(v => v && typeof v === 'string') as string[];
+      return Array.from(new Set(values.map(v => v.trim()))).sort();
+    };
+
+    return {
+      appellations: extractUnique('appellation'),
+      origins: extractUnique('origin'),
+      purchasePlaces: extractUnique('purchasePlace')
+    };
+  }, [cellars, globalHistory]);
+
   // Theme variable injection
   useEffect(() => {
     const theme = settings.theme || 'light';
@@ -498,8 +516,8 @@ function App() {
   };
 
   const renderContent = () => {
-    if (view === 'add') return <WineForm onSave={handleAddWine} onCancel={() => setView('list')} availableLocations={availableLocations} locationData={locationData} onOpenLocationManager={() => setIsLocationManagerOpen(true)} language={settings.language} fontSize={settings.fontSize} />;
-    if (view === 'edit' && selectedWine) return <WineForm initialData={selectedWine} onSave={handleEditWine} onCancel={() => setView('detail')} availableLocations={availableLocations} locationData={locationData} onOpenLocationManager={() => setIsLocationManagerOpen(true)} language={settings.language} isHistoryMode={activeTab === 'history'} fontSize={settings.fontSize} />;
+    if (view === 'add') return <WineForm onSave={handleAddWine} onCancel={() => setView('list')} availableLocations={availableLocations} locationData={locationData} onOpenLocationManager={() => setIsLocationManagerOpen(true)} language={settings.language} fontSize={settings.fontSize} suggestions={suggestions} />;
+    if (view === 'edit' && selectedWine) return <WineForm initialData={selectedWine} onSave={handleEditWine} onCancel={() => setView('detail')} availableLocations={availableLocations} locationData={locationData} onOpenLocationManager={() => setIsLocationManagerOpen(true)} language={settings.language} isHistoryMode={activeTab === 'history'} fontSize={settings.fontSize} suggestions={suggestions} />;
     if (view === 'detail' && selectedWine) return <WineDetail wine={selectedWine} cellars={cellars} currentCellarId={activeCellarId} onBack={() => setView('list')} onConsume={activeTab === 'history' ? undefined : handleConsumeWine} onDelete={activeTab === 'history' ? handleDeleteHistory : handleDeleteWine} onEdit={() => setView('edit')} onTransfer={handleTransferWine} onUpdateImage={activeTab === 'history' ? undefined : async (img) => { const compressed = await compressImage(img); updateActiveCellar({ wines: wines.map(x => x.id === selectedWine.id ? { ...x, image: compressed } : x) }); }} onEnlargeImage={setLargeImage} availableLocations={availableLocations} isHistory={activeTab === 'history'} language={settings.language} fontSize={settings.fontSize} />;
     
     if (activeTab === 'stats') return (

@@ -6,6 +6,7 @@ import { COLORS, AGING_POTENTIALS, STRENGTHS } from '../constants';
 import { getTranslation } from '../translations';
 import { CountrySelect } from './CountrySelect';
 import { RegionSelect } from './RegionSelect';
+import { SuggestionInput } from './SuggestionInput';
 import { GoogleGenAI, Type } from "@google/genai";
 
 interface WineFormProps {
@@ -18,6 +19,11 @@ interface WineFormProps {
   language: Language;
   isHistoryMode?: boolean;
   fontSize?: AppFontSize;
+  suggestions?: {
+    appellations: string[];
+    origins: string[];
+    purchasePlaces: string[];
+  };
 }
 
 export const WineForm: React.FC<WineFormProps> = ({ 
@@ -29,7 +35,8 @@ export const WineForm: React.FC<WineFormProps> = ({
   onOpenLocationManager,
   language, 
   isHistoryMode = false,
-  fontSize = 'medium'
+  fontSize = 'medium',
+  suggestions = { appellations: [], origins: [], purchasePlaces: [] }
 }) => {
   const t = (key: any) => getTranslation(language, key);
 
@@ -84,6 +91,11 @@ export const WineForm: React.FC<WineFormProps> = ({
         ? Number(value)
         : value
     }));
+  };
+
+  // Helper pour mettre à jour une valeur de suggestion
+  const handleSuggestionChange = (name: string, value: string) => {
+    setFormData(prev => ({ ...prev, [name]: value }));
   };
 
   const analyzeLabel = async (base64Data: string) => {
@@ -232,7 +244,15 @@ export const WineForm: React.FC<WineFormProps> = ({
               </div>
               <div>
                 <label className={labelClass}>{t('appellation')}</label>
-                <input required type="text" name="appellation" value={formData.appellation} onChange={handleChange} className={requiredInputClass} placeholder={t('placeholder_appellation')} />
+                <SuggestionInput
+                  value={formData.appellation}
+                  onChange={(val) => handleSuggestionChange('appellation', val)}
+                  suggestions={suggestions.appellations}
+                  placeholder={t('placeholder_appellation')}
+                  required
+                  className={requiredInputClass}
+                  fontSize={fontSize}
+                />
               </div>
             </div>
             <div className="grid grid-cols-2 gap-4">
@@ -286,7 +306,14 @@ export const WineForm: React.FC<WineFormProps> = ({
             </div>
             <div>
               <label className={labelClass}>{t('origin')}</label>
-              <input type="text" name="origin" value={formData.origin} onChange={handleChange} className={inputClass} placeholder={t('placeholder_origin')} />
+              <SuggestionInput
+                value={formData.origin}
+                onChange={(val) => handleSuggestionChange('origin', val)}
+                suggestions={suggestions.origins}
+                placeholder={t('placeholder_origin')}
+                className={inputClass}
+                fontSize={fontSize}
+              />
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div>
@@ -301,7 +328,13 @@ export const WineForm: React.FC<WineFormProps> = ({
               </div>
               <div>
                 <label className={labelClass}>{t('purchase_place')}</label>
-                <input type="text" name="purchasePlace" value={formData.purchasePlace} onChange={handleChange} className={inputClass} />
+                <SuggestionInput
+                  value={formData.purchasePlace}
+                  onChange={(val) => handleSuggestionChange('purchasePlace', val)}
+                  suggestions={suggestions.purchasePlaces}
+                  className={inputClass}
+                  fontSize={fontSize}
+                />
               </div>
             </div>
             <div className="grid grid-cols-4 gap-4">
