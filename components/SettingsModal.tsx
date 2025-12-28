@@ -58,19 +58,24 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, s
       try {
         const result = event.target?.result as string;
         const json = JSON.parse(result);
-        if (json && Array.isArray(json.cellars) && json.activeCellarId) {
+        
+        // Validation plus stricte de la structure du backup
+        if (json && Array.isArray(json.cellars) && json.cellars.length > 0) {
             setPendingImportData(json as BackupData);
             setShowImportModal(true);
         } else {
             alert(t('import_error'));
         }
       } catch (err) {
-        console.error(err);
+        console.error("Erreur lors du parsing JSON:", err);
         alert(t('import_error'));
       }
+      // Reset de l'input pour permettre de ré-importer le même fichier si besoin
       if (fileInputRef.current) fileInputRef.current.value = '';
     };
-    reader.readAsDataURL(file);
+    
+    // Correction CRITIQUE : Lire comme du texte et non comme DataURL
+    reader.readAsText(file);
   };
 
   const confirmImport = () => {

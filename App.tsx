@@ -701,7 +701,33 @@ function App() {
         <CellarManager cellars={cellars} activeCellarId={activeCellarId} onSelect={(id: string) => setActiveCellarId(id)} isOpen={isCellarManagerOpen} onClose={() => setIsCellarManagerOpen(false)} onAdd={handleAddCellar} onDelete={(id: string) => { if (cellars.length <= 1) return; const next = cellars.filter(c => c.id !== id); setCellars(next); if (activeCellarId === id) setActiveCellarId(next[0].id); }} onUpdate={async (id: string, name: string, image: string | null) => { const compressed = image ? await compressImage(image) : null; setCellars(prev => prev.map(c => c.id === id ? { ...c, name, image: compressed } : c)); }} t={t} fs={fontClasses} />
         <CellarSelector cellars={cellars} isOpen={isCellarSelectorOpen} onClose={() => setIsCellarSelectorOpen(false)} onSelect={(id: string) => { setActiveCellarId(id); setIsCellarSelectorOpen(false); }} t={t} fs={fontClasses} />
         <SearchModal isOpen={isSearchOpen} onClose={() => setIsSearchOpen(false)} onSearch={setSearchFilters} currentFilters={searchFilters} onReset={() => setSearchFilters({})} locationData={locationData} language={settings.language} isHistoryMode={activeTab === 'history'} fontSize={settings.fontSize} />
-        <SettingsModal isOpen={isSettingsOpen} onClose={() => setIsSettingsOpen(false)} settings={settings} onUpdateSettings={handleUpdateSettings} onExport={() => { const backup: BackupData = { cellars, activeCellarId, locations: locationData, globalHistory: globalHistory, timestamp: new Date().toISOString() }; const blob = new Blob([JSON.stringify(backup, null, 2)], { type: 'application/json' }); const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = `wine_cellar_backup_${new Date().toISOString().split('T')[0]}.json`; a.click(); URL.revokeObjectURL(url); }} onImport={(data: BackupData) => { if (data.cellars) { setCellars(data.cellars); setActiveCellarId(data.activeCellarId); if (data.locations) setLocationData(data.locations); if (data.globalHistory) setGlobalHistory(data.globalHistory); alert(t('import_success')); } }} fontSize={settings.fontSize} />
+        <SettingsModal isOpen={isSettingsOpen} onClose={() => setIsSettingsOpen(false)} settings={settings} onUpdateSettings={handleUpdateSettings} onExport={() => { const backup: BackupData = { cellars, activeCellarId, locations: locationData, globalHistory: globalHistory, timestamp: new Date().toISOString() }; const blob = new Blob([JSON.stringify(backup, null, 2)], { type: 'application/json' }); const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = `wine_cellar_backup_${new Date().toISOString().split('T')[0]}.json`; a.click(); URL.revokeObjectURL(url); }} onImport={(data: BackupData) => { 
+          // Importation robuste de toutes les données
+          if (data.cellars && Array.isArray(data.cellars)) {
+            setCellars(data.cellars);
+            
+            // On vérifie que l'ID actif existe bien dans les données importées
+            if (data.activeCellarId && data.cellars.some(c => c.id === data.activeCellarId)) {
+              setActiveCellarId(data.activeCellarId);
+            } else {
+              setActiveCellarId(data.cellars[0].id);
+            }
+            
+            // Restauration des pays et régions personnalisés
+            if (data.locations) {
+              setLocationData(data.locations);
+            }
+            
+            // Restauration de l'historique de consommation
+            if (data.globalHistory) {
+              setGlobalHistory(data.globalHistory);
+            }
+            
+            alert(t('import_success'));
+          } else {
+            alert(t('import_error'));
+          }
+        }} fontSize={settings.fontSize} />
         <InfoModal isOpen={isInfoOpen} onClose={() => setIsInfoOpen(false)} fontSize={settings.fontSize} />
         <LocationManagerModal isOpen={isLocationManagerOpen} onClose={() => setIsLocationManagerOpen(false)} language={settings.language} locationData={locationData} onUpdateLocationData={setLocationData} fontSize={settings.fontSize} />
         {renderFloatingList(isQuantityModalOpen, () => setIsQuantityModalOpen(false), t('priority_consumption'), wines, 'consumption')}
