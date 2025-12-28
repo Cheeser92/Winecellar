@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { X, Search, RotateCcw, Eraser, Tag as TagIcon } from 'lucide-react';
+import { X, Search, RotateCcw, Eraser, Tag as TagIcon, LayoutGrid, Globe } from 'lucide-react';
 import { SearchFilters, Language, LocationData, AppFontSize } from '../types';
 import { COLORS, AGING_POTENTIALS, STRENGTHS } from '../constants';
 import { getTranslation } from '../translations';
@@ -30,7 +30,10 @@ export const SearchModal: React.FC<SearchModalProps> = ({
   isHistoryMode = false,
   fontSize = 'medium'
 }) => {
-  const [filters, setFilters] = useState<SearchFilters>(currentFilters);
+  const [filters, setFilters] = useState<SearchFilters>({
+    ...currentFilters,
+    searchScope: currentFilters.searchScope || 'current'
+  });
   const t = (key: any) => getTranslation(language, key);
 
   if (!isOpen) return null;
@@ -41,6 +44,10 @@ export const SearchModal: React.FC<SearchModalProps> = ({
       ...prev,
       [name]: value === '' ? undefined : (name === 'year' || name === 'recommendedYear' || name === 'strength' ? Number(value) : value)
     }));
+  };
+
+  const toggleScope = (scope: 'current' | 'all') => {
+    setFilters(prev => ({ ...prev, searchScope: scope }));
   };
 
   const resetField = (name: keyof SearchFilters) => {
@@ -65,7 +72,7 @@ export const SearchModal: React.FC<SearchModalProps> = ({
   };
 
   const handleSubmit = (e: React.FormEvent) => { e.preventDefault(); onSearch(filters); onClose(); };
-  const handleReset = () => { setFilters({}); onReset(); onClose(); };
+  const handleReset = () => { setFilters({ searchScope: 'current' }); onReset(); onClose(); };
 
   const getFontSizeClasses = (size: AppFontSize) => {
     switch(size) {
@@ -77,13 +84,15 @@ export const SearchModal: React.FC<SearchModalProps> = ({
   };
 
   const fs = getFontSizeClasses(fontSize as AppFontSize);
-  const inputClass = `mt-1 block w-full rounded-lg border border-gray-300 dark:border-stone-700 bg-white dark:bg-stone-800 text-gray-900 dark:text-stone-100 shadow-sm focus:border-rose-500 focus:ring-rose-500 h-11 pl-3 pr-10 transition-all ${fs.base}`;
+  
+  // Utilisation systématique de var(--theme-bg-soft) et var(--theme-border) pour les champs
+  const inputClass = `mt-1 block w-full rounded-lg border-2 border-[var(--theme-border)] bg-[var(--theme-bg-soft)] dark:bg-stone-800 text-gray-900 dark:text-stone-100 shadow-sm focus:border-[var(--theme-primary)] focus:ring-[var(--theme-primary)]/20 h-11 pl-3 pr-10 transition-all outline-none ${fs.base}`;
   const labelClass = `block font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1 ${fs.label}`;
 
   const ClearButton = ({ onClick, visible }: { onClick: () => void, visible: boolean }) => {
     if (!visible) return null;
     return (
-      <button type="button" onClick={onClick} className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 text-stone-500 hover:text-rose-600 dark:text-stone-400 dark:hover:text-rose-400 transition-colors z-20"><Eraser size={16} /></button>
+      <button type="button" onClick={onClick} className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 text-stone-500 hover:text-[var(--theme-primary)] dark:text-stone-400 dark:hover:text-rose-400 transition-colors z-20"><Eraser size={16} /></button>
     );
   };
 
@@ -92,10 +101,36 @@ export const SearchModal: React.FC<SearchModalProps> = ({
       <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
       <div className="relative bg-white dark:bg-stone-900 rounded-2xl w-full max-w-md max-h-[90vh] flex flex-col shadow-2xl transition-colors duration-300">
         <div className="flex justify-between items-center p-4 border-b border-gray-100 dark:border-stone-800 bg-white dark:bg-stone-800">
-          <h2 className={`font-serif font-bold text-gray-800 dark:text-gray-100 flex items-center gap-2 ${fs.xl}`}><Search size={20} className="text-rose-900 dark:text-rose-500"/>{t('search')}</h2>
+          <h2 className={`font-serif font-bold text-gray-800 dark:text-gray-100 flex items-center gap-2 ${fs.xl}`}><Search size={20} className="text-[var(--theme-primary)] dark:text-rose-500"/>{t('search')}</h2>
           <button onClick={onClose} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 bg-gray-50 dark:bg-stone-800 p-2 rounded-full transition-colors"><X size={20} /></button>
         </div>
+        
         <div className="overflow-y-auto p-5 space-y-4 no-scrollbar">
+          {/* Search Scope Toggle */}
+          {!isHistoryMode && (
+            <div className="space-y-2">
+              <label className={labelClass}>{t('search_scope')}</label>
+              <div className="flex p-1 bg-stone-100 dark:bg-stone-800 rounded-xl border border-stone-200 dark:border-stone-700">
+                <button 
+                  type="button" 
+                  onClick={() => toggleScope('current')}
+                  className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg font-bold transition-all ${filters.searchScope === 'current' ? 'bg-white dark:bg-stone-700 shadow-sm text-[var(--theme-primary)] dark:text-white' : 'text-stone-400 hover:text-stone-600'}`}
+                >
+                  <LayoutGrid size={16} />
+                  <span className={fs.base}>{t('search_this_cellar')}</span>
+                </button>
+                <button 
+                  type="button" 
+                  onClick={() => toggleScope('all')}
+                  className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg font-bold transition-all ${filters.searchScope === 'all' ? 'bg-white dark:bg-stone-700 shadow-sm text-[var(--theme-primary)] dark:text-white' : 'text-stone-400 hover:text-stone-600'}`}
+                >
+                  <Globe size={16} />
+                  <span className={fs.base}>{t('search_all_cellars')}</span>
+                </button>
+              </div>
+            </div>
+          )}
+
           <div><label className={labelClass}>{t('name')}</label><div className="relative"><input type="text" name="name" value={filters.name || ''} onChange={handleChange} className={inputClass} placeholder={t('search_placeholder')} /><ClearButton onClick={() => resetField('name')} visible={!!filters.name} /></div></div>
           <div><label className={labelClass}>{t('appellation')}</label><div className="relative"><input type="text" name="appellation" value={filters.appellation || ''} onChange={handleChange} className={inputClass} placeholder={t('placeholder_contains')} /><ClearButton onClick={() => resetField('appellation')} visible={!!filters.appellation} /></div></div>
           <div className="grid grid-cols-2 gap-4">
@@ -127,7 +162,7 @@ export const SearchModal: React.FC<SearchModalProps> = ({
         </div>
         <div className="p-4 border-t border-gray-100 dark:border-stone-800 flex gap-3 bg-white dark:bg-stone-900 rounded-b-2xl transition-colors">
           <button onClick={handleReset} className="flex items-center justify-center gap-2 px-4 py-3 rounded-xl border border-gray-300 dark:border-stone-700 text-gray-600 dark:text-stone-300 font-medium hover:bg-white dark:hover:bg-stone-800 transition"><RotateCcw size={18} /></button>
-          <button onClick={handleSubmit} className={`flex-1 bg-rose-900 dark:bg-rose-700 text-white font-bold py-3 px-6 rounded-xl shadow-lg shadow-rose-900/20 hover:bg-rose-800 dark:hover:bg-rose-600 transition ${fs.base}`}>{t('search')}</button>
+          <button onClick={handleSubmit} className={`flex-1 bg-[var(--theme-primary)] dark:bg-[var(--theme-primary-dark)] text-white font-bold py-3 px-6 rounded-xl shadow-lg hover:opacity-90 transition ${fs.base}`}>{t('search')}</button>
         </div>
       </div>
     </div>

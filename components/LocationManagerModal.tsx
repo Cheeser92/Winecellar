@@ -54,13 +54,16 @@ export const LocationManagerModal: React.FC<LocationManagerModalProps> = ({
   };
 
   const fs = getFontSizeClasses(fontSize as AppFontSize);
+  
+  // Style harmonisé
+  const inputClass = `flex-1 bg-[var(--theme-bg-soft)] dark:bg-stone-800 border-2 border-[var(--theme-border)] rounded-xl px-4 py-3 shadow-sm focus:border-[var(--theme-primary)] outline-none transition-all ${fs.base}`;
 
   return (
     <div className="fixed inset-0 z-[200] flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
       <div className="relative bg-white dark:bg-stone-900 rounded-2xl w-full max-w-sm shadow-2xl overflow-hidden flex flex-col max-h-[85vh] animate-in zoom-in-95 duration-200">
         <div className="p-4 border-b border-stone-100 dark:border-stone-800 flex justify-between items-center bg-white dark:bg-stone-800/50">
-          <h2 className={`font-serif font-bold text-rose-900 dark:text-rose-100 ${fs.xl}`}>{t('manage_locations')}</h2>
+          <h2 className={`font-serif font-bold text-[var(--theme-primary)] dark:text-stone-100 ${fs.xl}`}>{t('manage_locations')}</h2>
           <button onClick={onClose} className="p-2 text-stone-400 hover:text-stone-600 dark:hover:text-stone-200 rounded-full bg-white dark:bg-stone-800 shadow-sm transition-colors"><X size={20}/></button>
         </div>
         <div className="p-6 overflow-y-auto space-y-8 no-scrollbar pb-10">
@@ -77,9 +80,9 @@ export const LocationManagerModal: React.FC<LocationManagerModalProps> = ({
                 value={newCountry} 
                 onChange={(e) => setNewCountry(e.target.value)} 
                 placeholder={t('new_country_placeholder')} 
-                className={`flex-1 bg-white dark:bg-stone-800 border-2 border-red-500 rounded-xl px-4 py-3 shadow-sm focus:ring-rose-500 focus:border-rose-500 outline-none transition-all ${fs.base}`} 
+                className={inputClass} 
               />
-              <button onClick={handleAddCountry} disabled={!newCountry.trim()} className="bg-rose-900 dark:bg-rose-700 text-white p-3 rounded-xl shadow-lg disabled:opacity-50 active:scale-95 transition-all"><Plus size={20}/></button>
+              <button onClick={handleAddCountry} disabled={!newCountry.trim()} className="bg-[var(--theme-primary)] dark:bg-[var(--theme-primary-dark)] text-white p-3 rounded-xl shadow-lg disabled:opacity-50 active:scale-95 transition-all"><Plus size={20}/></button>
             </div>
           </div>
           <div className="space-y-3 pt-4 border-t border-stone-100 dark:border-stone-800">
@@ -88,7 +91,7 @@ export const LocationManagerModal: React.FC<LocationManagerModalProps> = ({
               <select 
                 value={selectedCountry} 
                 onChange={(e) => setSelectedCountry(e.target.value)} 
-                className={`w-full bg-white dark:bg-stone-800 border-2 border-red-500 rounded-xl px-4 py-3 shadow-sm outline-none transition-all ${fs.base}`}
+                className={inputClass}
               >
                 <option value="">{t('select_country_first')}</option>
                 {locationData.countries.map(c => <option key={c} value={c}>{c}</option>)}
@@ -100,9 +103,9 @@ export const LocationManagerModal: React.FC<LocationManagerModalProps> = ({
                   disabled={!selectedCountry} 
                   onChange={(e) => setNewRegion(e.target.value)} 
                   placeholder={t('new_region_placeholder')} 
-                  className={`flex-1 bg-white dark:bg-stone-800 border-2 border-red-500 rounded-xl px-4 py-3 shadow-sm focus:ring-rose-500 focus:border-rose-500 outline-none transition-all disabled:opacity-50 ${fs.base}`} 
+                  className={`${inputClass} disabled:opacity-50`} 
                 />
-                <button onClick={handleAddRegion} disabled={!newRegion.trim() || !selectedCountry} className="bg-rose-900 dark:bg-rose-700 text-white p-3 rounded-xl shadow-lg disabled:opacity-50 active:scale-95 transition-all"><Plus size={20}/></button>
+                <button onClick={handleAddRegion} disabled={!newRegion.trim() || !selectedCountry} className="bg-[var(--theme-primary)] dark:bg-[var(--theme-primary-dark)] text-white p-3 rounded-xl shadow-lg disabled:opacity-50 active:scale-95 transition-all"><Plus size={20}/></button>
               </div>
             </div>
           </div>

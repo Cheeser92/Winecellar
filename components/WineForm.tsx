@@ -43,7 +43,7 @@ export const WineForm: React.FC<WineFormProps> = ({
     name: initialData?.name || '',
     appellation: initialData?.appellation || '',
     region: initialData?.region || '',
-    country: initialData?.country || 'France',
+    country: initialData?.country || (language === 'fr' ? 'France' : 'France'),
     color: initialData?.color || WineColor.ROUGE,
     year: initialData?.year || new Date().getFullYear(),
     origin: initialData?.origin || '',
@@ -87,7 +87,7 @@ export const WineForm: React.FC<WineFormProps> = ({
   };
 
   const analyzeLabel = async (base64Data: string) => {
-    if (isEdit) return; // Uniquement pour les nouvelles saisies
+    if (isEdit) return;
 
     setIsAnalyzing(true);
     try {
@@ -165,15 +165,15 @@ export const WineForm: React.FC<WineFormProps> = ({
   };
 
   const fs = getFontSizeClasses(fontSize as AppFontSize);
-  const inputClass = `mt-1 block w-full rounded-lg border border-gray-300 dark:border-stone-700 bg-white dark:bg-stone-800 text-gray-900 dark:text-white shadow-sm focus:border-rose-500 focus:ring-rose-500 h-11 px-3 transition-all ${fs.base}`;
-  const requiredInputClass = `mt-1 block w-full rounded-lg border-2 border-red-500 bg-white dark:bg-stone-800 text-gray-900 dark:text-white shadow-sm focus:border-rose-500 focus:ring-rose-500 h-11 px-3 transition-all ${fs.base}`;
-  const textareaClass = `mt-1 block w-full rounded-lg border border-gray-300 dark:border-stone-700 bg-white dark:bg-stone-800 text-gray-900 dark:text-white shadow-sm focus:border-rose-500 focus:ring-rose-500 p-3 transition-all ${fs.base}`;
+  const inputClass = `mt-1 block w-full rounded-lg border border-gray-300 dark:border-stone-700 bg-[var(--theme-bg-soft)] dark:bg-stone-800 text-gray-900 dark:text-white shadow-sm focus:border-[var(--theme-primary)] focus:ring-[var(--theme-primary)]/20 h-11 px-3 transition-all ${fs.base}`;
+  const requiredInputClass = `mt-1 block w-full rounded-lg border-2 border-[var(--theme-primary)] bg-[var(--theme-bg-soft)] dark:bg-stone-800 text-gray-900 dark:text-white shadow-sm focus:border-[var(--theme-primary)] focus:ring-[var(--theme-primary)]/20 h-11 px-3 transition-all ${fs.base}`;
+  const textareaClass = `mt-1 block w-full rounded-lg border border-gray-300 dark:border-stone-700 bg-[var(--theme-bg-soft)] dark:bg-stone-800 text-gray-900 dark:text-white shadow-sm focus:border-[var(--theme-primary)] focus:ring-[var(--theme-primary)]/20 p-3 transition-all ${fs.base}`;
   const labelClass = `block font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1 ${fs.label}`;
 
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-5 pb-24 p-4 bg-stone-100 dark:bg-black min-h-full transition-colors duration-300 relative">
-      <div className="flex justify-between items-center mb-2 bg-white dark:bg-stone-900 p-4 rounded-xl shadow-sm sticky top-0 z-10 transition-colors">
-        <h2 className={`font-serif font-bold text-rose-900 dark:text-rose-100 ${fs.xl}`}>
+      <div className="flex justify-between items-center mb-2 bg-white dark:bg-stone-900 p-4 rounded-xl shadow-sm sticky top-0 z-10 transition-colors border-b border-[var(--theme-bg-soft)]">
+        <h2 className={`font-serif font-bold text-[var(--theme-primary-dark)] dark:text-stone-100 ${fs.xl}`}>
           {isHistoryMode ? t('personal_note') : (isEdit ? t('edit_bottle') : t('add_bottle'))}
         </h2>
         <button type="button" onClick={onCancel} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 bg-gray-100 dark:bg-stone-800 p-2 rounded-full transition-colors">
@@ -207,11 +207,11 @@ export const WineForm: React.FC<WineFormProps> = ({
           </div>
         ) : (
           <div className="text-center w-full">
-            <div className="mx-auto h-16 w-16 bg-rose-50 dark:bg-rose-900/20 text-rose-300 dark:text-rose-500 rounded-full flex items-center justify-center mb-3">
+            <div className="mx-auto h-16 w-16 bg-[var(--theme-bg-soft)] dark:bg-rose-900/20 text-[var(--theme-primary)] dark:text-rose-500 rounded-full flex items-center justify-center mb-3">
               <Camera size={32} />
             </div>
             <div className="flex flex-col text-sm text-gray-600 dark:text-gray-400">
-              <span className={`font-medium text-rose-700 dark:text-rose-400 ${fs.base}`}>
+              <span className={`font-medium text-[var(--theme-primary)] dark:text-rose-400 ${fs.base}`}>
                 {t('take_photo')}
               </span>
               <span className={`text-gray-400 mt-1 ${fs.label}`}>{t('gallery')}</span>
@@ -224,7 +224,7 @@ export const WineForm: React.FC<WineFormProps> = ({
       {!isHistoryMode ? (
         <>
           <div className="bg-white dark:bg-stone-900 p-5 rounded-xl shadow-sm space-y-4 transition-colors">
-            <h3 className={`font-bold text-rose-900 dark:text-rose-500 uppercase tracking-widest border-b border-gray-100 dark:border-stone-800 pb-2 mb-4 ${fs.base}`}>{t('info_main')}</h3>
+            <h3 className={`font-bold text-[var(--theme-primary)] dark:text-rose-500 uppercase tracking-widest border-b border-gray-100 dark:border-stone-800 pb-2 mb-4 ${fs.base}`}>{t('info_main')}</h3>
             <div className="space-y-4">
               <div>
                 <label className={labelClass}>{t('name')}</label>
@@ -271,13 +271,13 @@ export const WineForm: React.FC<WineFormProps> = ({
               </div>
               <div>
                 <label className={labelClass}>{t('year')}</label>
-                <input required type="number" min="1900" max="2100" name="year" value={formData.year} onChange={handleChange} className={requiredInputClass} />
+                <input required type="number" min="1900" max="2100" name="year" value={formData.year} onChange={handleChange} className={requiredInputClass} placeholder={t('placeholder_vintage')} />
               </div>
             </div>
           </div>
 
           <div className="bg-white dark:bg-stone-900 p-5 rounded-xl shadow-sm space-y-4 transition-colors">
-            <h3 className={`font-bold text-rose-900 dark:text-rose-500 uppercase tracking-widest border-b border-gray-100 dark:border-stone-800 pb-2 mb-4 ${fs.base}`}>{t('info_detail_bottle')}</h3>
+            <h3 className={`font-bold text-[var(--theme-primary)] dark:text-rose-500 uppercase tracking-widest border-b border-gray-100 dark:border-stone-800 pb-2 mb-4 ${fs.base}`}>{t('info_detail_bottle')}</h3>
             <div>
               <label className={labelClass}>{t('location')}</label>
               <select name="location" value={formData.location} onChange={handleChange} className={inputClass}>
@@ -319,7 +319,7 @@ export const WineForm: React.FC<WineFormProps> = ({
               </div>
                <div className="col-span-1">
                 <label className={labelClass}>{t('recommended_year')}</label>
-                <input required type="number" min="1900" max="2100" name="recommendedYear" value={formData.recommendedYear} onChange={handleChange} className={requiredInputClass} />
+                <input required type="number" min="1900" max="2100" name="recommendedYear" value={formData.recommendedYear} onChange={handleChange} className={requiredInputClass} placeholder={t('placeholder_drink_in')} />
               </div>
             </div>
             <div className="grid grid-cols-2 gap-4">
@@ -348,7 +348,7 @@ export const WineForm: React.FC<WineFormProps> = ({
             </div>
             <div>
               <label className={labelClass}>{t('note')}</label>
-              <textarea name="note" value={formData.note} onChange={handleChange} rows={3} className={textareaClass} />
+              <textarea name="note" value={formData.note} onChange={handleChange} rows={3} className={textareaClass} placeholder={t('placeholder_note')} />
             </div>
           </div>
         </>
@@ -369,7 +369,7 @@ export const WineForm: React.FC<WineFormProps> = ({
         </div>
       )}
 
-      <button type="submit" className={`w-full sticky bottom-4 bg-rose-900 dark:bg-rose-700 text-white font-bold py-4 px-6 rounded-xl shadow-lg hover:bg-rose-800 dark:hover:bg-rose-600 active:scale-95 transition-all duration-200 ${fs.lg}`}>{t('save')}</button>
+      <button type="submit" className={`w-full sticky bottom-4 bg-[var(--theme-primary)] text-white font-bold py-4 px-6 rounded-xl shadow-lg hover:bg-[var(--theme-primary-dark)] active:scale-95 transition-all duration-200 ${fs.lg}`}>{t('save')}</button>
     </form>
   );
 };

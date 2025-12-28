@@ -31,6 +31,25 @@ export const translations = {
     copy_quantity: "Quantité à copier",
     quantity_consumed: "Nombre de bouteilles",
     
+    // Placeholders
+    placeholder_wine_name: "Ex: Château Margaux",
+    placeholder_appellation: "Ex: Cabernet Sauvignon",
+    placeholder_origin: "Ex: Domaine de la Romanée-Conti",
+    placeholder_tag: "Ex: Cadeau, Garde, Soirée",
+    placeholder_note: "Notes de dégustation, accords mets-vins...",
+    placeholder_drink_in: "Année idéale",
+    placeholder_vintage: "Millésime",
+    placeholder_contains: "Contient...",
+
+    // Search Scope
+    search_scope: "Périmètre de recherche",
+    search_this_cellar: "Dans cette cave",
+    search_all_cellars: "Dans toutes les caves",
+    found_in: "Situé dans",
+
+    // Themes
+    color_theme: "Couleur du thème",
+
     // Multi-Cellar
     manage_cellars: "Gestion des caves",
     new_cellar: "Nouvelle cave",
@@ -41,9 +60,11 @@ export const translations = {
     switch_cellar: "Changer de cave",
     transfer: "Transférer",
     transfer_bottle: "Transférer la bouteille",
-    transfer_to: "Transférer vers",
+    transfer_to: "Quantité à transférer",
     destroy_bottles_confirm: "Détruire définitivement les bouteilles restantes de cette cave",
     delete_cellar_warning: "Cette action est irréversible.",
+    delete_cellar_title: "Suppression de la cave",
+    remaining_bottles: "Bouteilles restantes",
     swipe_to_delete: "Glissez pour supprimer la cave",
     cellar_photo: "Photo de la cave",
 
@@ -76,16 +97,25 @@ export const translations = {
     ai_synthesis: "L'avis du Sommelier IA",
     generating_synthesis: "Rédaction de la fiche par l'IA...",
     
-    // Stats
+    // Stats Cellar
     bottles: "Bouteilles",
     consumed: "Consommées",
     total_cost: "Coût Total",
     avg_price: "Prix Moy.",
     avg_rating_short: "Note Moy.",
-    stats_color: "Répartition par Couleur (%)",
-    stats_region: "Vins par Région & Couleur",
-    stats_country: "Vins par Pays & Couleur",
-    stats_year: "Quantité par Année d'achat",
+    stats_color: "Répartition du stock par couleur (%)",
+    stats_region: "Stock par région et couleur",
+    stats_country: "Stock par pays et couleur",
+    stats_year: "Entrées par année d'achat",
+
+    // Stats History
+    stats_hist_region_color: "Consommation par région et couleur",
+    stats_hist_avg_rating_red: "Note moyenne des vins rouges par région",
+    stats_hist_avg_rating_white: "Note moyenne des vins blancs par région",
+    stats_hist_cons_color: "Volume consommé par couleur",
+    stats_hist_cons_region: "Volume consommé par région",
+    stats_hist_cons_year: "Volume consommé par millésime",
+    stats_hist_cons_country: "Volume consommé par pays",
     
     // Section Headers
     info_main: "Informations principales",
@@ -194,6 +224,26 @@ export const translations = {
     copy_quantity: "Quantity to copy",
     quantity_consumed: "Number of bottles",
 
+    // Placeholders
+    placeholder_wine_name: "e.g. Château Margaux",
+    placeholder_appellation: "e.g. Cabernet Sauvignon",
+    placeholder_origin: "e.g. Estate Name",
+    placeholder_tag: "e.g. Gift, Aging, Party",
+    placeholder_note: "Tasting notes, food pairings...",
+    placeholder_drink_in: "Ideal year",
+    placeholder_vintage: "Vintage",
+    placeholder_contains: "Contains...",
+
+    // Search Scope
+    search_scope: "Search Scope",
+    search_this_cellar: "In this cellar",
+    search_all_cellars: "In all cellars",
+    found_in: "Found in",
+
+    // Themes
+    color_theme: "Theme Color",
+
+    // Multi-Cellar
     manage_cellars: "Manage Cellars",
     new_cellar: "New Cellar",
     edit_cellar: "Edit Cellar",
@@ -203,12 +253,15 @@ export const translations = {
     switch_cellar: "Switch Cellar",
     transfer: "Transfer",
     transfer_bottle: "Transfer Bottle",
-    transfer_to: "Transfer to",
+    transfer_to: "Quantity to transfer",
     destroy_bottles_confirm: "Permanently destroy remaining bottles in this cellar",
     delete_cellar_warning: "This action is irreversible.",
+    delete_cellar_title: "Delete Cellar",
+    remaining_bottles: "Remaining bottles",
     swipe_to_delete: "Swipe to delete cellar",
     cellar_photo: "Cellar Photo",
 
+    // Form Labels
     name: "Wine Name",
     appellation: "Appellation – Grape",
     region: "Region",
@@ -237,15 +290,25 @@ export const translations = {
     ai_synthesis: "AI Sommelier's View",
     generating_synthesis: "Writing summary via AI...",
 
+    // Stats
     bottles: "Bottles",
     consumed: "Consumed",
     total_cost: "Total Cost",
     avg_price: "Avg Price",
     avg_rating_short: "Avg Rating",
-    stats_color: "Distribution by Color (%)",
-    stats_region: "Wines by Region & Color",
-    stats_country: "Wines by Country & Color",
-    stats_year: "Quantity by Purchase Year",
+    stats_color: "Stock distribution by color (%)",
+    stats_region: "Stock by region and color",
+    stats_country: "Stock by country and color",
+    stats_year: "Stock entries by purchase year",
+
+    // Stats History
+    stats_hist_region_color: "Consumption by region and color",
+    stats_hist_avg_rating_red: "Average rating of red wines by region",
+    stats_hist_avg_rating_white: "Average rating of white wines by region",
+    stats_hist_cons_color: "Consumed volume by color",
+    stats_hist_cons_region: "Consumed volume by region",
+    stats_hist_cons_year: "Consumed volume by vintage",
+    stats_hist_cons_country: "Consumed volume by country",
 
     info_main: "Main Information",
     info_detail_bottle: "Bottle Details",
@@ -271,6 +334,7 @@ export const translations = {
     font_medium: "Medium",
     font_large: "Large",
 
+    // Enums
     aging_Longue: "Long",
     aging_Moyenne: "Average",
     aging_Courte: "Short",
@@ -278,6 +342,7 @@ export const translations = {
     color_Blanc: "White",
     color_Rosé: "Rosé",
 
+    // Misc
     shelf_prefix: "Shelf",
     off_site: "Off-site",
     years_old: "years",

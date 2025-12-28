@@ -1,6 +1,6 @@
 
 import React, { useState, useRef, useEffect } from 'react';
-import { ArrowLeft, Check, Calendar, Clock, Tag, Trash2, Star, Pencil, Copy, Eye, Camera, ShoppingBag, Wine as WineIcon, Minus, Plus, Move, Warehouse, Map as MapIcon, Sparkles, Loader2 } from 'lucide-react';
+import { ArrowLeft, Check, Calendar, Clock, Tag, Trash2, Star, Pencil, Copy, Eye, Camera, ShoppingBag, Wine as WineIcon, Minus, Plus, Move, Warehouse, Map as MapIcon, Sparkles, Loader2, ExternalLink } from 'lucide-react';
 import { Wine, ConsumptionStatus, HistoryEntry, Language, AppFontSize, Cellar } from '../types';
 import { RATINGS, STRENGTHS } from '../constants';
 import { getTranslation } from '../translations';
@@ -98,10 +98,10 @@ export const WineDetail: React.FC<WineDetailProps> = ({ wine, cellars, currentCe
 
   const getFontSizeClasses = (size: AppFontSize) => {
     switch(size) {
-      case 'small': return { title: 'text-lg', sub: 'text-xs', statsLabel: 'text-[8px]', statsValue: 'text-sm', infoText: 'text-xs', cellarBadge: 'text-[9px]' };
-      case 'large': return { title: 'text-4xl', sub: 'text-xl', statsLabel: 'text-[11px]', statsValue: 'text-xl', infoText: 'text-lg', cellarBadge: 'text-xs' };
+      case 'small': return { title: 'text-lg', sub: 'text-xs', statsLabel: 'text-[8px]', statsValue: 'text-sm', infoText: 'text-xs', cellarBadge: 'text-xs' };
+      case 'large': return { title: 'text-4xl', sub: 'text-xl', statsLabel: 'text-[11px]', statsValue: 'text-xl', infoText: 'text-lg', cellarBadge: 'text-base' };
       case 'medium':
-      default: return { title: 'text-3xl', sub: 'text-lg', statsLabel: 'text-[9px]', statsValue: 'text-base', infoText: 'text-base', cellarBadge: 'text-[10px]' };
+      default: return { title: 'text-3xl', sub: 'text-lg', statsLabel: 'text-[9px]', statsValue: 'text-base', infoText: 'text-base', cellarBadge: 'text-sm' };
     }
   };
 
@@ -132,7 +132,11 @@ export const WineDetail: React.FC<WineDetailProps> = ({ wine, cellars, currentCe
   };
 
   const mapSearchQuery = encodeURIComponent(`${wine.name} ${wine.region} ${wine.country}`);
-  const mapUrl = `https://maps.google.com/maps?q=${mapSearchQuery}&t=&z=13&ie=UTF8&iwloc=&output=embed`;
+  const mapEmbedUrl = `https://maps.google.com/maps?q=${mapSearchQuery}&t=&z=13&ie=UTF8&iwloc=&output=embed`;
+  const mapDirectUrl = `https://www.google.com/maps/search/?api=1&query=${mapSearchQuery}`;
+
+  // Style standardisé pour les champs
+  const inputClass = `w-full p-4 rounded-xl bg-[var(--theme-bg-soft)] dark:bg-stone-800 border-2 border-[var(--theme-border)] focus:border-[var(--theme-primary)] text-stone-800 dark:text-white outline-none focus:ring-2 focus:ring-[var(--theme-primary)]/20 transition-all ${fs.infoText}`;
 
   return (
     <div className={`min-h-full relative ${wine.image ? 'bg-stone-900' : 'bg-stone-100 dark:bg-black'} transition-colors duration-300`}>
@@ -198,9 +202,9 @@ export const WineDetail: React.FC<WineDetailProps> = ({ wine, cellars, currentCe
               <p className={`text-stone-400 dark:text-stone-500 uppercase font-bold tracking-wide ${fs.statsLabel}`}>{t('price')}</p>
               <p className={`font-bold text-stone-800 dark:text-stone-100 leading-tight ${fs.statsValue}`}>{wine.price.toLocaleString(language, { style: 'currency', currency: 'EUR', maximumFractionDigits: 1 })}</p>
             </div>
-            <div className="text-center border-l border-stone-200 dark:border-stone-700 bg-rose-50 dark:bg-rose-900/20 rounded-r-lg -my-4 py-4 flex flex-col justify-center">
-              <p className={`text-rose-800 dark:text-rose-300 uppercase font-bold tracking-wide ${fs.statsLabel}`}>{t('total_cost')}</p>
-              <p className={`font-bold text-rose-700 dark:text-rose-400 leading-tight ${fs.statsValue}`}>{totalCost.toLocaleString(language, { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 })}</p>
+            <div className={`text-center border-l border-stone-200 dark:border-stone-700 bg-[var(--theme-bg-soft)] dark:bg-rose-900/20 rounded-r-lg -my-4 py-4 flex flex-col justify-center`}>
+              <p className={`text-[var(--theme-primary)] dark:text-rose-300 uppercase font-bold tracking-wide ${fs.statsLabel}`}>{t('total_cost')}</p>
+              <p className={`font-bold text-[var(--theme-primary)] dark:text-rose-400 leading-tight ${fs.statsValue}`}>{totalCost.toLocaleString(language, { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 })}</p>
             </div>
           </div>
 
@@ -228,7 +232,7 @@ export const WineDetail: React.FC<WineDetailProps> = ({ wine, cellars, currentCe
           <div className="grid grid-cols-2 gap-y-6 gap-x-4 text-sm pt-2">
                <div><p className="text-stone-400 dark:text-stone-500 text-xs font-bold uppercase mb-1">{t('origin')}</p><p className={`text-stone-800 dark:text-stone-200 font-medium ${fs.infoText}`}>{wine.origin || 'N/A'}</p></div>
                <div><p className="text-stone-400 dark:text-stone-500 text-xs font-bold uppercase mb-1">{t('purchase_place')}</p><p className={`text-stone-800 dark:text-stone-200 font-medium ${fs.infoText}`}>{wine.purchasePlace || 'N/A'}</p></div>
-               <div><p className="text-stone-400 dark:text-stone-500 text-xs font-bold uppercase mb-1">{t('strength')}</p><div className="flex items-center gap-2"><div className="flex-1 bg-stone-200 dark:bg-stone-700 rounded-full h-2"><div className="bg-rose-900 dark:bg-rose-500 h-2 rounded-full transition-all duration-1000" style={{ width: `${wine.strength}%` }}></div></div><span className={`font-bold text-rose-900 dark:text-rose-400 ${fs.infoText}`}>{wine.strength}%</span></div></div>
+               <div><p className="text-stone-400 dark:text-stone-500 text-xs font-bold uppercase mb-1">{t('strength')}</p><div className="flex items-center gap-2"><div className="flex-1 bg-stone-200 dark:bg-stone-700 rounded-full h-2"><div className="bg-[var(--theme-primary)] dark:bg-rose-500 h-2 rounded-full transition-all duration-1000" style={{ width: `${wine.strength}%` }}></div></div><span className={`font-bold text-[var(--theme-primary)] dark:text-rose-400 ${fs.infoText}`}>{wine.strength}%</span></div></div>
                {!isHistory && (<div><p className="text-stone-400 dark:text-stone-500 text-xs font-bold uppercase mb-1">{t('aging')}</p><p className={`text-stone-800 dark:text-stone-200 font-medium ${fs.infoText}`}>{t('aging_' + wine.agingPotential)}</p></div>)}
                
                {isHistory && historyEntry?.originalCellarName && (
@@ -243,11 +247,20 @@ export const WineDetail: React.FC<WineDetailProps> = ({ wine, cellars, currentCe
           </div>
 
           <div className="space-y-3 pt-4 border-t border-stone-100 dark:border-stone-800">
-             <div className="flex items-center gap-2 text-rose-900 dark:text-rose-400">
-                <MapIcon size={18} />
-                <span className={`font-bold uppercase tracking-wider ${fs.infoText}`}>{t('winery_location')}</span>
+             <div className="flex items-center justify-between text-[var(--theme-primary)] dark:text-rose-400">
+                <div className="flex items-center gap-2">
+                   <MapIcon size={18} />
+                   <span className={`font-bold uppercase tracking-wider ${fs.infoText}`}>{t('winery_location')}</span>
+                </div>
+                <a href={mapDirectUrl} className="flex items-center gap-1.5 text-xs font-bold bg-[var(--theme-bg-soft)] dark:bg-rose-900/20 px-3 py-1.5 rounded-lg border border-[var(--theme-border)] dark:border-rose-900/40 active:scale-95 transition-transform">
+                   <ExternalLink size={14} />
+                   <span>Google Maps</span>
+                </a>
              </div>
-             <div className="w-full h-48 rounded-2xl overflow-hidden shadow-inner border border-stone-100 dark:border-stone-800">
+             <a 
+               href={mapDirectUrl}
+               className="block w-full h-48 rounded-2xl overflow-hidden shadow-inner border border-stone-100 dark:border-stone-800 relative group"
+             >
                 <iframe 
                   width="100%" 
                   height="100%" 
@@ -255,14 +268,15 @@ export const WineDetail: React.FC<WineDetailProps> = ({ wine, cellars, currentCe
                   scrolling="no" 
                   marginHeight={0} 
                   marginWidth={0} 
-                  src={mapUrl}
-                  className="grayscale dark:invert-[0.9] dark:hue-rotate-180 transition-all opacity-80 hover:opacity-100"
+                  src={mapEmbedUrl}
+                  className="grayscale dark:invert-[0.9] dark:hue-rotate-180 transition-all opacity-80 group-hover:opacity-100 pointer-events-none"
                 />
-             </div>
+                <div className="absolute inset-0 bg-black/5 group-hover:bg-transparent transition-colors"></div>
+             </a>
           </div>
 
           <div className="space-y-3 pt-4 border-t border-stone-100 dark:border-stone-800">
-            <div className="flex items-center gap-2 text-rose-900 dark:text-rose-400">
+            <div className="flex items-center gap-2 text-[var(--theme-primary)] dark:text-rose-400">
                <Sparkles size={18} />
                <span className={`font-bold uppercase tracking-wider ${fs.infoText}`}>{t('ai_synthesis')}</span>
             </div>
@@ -274,7 +288,7 @@ export const WineDetail: React.FC<WineDetailProps> = ({ wine, cellars, currentCe
                 </div>
               ) : aiSummary ? (
                 <div className="relative">
-                  <div className="absolute -left-1 -top-1 opacity-10"><WineIcon size={40} className="text-rose-900 dark:text-rose-500" /></div>
+                  <div className="absolute -left-1 -top-1 opacity-10"><WineIcon size={40} className="text-[var(--theme-primary)] dark:text-rose-500" /></div>
                   <p className={`text-stone-700 dark:text-stone-300 italic leading-relaxed relative z-10 ${fs.infoText}`}>
                     {aiSummary}
                   </p>
@@ -296,7 +310,7 @@ export const WineDetail: React.FC<WineDetailProps> = ({ wine, cellars, currentCe
                 {cellars.length > 1 && (
                   <button type="button" onClick={() => handleTransferClick(true)} className="flex-none h-[56px] w-[56px] flex items-center justify-center rounded-xl border border-orange-200 dark:border-orange-900/50 text-orange-500 dark:text-orange-400 bg-orange-50 dark:bg-orange-900/10 hover:bg-orange-100 transition cursor-pointer"><Move size={20} /></button>
                 )}
-                <button type="button" onClick={() => setShowConsumeModal(true)} className="flex-1 flex items-center justify-center h-[56px] gap-2 bg-gradient-to-r from-rose-900 to-rose-800 dark:from-rose-700 dark:to-rose-600 text-white font-bold px-6 rounded-xl shadow-lg shadow-rose-900/20 hover:shadow-xl transition transform active:scale-95 cursor-pointer">
+                <button type="button" onClick={() => setShowConsumeModal(true)} className={`flex-1 flex items-center justify-center h-[56px] gap-2 bg-gradient-to-r from-[var(--theme-primary)] to-[var(--theme-primary-dark)] text-white font-bold px-6 rounded-xl shadow-lg shadow-[var(--theme-primary)]/20 hover:shadow-xl transition transform active:scale-95 cursor-pointer`}>
                   <Check size={20} /><span>{t('consume_bottle')}</span>
                 </button>
                 </>
@@ -317,8 +331,8 @@ export const WineDetail: React.FC<WineDetailProps> = ({ wine, cellars, currentCe
                 <button onClick={() => setConsumeQty(prev => Math.min(wine.quantity, prev + 1))} className="w-12 h-12 rounded-xl bg-stone-100 dark:bg-stone-800 text-stone-600 dark:text-stone-300 flex items-center justify-center border border-stone-200 active:scale-90 transition-all"><Plus size={20} className="text-stone-600 dark:text-stone-300" /></button>
               </div>
             </div>
-            <div className="mb-6"><label className="block text-xs font-bold text-stone-500 uppercase mb-3">Note</label><div className="flex justify-between px-2">{RATINGS.map(r => (<button key={r} onClick={() => setRating(r)} className={`w-10 h-10 rounded-xl flex items-center justify-center text-lg font-bold transition-all ${rating === r ? 'bg-rose-900 dark:bg-rose-700 text-white scale-110 shadow-lg' : 'bg-stone-100 dark:bg-stone-800 text-stone-400'}`}>{r}</button>))}</div></div>
-            <div className="flex gap-3"><button onClick={() => setShowConsumeModal(false)} className="flex-1 py-3 rounded-xl border border-stone-200 text-stone-600 dark:text-stone-300 font-medium hover:bg-stone-50">{t('cancel')}</button><button onClick={() => onConsume?.(wine as Wine, rating, selectedStrength, consumeQty)} className="flex-1 py-3 rounded-xl bg-rose-900 dark:bg-rose-700 text-white font-bold hover:bg-rose-800 shadow-lg">{t('confirm')}</button></div>
+            <div className="mb-6"><label className="block text-xs font-bold text-stone-500 uppercase mb-3">Note</label><div className="flex justify-between px-2">{RATINGS.map(r => (<button key={r} onClick={() => setRating(r)} className={`w-10 h-10 rounded-xl flex items-center justify-center text-lg font-bold transition-all ${rating === r ? 'bg-[var(--theme-primary)] dark:bg-[var(--theme-primary-dark)] text-white scale-110 shadow-lg' : 'bg-stone-100 dark:bg-stone-800 text-stone-400'}`}>{r}</button>))}</div></div>
+            <div className="flex gap-3"><button onClick={() => setShowConsumeModal(false)} className="flex-1 py-3 rounded-xl border border-stone-200 text-stone-600 dark:text-stone-300 font-medium hover:bg-stone-50">{t('cancel')}</button><button onClick={() => onConsume?.(wine as Wine, rating, selectedStrength, consumeQty)} className="flex-1 py-3 rounded-xl bg-[var(--theme-primary)] dark:bg-[var(--theme-primary-dark)] text-white font-bold hover:opacity-90 shadow-lg">{t('confirm')}</button></div>
           </div>
         </div>
       )}
@@ -333,7 +347,7 @@ export const WineDetail: React.FC<WineDetailProps> = ({ wine, cellars, currentCe
                 <select 
                   value={targetCellarId} 
                   onChange={(e) => setTargetCellarId(e.target.value)}
-                  className="w-full p-4 rounded-xl bg-stone-50 dark:bg-stone-800 border-2 border-red-500 text-stone-800 dark:text-white outline-none focus:ring-2 focus:ring-rose-500/20"
+                  className={inputClass}
                 >
                   {cellars.map((c: Cellar) => (
                     <option key={c.id} value={c.id}>{c.name}</option>
@@ -343,22 +357,22 @@ export const WineDetail: React.FC<WineDetailProps> = ({ wine, cellars, currentCe
               <div className="space-y-4">
                 <div>
                   <label className="block text-xs font-bold text-stone-500 uppercase mb-2">{t('target_location')}</label>
-                  <select value={targetLocation} onChange={(e) => setTargetLocation(e.target.value)} className="w-full p-4 rounded-xl bg-stone-50 dark:bg-stone-800 border border-stone-200 dark:border-stone-700 text-stone-800 dark:text-white">
+                  <select value={targetLocation} onChange={(e) => setTargetLocation(e.target.value)} className={inputClass}>
                     {getCellarShelves(targetCellar).map(l => <option key={l} value={l}>{l}</option>)}
                   </select>
                 </div>
                 <div>
                   <label className="block text-xs font-bold text-stone-500 uppercase mb-2">{transferModal.isMove ? t('transfer_to') : t('copy_quantity')}</label>
-                  <div className="flex items-center gap-3">
-                    <button onClick={() => setTransferQty(prev => Math.max(1, prev - 1))} className="w-12 h-12 rounded-xl bg-stone-100 dark:bg-stone-800 text-stone-600 dark:text-stone-300 flex items-center justify-center border active:scale-90 transition-all"><Minus size={20} className="text-stone-600 dark:text-stone-300" /></button>
-                    <div className="flex-1 h-12 bg-stone-50 dark:bg-stone-900 border rounded-xl flex items-center justify-center font-bold text-lg text-stone-900 dark:text-white">{transferQty}</div>
-                    <button onClick={() => setTransferQty(prev => Math.min(transferModal.isMove ? (wine as Wine).quantity : 100, prev + 1))} className="w-12 h-12 rounded-xl bg-stone-100 dark:bg-stone-800 text-stone-600 dark:text-stone-300 flex items-center justify-center border active:scale-90 transition-all"><Plus size={20} className="text-stone-600 dark:text-stone-300" /></button>
+                  <div className="flex items-center gap-3 mt-1">
+                    <button onClick={() => setTransferQty(prev => Math.max(1, prev - 1))} className="w-12 h-12 rounded-xl bg-stone-100 dark:bg-stone-800 text-stone-600 dark:text-stone-300 flex items-center justify-center border border-stone-200 dark:border-stone-700 active:scale-90 transition-all"><Minus size={20} className="text-stone-600 dark:text-stone-300" /></button>
+                    <div className="flex-1 h-12 bg-[var(--theme-bg-soft)] dark:bg-stone-900 border-2 border-[var(--theme-border)] rounded-xl flex items-center justify-center font-bold text-lg text-stone-900 dark:text-white">{transferQty}</div>
+                    <button onClick={() => setTransferQty(prev => Math.min(transferModal.isMove ? (wine as Wine).quantity : 100, prev + 1))} className="w-12 h-12 rounded-xl bg-stone-100 dark:bg-stone-800 text-stone-600 dark:text-stone-300 flex items-center justify-center border border-stone-200 dark:border-stone-700 active:scale-90 transition-all"><Plus size={20} className="text-stone-600 dark:text-stone-300" /></button>
                   </div>
                 </div>
               </div>
               <div className="flex gap-3 pt-4">
-                <button onClick={() => setTransferModal({ isOpen: false, isMove: false })} className="flex-1 py-3 rounded-xl border text-stone-600 dark:text-stone-300 font-bold">{t('cancel')}</button>
-                <button onClick={confirmTransfer} className="flex-1 py-3 rounded-xl bg-rose-900 dark:bg-rose-700 text-white font-bold shadow-lg">{t('confirm')}</button>
+                <button onClick={() => setTransferModal({ isOpen: false, isMove: false })} className="flex-1 py-3 rounded-xl border border-stone-200 text-stone-600 dark:text-stone-300 font-bold">{t('cancel')}</button>
+                <button onClick={confirmTransfer} className="flex-1 py-3 rounded-xl bg-[var(--theme-primary)] dark:bg-[var(--theme-primary-dark)] text-white font-bold shadow-lg">{t('confirm')}</button>
               </div>
             </div>
           </div>

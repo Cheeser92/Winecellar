@@ -60,17 +60,20 @@ export interface SearchFilters {
   strength?: number;
   agingPotential?: string;
   tag?: string;
+  searchScope?: 'current' | 'all';
 }
 
 export type Language = 'fr' | 'en';
 export type Theme = 'light' | 'dark';
 export type AppFontSize = 'small' | 'medium' | 'large';
+export type ColorTheme = 'default' | 'blue' | 'red' | 'yellow' | 'mauve' | 'green';
 
 export interface AppSettings {
   language: Language;
   theme: Theme;
   shelfCount: number;
   fontSize: AppFontSize;
+  colorTheme?: ColorTheme;
 }
 
 export interface LocationData {
