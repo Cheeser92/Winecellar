@@ -1009,7 +1009,7 @@ function App() {
             }
           }
         }} fontSize={settings.fontSize} />
-        <InfoModal isOpen={isInfoOpen} onClose={() => setIsInfoOpen(false)} fontSize={settings.fontSize} />
+        <InfoModal isOpen={isInfoOpen} onClose={() => setIsInfoOpen(false)} language={settings.language} fontSize={settings.fontSize} />
         <LocationManagerModal isOpen={isLocationManagerOpen} onClose={() => setIsLocationManagerOpen(false)} language={settings.language} locationData={locationData} onUpdateLocationData={setLocationData} fontSize={settings.fontSize} />
         {renderFloatingList(isQuantityModalOpen, () => setIsQuantityModalOpen(false), t('priority_consumption'), wines, 'consumption')}
         {renderFloatingList(isCostModalOpen, () => setIsCostModalOpen(false), activeTab === 'history' ? t('history_value') : t('top_value_wines'), activeTab === 'history' ? history : wines, 'cost')}
