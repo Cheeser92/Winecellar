@@ -63,7 +63,7 @@ export const StatsView: React.FC<StatsViewProps> = ({ wines, cellars, history, a
     return wines;
   }, [statsScope, wines, cellars]);
 
-  const currentContextName = statsScope === 'all' ? (language === 'fr' ? 'Toutes les caves' : 'All cellars') : activeCellarName;
+  const currentContextName = statsScope === 'all' ? t('all_cellars') : activeCellarName;
 
   // --- CELLAR DATA PROCESSING ---
   const cellarColorData = Object.entries(displayWines.reduce((acc, wine) => {
@@ -211,8 +211,8 @@ export const StatsView: React.FC<StatsViewProps> = ({ wines, cellars, history, a
                     <Layers size={18} />
                     <span className={fs.section}>
                       {statsScope === 'current' 
-                        ? (language === 'fr' ? 'Afficher les données de toutes les caves' : 'Show data from all cellars')
-                        : (language === 'fr' ? `Afficher les données de la cave ${activeCellarName}` : `Show data from cellar ${activeCellarName}`)}
+                        ? t('show_all_cellars_data')
+                        : t('show_current_cellar_data').replace('{name}', activeCellarName)}
                     </span>
                   </button>
                 </div>

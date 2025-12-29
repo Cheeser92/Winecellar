@@ -382,8 +382,8 @@ export const WineForm: React.FC<WineFormProps> = ({
                 />
               </div>
             </div>
-            <div className="grid grid-cols-4 gap-4">
-              <div className="col-span-3">
+            <div className="grid grid-cols-2 gap-4">
+              <div>
                 <label className={labelClass}>{t('quantity')}</label>
                 <div className="flex items-center gap-2 mt-1">
                   <button type="button" onClick={() => handleQuantityChange(formData.quantity - 1)} className="w-11 h-11 rounded-lg bg-stone-100 dark:bg-stone-800 flex items-center justify-center border border-stone-200 dark:border-stone-700 active:scale-90 transition-all">
@@ -395,7 +395,7 @@ export const WineForm: React.FC<WineFormProps> = ({
                   </button>
                 </div>
               </div>
-               <div className="col-span-1">
+               <div>
                 <label className={labelClass}>{t('recommended_year')}</label>
                 <input required type="number" min="1900" max="2100" name="recommendedYear" value={formData.recommendedYear} onChange={handleChange} className={requiredInputClass} placeholder={t('placeholder_drink_in')} />
               </div>

@@ -204,11 +204,16 @@ export const translations = {
     region_already_exists: "Cette région existe déjà.",
     reverse_sort: "Inverser le tri",
     global: "Global",
+    all_cellars: "Toutes les caves",
 
     // Error messages
     error_validation: "Erreur de saisie",
     error_recommended_year: "L'année idéale de consommation doit être strictement supérieure à l'année du vin.",
-    error_purchase_year: "L'année d'achat doit être supérieure ou égale à l'année du vin."
+    error_purchase_year: "L'année d'achat doit être supérieure ou égale à l'année du vin.",
+
+    // New specific buttons
+    show_all_cellars_data: "Afficher les données de toutes les caves",
+    show_current_cellar_data: "Afficher les données de la cave {name}"
   },
   en: {
     app_title: "My Wine Cellar",
@@ -232,7 +237,7 @@ export const translations = {
     consume_bottle: "Drink Wine",
     consume_msg_multi: "One bottle will be removed from your stock.",
     consume_msg_single: "This is the last bottle. It will be moved to history.",
-    rate_wine: "Rate & Details",
+    rate_wine: "Rating & Details",
     duplicate: "Duplicate",
     duplicate_bottle: "Duplicate Bottle",
     target_location: "To Shelf",
@@ -292,13 +297,13 @@ export const translations = {
     purchase_date: "Purchase Date",
     purchase_place: "Purchase Place",
     quantity: "Quantity",
-    recommended_year: "Drink In",
+    recommended_year: "Best to drink",
     price: "Unit Price",
     strength: "Intensity (%)",
     aging: "Aging Potential",
     tag: "Tags",
     note: "Note (Description)",
-    location: "Location",
+    location: "Storage Location",
     image: "Image",
     take_photo: "Take a photo",
     gallery: "or choose from gallery",
@@ -318,7 +323,7 @@ export const translations = {
     stats_color: "Stock distribution by color (%)",
     stats_region: "Stock by region and color",
     stats_country: "Stock by country and color",
-    stats_year: "Stock entries by purchase year",
+    stats_year: "Inventory by purchase year",
 
     // Stats History
     stats_hist_region_color: "Consumption by region and color",
@@ -329,15 +334,15 @@ export const translations = {
     stats_hist_cons_year: "Consumed volume by vintage",
     stats_hist_cons_country: "Consumed volume by country",
 
-    info_main: "Main Information",
+    info_main: "Primary Information",
     info_detail_bottle: "Bottle Details",
     section_cellar_stats: "Wines in Cellar",
     section_history_stats: "History",
 
     settings: "Settings",
     global_settings: "Global Settings",
-    cellar_specific_settings: "Settings for this cellar",
-    settings_scope_desc: "Dark mode, language, and font size apply to all cellars. Number of shelves is specific to each cellar.",
+    cellar_specific_settings: "Cellar Settings",
+    settings_scope_desc: "Dark mode, language, and font size apply to all cellars. Shelf count is specific to each cellar.",
     theme: "Dark Mode",
     language: "Language",
     shelf_count: "Number of Shelves",
@@ -395,26 +400,31 @@ export const translations = {
     shelf_delete_msg: "Bottles on this shelf will be moved to 'Off-site'",
     swipe_to_confirm: "Swipe to confirm",
     priority_consumption: "Consumption Priorities",
-    top_value_wines: "Cellar Values",
-    history_value: "History Values",
-    most_consumed_wines: "Most consumed wines",
-    manage_locations: "Manage Countries & Regions",
-    add_country: "Add country",
-    add_region: "Add region",
+    top_value_wines: "Cellar Value",
+    history_value: "History Value",
+    most_consumed_wines: "Most Consumed Wines",
+    manage_locations: "Manage Regions",
+    add_country: "Add Country",
+    add_region: "Add Region",
     select_country_first: "Select a country first",
     country_added: "Country added!",
     region_added: "Region added!",
     new_country_placeholder: "New country name...",
     new_region_placeholder: "New region name...",
     country_already_exists: "Country already exists.",
-    region_already_exists: "Cette région existe déjà.",
+    region_already_exists: "Region already exists.",
     reverse_sort: "Reverse sort",
     global: "Global",
+    all_cellars: "All Cellars",
 
     // Error messages
     error_validation: "Input error",
-    error_recommended_year: "Ideal year of consumption must be strictly greater than the wine's vintage year.",
-    error_purchase_year: "Purchase year must be greater than or equal to the wine's vintage year."
+    error_recommended_year: "Best year to drink must be strictly greater than the vintage year.",
+    error_purchase_year: "Purchase year must be greater than or equal to the vintage year.",
+
+    // New specific buttons
+    show_all_cellars_data: "Show data from all cellars",
+    show_current_cellar_data: "Show data from cellar {name}"
   }
 };
 
