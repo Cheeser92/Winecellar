@@ -169,7 +169,6 @@ export const WineDetail: React.FC<WineDetailProps> = ({ wine, cellars, currentCe
   const mapEmbedUrl = `https://maps.google.com/maps?q=${mapSearchQuery}&t=&z=13&ie=UTF8&iwloc=&output=embed`;
   const mapDirectUrl = `https://www.google.com/maps/search/?api=1&query=${mapSearchQuery}`;
 
-  // Style standardisé pour les champs
   const inputClass = `w-full p-4 rounded-xl bg-[var(--theme-bg-soft)] dark:bg-stone-800 border-2 border-[var(--theme-border)] focus:border-[var(--theme-primary)] text-stone-800 dark:text-white outline-none focus:ring-2 focus:ring-[var(--theme-primary)]/20 transition-all ${fs.infoText}`;
 
   return (
@@ -377,8 +376,9 @@ export const WineDetail: React.FC<WineDetailProps> = ({ wine, cellars, currentCe
 
       {showConsumeModal && (
         <div className="fixed inset-0 z-[300] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-           <div className="relative bg-white dark:bg-stone-900 rounded-3xl w-full max-w-sm p-6 shadow-2xl max-h-[90vh] overflow-y-auto">
+           <div className="relative bg-white dark:bg-stone-900 rounded-3xl w-full max-w-sm p-6 shadow-2xl max-h-[95vh] overflow-y-auto no-scrollbar">
             <h3 className="text-xl font-bold text-stone-900 dark:text-white mb-2">{t('rate_wine')}</h3>
+            
             <div className="mb-6">
               <label className="block text-xs font-bold text-stone-500 uppercase mb-3">{t('quantity_consumed')}</label>
               <div className="flex items-center gap-3">
@@ -387,8 +387,35 @@ export const WineDetail: React.FC<WineDetailProps> = ({ wine, cellars, currentCe
                 <button onClick={() => setConsumeQty(prev => Math.min(wine.quantity, prev + 1))} className="w-12 h-12 rounded-xl bg-stone-100 dark:bg-stone-800 text-stone-600 dark:text-stone-300 flex items-center justify-center border border-stone-200 active:scale-90 transition-all"><Plus size={20} className="text-stone-600 dark:text-stone-300" /></button>
               </div>
             </div>
-            <div className="mb-6"><label className="block text-xs font-bold text-stone-500 uppercase mb-3">Note</label><div className="flex justify-between px-2">{RATINGS.map(r => (<button key={r} onClick={() => setRating(r)} className={`w-10 h-10 rounded-xl flex items-center justify-center text-lg font-bold transition-all ${rating === r ? 'bg-[var(--theme-primary)] dark:bg-[var(--theme-primary-dark)] text-white scale-110 shadow-lg' : 'bg-stone-100 dark:bg-stone-800 text-stone-400'}`}>{r}</button>))}</div></div>
-            <div className="flex gap-3"><button onClick={() => setShowConsumeModal(false)} className="flex-1 py-3 rounded-xl border border-stone-200 text-stone-600 dark:text-stone-300 font-medium hover:bg-stone-50">{t('cancel')}</button><button onClick={() => onConsume?.(wine as Wine, rating, selectedStrength, consumeQty)} className="flex-1 py-3 rounded-xl bg-[var(--theme-primary)] dark:bg-[var(--theme-primary-dark)] text-white font-bold hover:opacity-90 shadow-lg">{t('confirm')}</button></div>
+
+            <div className="mb-6">
+              <label className="block text-xs font-bold text-stone-500 uppercase mb-3">{t('strength')}</label>
+              <div className="grid grid-cols-4 gap-2">
+                {STRENGTHS.map(s => (
+                  <button 
+                    key={s} 
+                    onClick={() => setSelectedStrength(s)} 
+                    className={`h-11 rounded-xl font-bold transition-all border ${selectedStrength === s ? 'bg-[var(--theme-primary)] text-white border-[var(--theme-primary)]' : 'bg-stone-100 dark:bg-stone-800 text-stone-400 border-stone-200 dark:border-stone-700'}`}
+                  >
+                    {s}%
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="mb-6">
+              <label className="block text-xs font-bold text-stone-500 uppercase mb-3">Note</label>
+              <div className="flex justify-between px-2">
+                {RATINGS.map(r => (
+                  <button key={r} onClick={() => setRating(r)} className={`w-10 h-10 rounded-xl flex items-center justify-center text-lg font-bold transition-all ${rating === r ? 'bg-[var(--theme-primary)] dark:bg-[var(--theme-primary-dark)] text-white scale-110 shadow-lg' : 'bg-stone-100 dark:bg-stone-800 text-stone-400'}`}>{r}</button>
+                ))}
+              </div>
+            </div>
+
+            <div className="flex gap-3 pt-2">
+              <button onClick={() => setShowConsumeModal(false)} className="flex-1 py-4 rounded-xl border border-stone-200 text-stone-600 dark:text-stone-300 font-bold hover:bg-stone-50">{t('cancel')}</button>
+              <button onClick={() => onConsume?.(wine as Wine, rating, selectedStrength, consumeQty)} className="flex-1 py-4 rounded-xl bg-[var(--theme-primary)] dark:bg-[var(--theme-primary-dark)] text-white font-bold hover:opacity-90 shadow-lg">{t('confirm')}</button>
+            </div>
           </div>
         </div>
       )}
@@ -450,7 +477,6 @@ export const WineDetail: React.FC<WineDetailProps> = ({ wine, cellars, currentCe
 
 function getCellarShelves(cellar: Cellar) {
   const prefix = getTranslation(cellar.settings.language, 'shelf_prefix');
-  // Include shelf 0
   const shelves = Array.from({ length: (cellar.settings.shelfCount || 0) + 1 }, (_, i) => `${prefix} ${i}`);
   return [...shelves, getTranslation(cellar.settings.language, 'off_site')];
 }

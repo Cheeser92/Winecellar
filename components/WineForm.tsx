@@ -1,8 +1,8 @@
 
 import React, { useState, useRef, useEffect } from 'react';
 import { Camera, X, Minus, Plus, Calendar as CalendarIcon, Pencil, Loader2 } from 'lucide-react';
-import { Wine, WineColor, AgingPotential, Language, LocationData, AppFontSize } from '../types';
-import { COLORS, AGING_POTENTIALS, STRENGTHS } from '../constants';
+import { Wine, WineColor, AgingPotential, Language, LocationData, AppFontSize, HistoryEntry } from '../types';
+import { COLORS, AGING_POTENTIALS, STRENGTHS, RATINGS } from '../constants';
 import { getTranslation } from '../translations';
 import { CountrySelect } from './CountrySelect';
 import { RegionSelect } from './RegionSelect';
@@ -12,7 +12,7 @@ import { GoogleGenAI, Type } from "@google/genai";
 interface WineFormProps {
   onSave: (wine: Omit<Wine, 'id'>) => void;
   onCancel: () => void;
-  initialData?: Partial<Wine>;
+  initialData?: Partial<Wine> | Partial<HistoryEntry>;
   availableLocations: string[];
   locationData: LocationData;
   onOpenLocationManager: () => void;
@@ -46,7 +46,8 @@ export const WineForm: React.FC<WineFormProps> = ({
     return `${day}/${month}/${year}`;
   };
 
-  const [formData, setFormData] = useState<Omit<Wine, 'id'>>({
+  // État étendu pour supporter les champs spécifiques à l'historique
+  const [formData, setFormData] = useState<any>({
     name: initialData?.name || '',
     appellation: initialData?.appellation || '',
     region: initialData?.region || '',
@@ -65,6 +66,8 @@ export const WineForm: React.FC<WineFormProps> = ({
     agingPotential: initialData?.agingPotential || AgingPotential.MOYENNE,
     image: initialData?.image || null,
     location: initialData?.location || availableLocations[0],
+    // Champs spécifiques Historique
+    consumptionRating: (initialData as HistoryEntry)?.consumptionRating || 5,
   });
 
   const [isAnalyzing, setIsAnalyzing] = useState(false);
@@ -87,13 +90,12 @@ export const WineForm: React.FC<WineFormProps> = ({
     const { name, value } = e.target;
     setFormData(prev => ({
       ...prev,
-      [name]: name === 'year' || name === 'quantity' || name === 'recommendedYear' || name === 'strength' || name === 'price'
+      [name]: name === 'year' || name === 'quantity' || name === 'recommendedYear' || name === 'strength' || name === 'price' || name === 'consumptionRating'
         ? Number(value)
         : value
     }));
   };
 
-  // Helper pour mettre à jour une valeur de suggestion
   const handleSuggestionChange = (name: string, value: string) => {
     setFormData(prev => ({ ...prev, [name]: value }));
   };
@@ -186,7 +188,7 @@ export const WineForm: React.FC<WineFormProps> = ({
     <form onSubmit={handleSubmit} className="flex flex-col gap-5 pb-24 p-4 bg-stone-100 dark:bg-black min-h-full transition-colors duration-300 relative">
       <div className="flex justify-between items-center mb-2 bg-white dark:bg-stone-900 p-4 rounded-xl shadow-sm sticky top-0 z-10 transition-colors border-b border-[var(--theme-bg-soft)]">
         <h2 className={`font-serif font-bold text-[var(--theme-primary-dark)] dark:text-stone-100 ${fs.xl}`}>
-          {isHistoryMode ? t('personal_note') : (isEdit ? t('edit_bottle') : t('add_bottle'))}
+          {isHistoryMode ? t('edit_bottle') : (isEdit ? t('edit_bottle') : t('add_bottle'))}
         </h2>
         <button type="button" onClick={onCancel} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 bg-gray-100 dark:bg-stone-800 p-2 rounded-full transition-colors">
           <X size={20} />
@@ -386,14 +388,39 @@ export const WineForm: React.FC<WineFormProps> = ({
           </div>
         </>
       ) : (
-        <div className="bg-white dark:bg-stone-900 p-5 rounded-xl shadow-sm space-y-4 transition-colors">
+        <div className="bg-white dark:bg-stone-900 p-5 rounded-xl shadow-sm space-y-5 transition-colors">
           <div className="pb-4 border-b border-gray-100 dark:border-stone-800">
              <h3 className={`font-bold text-stone-900 dark:text-white leading-tight ${fs.lg}`}>{formData.name}</h3>
              <p className={`text-stone-500 dark:text-stone-400 font-medium ${fs.base}`}>{formData.appellation} - {formData.year}</p>
           </div>
+          
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className={labelClass}>Note (1-5)</label>
+              <div className="flex gap-1.5 justify-between mt-1">
+                {RATINGS.map(r => (
+                  <button 
+                    key={r} 
+                    type="button"
+                    onClick={() => setFormData(prev => ({ ...prev, consumptionRating: r }))}
+                    className={`flex-1 h-10 rounded-lg font-bold transition-all border ${formData.consumptionRating === r ? 'bg-[var(--theme-primary)] text-white border-[var(--theme-primary)]' : 'bg-stone-50 dark:bg-stone-800 text-stone-400 border-stone-200 dark:border-stone-700'}`}
+                  >
+                    {r}
+                  </button>
+                ))}
+              </div>
+            </div>
+            <div>
+              <label className={labelClass}>{t('strength')}</label>
+              <select name="strength" value={formData.strength} onChange={handleChange} className={inputClass}>
+                {STRENGTHS.map(s => <option key={s} value={s}>{s}%</option>)}
+              </select>
+            </div>
+          </div>
+
           <div>
-            <label className={labelClass}>{t('note')}</label>
-            <textarea name="note" value={formData.note} onChange={handleChange} rows={8} className={textareaClass} autoFocus placeholder={t('placeholder_note')}/>
+            <label className={labelClass}>{t('personal_note')}</label>
+            <textarea name="note" value={formData.note} onChange={handleChange} rows={6} className={textareaClass} placeholder={t('placeholder_note')}/>
           </div>
           <div>
             <label className={labelClass}>{t('tag')}</label>

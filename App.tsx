@@ -133,6 +133,7 @@ function App() {
   const [isHistoryQuantityModalOpen, setIsHistoryQuantityModalOpen] = useState(false);
   const [isSortAscending, setIsSortAscending] = useState(false);
   const [shelfToDelete, setShelfToDelete] = useState<string | null>(null);
+  const [activeColorFilters, setActiveColorFilters] = useState<WineColor[]>([]);
   
   // États de recherche séparés
   const [cellarSearchFilters, setCellarSearchFilters] = useState<SearchFilters>({});
@@ -564,11 +565,11 @@ function App() {
     const isHistory = activeTab === 'history';
     return (
       <div className="grid grid-cols-3 gap-1.5 mb-4">
-        <button onClick={() => { setIsHistoryQuantityModalOpen(isHistory); setIsQuantityModalOpen(!isHistory); setIsSortAscending(false); }} className="bg-white dark:bg-stone-800 p-2 rounded-xl shadow-sm border border-stone-100 dark:border-stone-700 flex flex-col items-center justify-center transition-all active:scale-95">
+        <button onClick={() => { setActiveColorFilters([]); setIsHistoryQuantityModalOpen(isHistory); setIsQuantityModalOpen(!isHistory); setIsSortAscending(!isHistory); }} className="bg-white dark:bg-stone-800 p-2 rounded-xl shadow-sm border border-stone-100 dark:border-stone-700 flex flex-col items-center justify-center transition-all active:scale-95">
             <div className="flex items-center gap-1 text-stone-400 dark:text-stone-500 mb-0.5"><Hash size={10}/><span className="text-[9px] uppercase font-bold tracking-wide">{isHistory ? t('consumed') : t('bottles')}</span></div>
             <p className={`font-bold text-stone-800 dark:text-stone-100 leading-tight ${fontClasses.statsValue}`}>{totalBottles}</p>
         </button>
-        <button onClick={() => { setIsCostModalOpen(true); setIsSortAscending(false); }} className="bg-white dark:bg-stone-800 p-2 rounded-xl shadow-sm border border-stone-100 dark:border-stone-700 flex flex-col items-center justify-center transition-all active:scale-95">
+        <button onClick={() => { setActiveColorFilters([]); setIsCostModalOpen(true); setIsSortAscending(false); }} className="bg-white dark:bg-stone-800 p-2 rounded-xl shadow-sm border border-stone-100 dark:border-stone-700 flex flex-col items-center justify-center transition-all active:scale-95">
              <div className="flex items-center gap-1 text-stone-400 dark:text-stone-500 mb-0.5"><Coins size={10}/><span className="text-[9px] uppercase font-bold tracking-wide">{t('total_cost')}</span></div>
             <p className={`font-bold text-stone-800 dark:text-stone-100 leading-tight ${fontClasses.statsValue}`}>{totalCost.toLocaleString(settings.language, { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 })}</p>
         </button>
@@ -598,21 +599,86 @@ function App() {
         return isSortAscending ? valA - valB : valB - valA;
     });
 
+    const filteredByColor = activeColorFilters.length > 0 
+      ? sortedItems.filter(item => activeColorFilters.includes(item.color))
+      : sortedItems;
+
+    const availableColorsInList = Array.from(new Set(sortedItems.map(item => item.color)));
+
+    const toggleColorFilter = (color: WineColor) => {
+      setActiveColorFilters(prev => 
+        prev.includes(color) ? prev.filter(c => c !== color) : [...prev, color]
+      );
+    };
+
+    const getColorFilterStyle = (color: WineColor) => {
+      const isActive = activeColorFilters.includes(color);
+      
+      switch(color) {
+        case WineColor.ROUGE: 
+          return isActive 
+            ? 'bg-[#881337] text-white border-[#881337] shadow-md' 
+            : 'bg-[#881337]/5 text-[#881337] border-[#881337]/20';
+        case WineColor.BLANC: 
+          return isActive 
+            ? 'bg-[#fbbf24] text-stone-900 border-[#fbbf24] shadow-md' 
+            : 'bg-[#fbbf24]/5 text-[#fbbf24] border-[#fbbf24]/20';
+        case WineColor.ROSE: 
+          return isActive 
+            ? 'bg-[#f472b6] text-white border-[#f472b6] shadow-md' 
+            : 'bg-[#f472b6]/5 text-[#f472b6] border-[#f472b6]/20';
+        default: 
+          return 'bg-stone-100 text-stone-400 border-stone-200';
+      }
+    };
+
+    // Calculs dynamiques basés sur le filtre
+    const currentQty = filteredByColor.reduce((acc, i) => acc + i.quantity, 0);
+    const currentVal = filteredByColor.reduce((acc, i) => acc + (i.price * i.quantity), 0);
+
     return (
         <div className="fixed inset-0 z-[150] flex items-center justify-center p-4">
             <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
             <div className="relative bg-white dark:bg-stone-900 rounded-3xl w-full max-w-md max-h-[85vh] flex flex-col shadow-2xl overflow-hidden border border-stone-100 dark:border-stone-800 animate-in zoom-in-95 duration-200">
-                <div className="p-4 border-b border-stone-100 dark:border-stone-800 flex justify-between items-center bg-stone-50/50 dark:bg-stone-800/50 sticky top-0 z-10">
-                    <div className="flex items-center gap-3">
-                      <h2 className={`font-serif font-bold text-[var(--theme-primary)] dark:text-stone-100 ${fontClasses.lg}`}>{title}</h2>
-                      <button onClick={() => setIsSortAscending(!isSortAscending)} className="p-2 text-stone-400 hover:text-stone-600 dark:hover:text-stone-200 rounded-full bg-white dark:bg-stone-800 shadow-sm flex items-center gap-1 active:scale-95 transition-all" title={t('reverse_sort')}>
-                        <ArrowUpDown size={16} />
-                      </button>
+                {/* Bandeau supérieur complet (Titre + Filtres) coller en haut */}
+                <div className="sticky top-0 z-20 bg-stone-50/95 dark:bg-stone-800/95 backdrop-blur-md border-b border-stone-100 dark:border-stone-800">
+                    <div className="p-4 flex justify-between items-center">
+                        <div className="flex items-center gap-3">
+                            <div>
+                                <h2 className={`font-serif font-bold text-[var(--theme-primary)] dark:text-stone-100 ${fontClasses.lg}`}>{title}</h2>
+                                <div className="flex items-center gap-2 mt-0.5">
+                                    <span className="text-[10px] font-bold text-stone-400 uppercase tracking-widest">{currentQty} {t('bottles')} • {currentVal.toLocaleString(settings.language, { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 })}</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div className="flex items-center gap-2">
+                            <button onClick={() => setIsSortAscending(!isSortAscending)} className="p-2 text-stone-400 hover:text-stone-600 dark:hover:text-stone-200 rounded-full bg-white dark:bg-stone-800 shadow-sm flex items-center gap-1 active:scale-95 transition-all" title={t('reverse_sort')}>
+                                <ArrowUpDown size={16} />
+                            </button>
+                            <button onClick={(e) => { e.stopPropagation(); onClose(); }} className="p-2 text-stone-400 hover:text-stone-600 dark:hover:text-stone-200 rounded-full bg-white dark:bg-stone-800 shadow-sm transition-transform active:scale-95"><X size={20}/></button>
+                        </div>
                     </div>
-                    <button onClick={(e) => { e.stopPropagation(); onClose(); }} className="p-2.5 text-stone-400 hover:text-stone-600 dark:hover:text-stone-200 rounded-full bg-white dark:bg-stone-800 shadow-sm transition-transform active:scale-95 z-20"><X size={24}/></button>
+
+                    {/* Zone des filtres par couleur - Élevée à h-12 */}
+                    <div className="px-4 pb-4 flex gap-2 overflow-x-auto no-scrollbar">
+                        {Object.values(WineColor).map(color => {
+                            if (!availableColorsInList.includes(color)) return null;
+                            return (
+                                <button 
+                                    key={color}
+                                    onClick={() => toggleColorFilter(color)}
+                                    className={`px-5 h-12 rounded-2xl text-sm font-bold transition-all border whitespace-nowrap active:scale-95 flex items-center gap-2 ${getColorFilterStyle(color)}`}
+                                >
+                                    <div className={`w-3 h-3 rounded-full ${color === WineColor.ROUGE ? 'bg-rose-950' : color === WineColor.BLANC ? 'bg-yellow-400' : 'bg-pink-400'} shadow-sm`}></div>
+                                    {t(`color_${color}`)}
+                                </button>
+                            );
+                        })}
+                    </div>
                 </div>
+
                 <div className="flex-1 overflow-y-auto p-3 space-y-3 no-scrollbar pb-8">
-                    {sortedItems.map(wine => {
+                    {filteredByColor.length > 0 ? filteredByColor.map(wine => {
                         const isHistoryEntry = 'consumedDate' in wine;
                         return (
                             <div key={wine.id} className={`flex gap-3 items-center p-3 rounded-2xl transition-all border-l-4 shadow-sm ${getColorTheme(wine.color)}`}>
@@ -634,7 +700,7 @@ function App() {
                                   </div>
                                   <div className="flex items-center gap-3 mt-1.5">
                                     {sortType === 'consumption' ? (
-                                      <div className="flex items-center gap-1 text-[var(--theme-primary)] dark:text-rose-400 bg-[var(--theme-bg-soft)] dark:bg-rose-900/20 px-1.5 py-0.5 rounded border border-[var(--theme-border)] dark:border-rose-900/30">
+                                      <div className="flex items-center gap-1 text-[var(--theme-primary)] dark:text-rose-400 bg-[var(--theme-bg-soft)] dark:bg-rose-900/20 px-1.5 py-0.5 rounded border border border-[var(--theme-border)] dark:border-rose-900/30">
                                         <Calendar size={10} /><span className={`font-bold ${fontClasses.sm}`}>{t('recommended_year')}: {wine.recommendedYear}</span>
                                       </div>
                                     ) : sortType === 'most_consumed' && isHistoryEntry ? (
@@ -642,7 +708,7 @@ function App() {
                                         <History size={10} /><span className={`font-bold ${fontClasses.sm}`}>{t('consumed_on')} {new Date((wine as HistoryEntry).consumedDate).toLocaleDateString()}</span>
                                       </div>
                                     ) : (
-                                      <div className="flex items-center gap-1 text-emerald-800 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/20 px-1.5 py-0.5 rounded border border-emerald-100 dark:border-amber-900/30">
+                                      <div className="flex items-center gap-1 text-emerald-800 dark:text-emerald-400 bg-amber-50 dark:bg-emerald-900/20 px-1.5 py-0.5 rounded border border-emerald-100 dark:border-amber-900/30">
                                         <Coins size={10} /><span className={`font-bold ${fontClasses.sm}`}>{(wine.price * wine.quantity).toLocaleString(settings.language, { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 })}</span>
                                       </div>
                                     )}
@@ -659,7 +725,11 @@ function App() {
                                 </button>
                             </div>
                         )
-                    })}
+                    }) : (
+                      <div className="py-12 text-center text-stone-400 italic">
+                        {t('no_results')}
+                      </div>
+                    )}
                 </div>
             </div>
         </div>
@@ -826,7 +896,7 @@ function App() {
         <main className="w-full lg:max-w-4xl h-full bg-stone-100 dark:bg-black shadow-2xl relative flex flex-col transition-colors duration-300">
           <div key={`${activeCellarId}-${activeTab}-${view}`} className="flex-1 overflow-y-auto no-scrollbar relative">{renderContent()}</div>
           {view === 'list' && activeTab === 'cellar' && <button onClick={() => setView('add')} className="absolute bottom-24 right-6 bg-[var(--theme-primary)] text-white p-4 rounded-full shadow-lg shadow-[var(--theme-primary)]/30 active:scale-95 z-30 transition-colors"><Plus size={28} /></button>}
-          {view === 'list' && <div className="absolute bottom-0 left-0 right-0 bg-white/95 dark:bg-stone-900/95 backdrop-blur-md border-t border-stone-200 dark:border-stone-800 z-40 safe-area-bottom"><div className="flex justify-around items-center h-20 pb-2"><button onClick={() => { setActiveTab('cellar'); setView('list'); }} className={`flex flex-col items-center justify-center w-full h-full ${activeTab === 'cellar' ? 'text-[var(--theme-primary)]' : 'text-stone-400'}`}><LayoutGrid size={24} /><span className={`font-semibold ${fontClasses.tabLabel}`}>{t('cellar')}</span></button><button onClick={() => { setActiveTab('stats'); setView('list'); }} className={`flex flex-col items-center justify-center w-full h-full ${activeTab === 'stats' ? 'text-[var(--theme-primary)]' : 'text-stone-400'}`}><PieChart size={24} /><span className={`font-semibold ${fontClasses.tabLabel}`}>{t('stats')}</span></button><button onClick={() => { setActiveTab('history'); setView('list'); }} className={`flex flex-col items-center justify-center w-full h-full ${activeTab === 'history' ? 'text-[var(--theme-primary)]' : 'text-stone-400'}`}><History size={24} /><span className={`font-semibold ${fontClasses.tabLabel}`}>{t('history')}</span></button></div></div>}
+          {view === 'list' && <div className="absolute bottom-0 left-0 right-0 bg-white/95 dark:bg-stone-900/95 backdrop-blur-md border-t border-stone-200 dark:border-stone-800 z-40 safe-area-bottom"><div className="flex justify-around items-center h-20 pb-2"><button onClick={() => { setActiveTab('cellar'); setView('list'); }} className={`flex flex-col items-center justify-center w-full h-full ${activeTab === 'cellar' ? 'text-[var(--theme-primary)]' : 'text-stone-400'}`}><Warehouse size={24} /><span className={`font-semibold ${fontClasses.tabLabel}`}>{t('cellar')}</span></button><button onClick={() => { setActiveTab('stats'); setView('list'); }} className={`flex flex-col items-center justify-center w-full h-full ${activeTab === 'stats' ? 'text-[var(--theme-primary)]' : 'text-stone-400'}`}><PieChart size={24} /><span className={`font-semibold ${fontClasses.tabLabel}`}>{t('stats')}</span></button><button onClick={() => { setActiveTab('history'); setView('list'); }} className={`flex flex-col items-center justify-center w-full h-full ${activeTab === 'history' ? 'text-[var(--theme-primary)]' : 'text-stone-400'}`}><History size={24} /><span className={`font-semibold ${fontClasses.tabLabel}`}>{t('history')}</span></button></div></div>}
         </main>
 
         {/* Barre de progression pour la compression en masse */}
@@ -938,7 +1008,16 @@ function App() {
         {renderFloatingList(isQuantityModalOpen, () => setIsQuantityModalOpen(false), t('priority_consumption'), wines, 'consumption')}
         {renderFloatingList(isCostModalOpen, () => setIsCostModalOpen(false), activeTab === 'history' ? t('history_value') : t('top_value_wines'), activeTab === 'history' ? history : wines, 'cost')}
         {renderFloatingList(isHistoryQuantityModalOpen, () => setIsHistoryQuantityModalOpen(false), t('most_consumed_wines'), history, 'most_consumed')}
-        {shelfToDelete && <div className="fixed inset-0 z-[300] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"><div className="bg-white dark:bg-stone-900 rounded-3xl w-full max-w-sm p-6 shadow-2xl animate-in zoom-in-95 duration-200"><h3 className={`font-serif font-bold text-[var(--theme-primary-dark)] dark:text-stone-100 mb-6 text-center ${fontClasses.header}`}>{t('shelf_delete_title')}</h3><SwipeSlider label={t('swipe_to_confirm')} onConfirm={() => handleConfirmDeleteShelfAction(shelfToDelete)} fontSizeClass={fontClasses.sm} /><button onClick={() => setShelfToDelete(null)} className={`w-full mt-4 py-3 text-stone-400 font-bold hover:text-stone-600 transition ${fontClasses.base}`}>{t('cancel')}</button></div></div>}
+        {shelfToDelete && (
+          <div className="fixed inset-0 z-[300] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+            <div className="bg-white dark:bg-stone-900 rounded-3xl w-full max-w-sm p-6 shadow-2xl animate-in zoom-in-95 duration-200">
+              <h3 className={`font-serif font-bold text-[var(--theme-primary-dark)] dark:text-stone-100 mb-2 text-center ${fontClasses.header}`}>{t('shelf_delete_title')}</h3>
+              <p className={`text-stone-500 dark:text-stone-400 mb-6 text-center leading-tight ${fontClasses.base}`}>{t('shelf_delete_msg')}</p>
+              <SwipeSlider label={t('swipe_to_confirm')} onConfirm={() => handleConfirmDeleteShelfAction(shelfToDelete)} fontSizeClass={fontClasses.sm} />
+              <button onClick={() => setShelfToDelete(null)} className={`w-full mt-4 py-3 text-stone-400 font-bold hover:text-stone-600 transition ${fontClasses.base}`}>{t('cancel')}</button>
+            </div>
+          </div>
+        )}
         {largeImage && <div className="fixed inset-0 z-[500] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md" onClick={() => setLargeImage(null)}><div className="relative max-w-full max-h-[90vh] animate-in zoom-in-95 duration-200"><button className="absolute -top-4 -right-4 bg-white dark:bg-stone-800 p-2 rounded-full shadow-xl text-stone-800 dark:text-stone-100 z-10"><X size={20}/></button><img src={largeImage} className="max-w-full max-h-[85vh] object-contain rounded-2xl shadow-2xl" alt="Wine" /></div></div>}
       </div>
     </div>
@@ -1081,7 +1160,7 @@ const CellarSelector = ({ cellars, isOpen, onClose, onSelect, t, fs }: any) => {
   if (!isOpen) return null;
   return (
     <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-      <div className="relative bg-white dark:bg-stone-900 rounded-3xl w-full max-w-sm flex flex-col shadow-2xl animate-in zoom-in-95 duration-200">
+      <div className="relative bg-white dark:bg-stone-900 rounded-3xl w-full max-sm flex flex-col shadow-2xl animate-in zoom-in-95 duration-200">
         <div className="p-4 border-b border-stone-100 dark:border-stone-800 flex justify-between items-center"><h2 className={`font-serif font-bold text-[var(--theme-primary)] dark:text-stone-100 ${fs.lg}`}>{t('switch_cellar')}</h2><button onClick={onClose} className="p-2 text-stone-400 rounded-full bg-stone-50 dark:bg-stone-800 shadow-sm"><X size={20}/></button></div>
         <div className="p-4 space-y-3 max-h-[60vh] overflow-y-auto no-scrollbar">{(cellars || []).map((c: Cellar) => (
           <div key={c.id} onClick={() => onSelect(c.id)} className="p-3 rounded-2xl border border-stone-100 dark:border-stone-700 bg-white dark:bg-stone-800 flex items-center gap-3 cursor-pointer hover:bg-[var(--theme-bg-soft)] dark:hover:bg-rose-900/10 transition-colors shadow-sm">
