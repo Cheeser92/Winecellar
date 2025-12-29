@@ -47,6 +47,7 @@ export const WineForm: React.FC<WineFormProps> = ({
   };
 
   // État étendu pour supporter les champs spécifiques à l'historique
+  // Note: On gère le prix comme une string dans le state du formulaire pour permettre la saisie fluide de décimales et le champ vide
   const [formData, setFormData] = useState<any>({
     name: initialData?.name || '',
     appellation: initialData?.appellation || '',
@@ -59,7 +60,7 @@ export const WineForm: React.FC<WineFormProps> = ({
     purchasePlace: initialData?.purchasePlace || '',
     quantity: initialData?.quantity || 1,
     recommendedYear: initialData?.recommendedYear || new Date().getFullYear() + 5,
-    price: initialData?.price || 0,
+    price: initialData?.price && initialData?.price !== 0 ? String(initialData.price) : '',
     strength: initialData?.strength || 100,
     tag: initialData?.tag || '',
     note: initialData?.note || '',
@@ -88,9 +89,16 @@ export const WineForm: React.FC<WineFormProps> = ({
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
+    
+    // Le prix est géré en texte brut pour les décimales et le "vide"
+    if (name === 'price') {
+      setFormData(prev => ({ ...prev, [name]: value }));
+      return;
+    }
+
     setFormData(prev => ({
       ...prev,
-      [name]: name === 'year' || name === 'quantity' || name === 'recommendedYear' || name === 'strength' || name === 'price' || name === 'consumptionRating'
+      [name]: name === 'year' || name === 'quantity' || name === 'recommendedYear' || name === 'strength' || name === 'consumptionRating'
         ? Number(value)
         : value
     }));
@@ -167,7 +175,15 @@ export const WineForm: React.FC<WineFormProps> = ({
     }
   };
 
-  const handleSubmit = (e: React.FormEvent) => { e.preventDefault(); onSave(formData); };
+  const handleSubmit = (e: React.FormEvent) => { 
+    e.preventDefault(); 
+    // On convertit le prix en nombre avant de sauvegarder, champ vide = 0
+    const finalData = {
+      ...formData,
+      price: parseFloat(formData.price.replace(',', '.')) || 0
+    };
+    onSave(finalData); 
+  };
 
   const getFontSizeClasses = (size: AppFontSize) => {
     switch(size) {

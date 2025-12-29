@@ -1030,6 +1030,43 @@ function App() {
   );
 }
 
+const GlobalStatsBar = ({ cellars, t, fs }: { cellars: Cellar[], t: any, fs: any }) => {
+  const allWines = useMemo(() => cellars.flatMap(c => c.wines || []), [cellars]);
+  const totalBottles = useMemo(() => allWines.reduce((acc, w) => acc + (w.quantity || 0), 0), [allWines]);
+  const totalCost = useMemo(() => allWines.reduce((acc, w) => acc + ((w.price || 0) * (w.quantity || 0)), 0), [allWines]);
+  const avgPrice = totalBottles > 0 ? totalCost / totalBottles : 0;
+
+  return (
+    <div className="grid grid-cols-3 gap-1.5 px-4 pt-4 pb-2">
+      <div className="bg-white dark:bg-stone-800 p-2 rounded-xl shadow-sm border border-stone-100 dark:border-stone-700 flex flex-col items-center justify-center">
+        <div className="flex items-center gap-1 text-stone-400 dark:text-stone-500 mb-0.5">
+          <Hash size={10}/>
+          <span className="text-[9px] uppercase font-bold tracking-wide">{t('bottles')}</span>
+        </div>
+        <p className={`font-bold text-stone-800 dark:text-stone-100 leading-tight ${fs.statsValue}`}>{totalBottles}</p>
+      </div>
+      <div className="bg-white dark:bg-stone-800 p-2 rounded-xl shadow-sm border border-stone-100 dark:border-stone-700 flex flex-col items-center justify-center">
+        <div className="flex items-center gap-1 text-stone-400 dark:text-stone-500 mb-0.5">
+          <Coins size={10}/>
+          <span className="text-[9px] uppercase font-bold tracking-wide">{t('total_cost')}</span>
+        </div>
+        <p className={`font-bold text-stone-800 dark:text-stone-100 leading-tight ${fs.statsValue}`}>
+          {totalCost.toLocaleString(undefined, { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 })}
+        </p>
+      </div>
+      <div className="bg-white dark:bg-stone-800 p-2 rounded-xl shadow-sm border border-stone-100 dark:border-stone-700 flex flex-col items-center justify-center">
+        <div className="flex items-center gap-1 text-stone-400 dark:text-stone-500 mb-0.5">
+          <Calculator size={10}/>
+          <span className="text-[9px] uppercase font-bold tracking-wide">{t('avg_price')}</span>
+        </div>
+        <p className={`font-bold text-stone-800 dark:text-stone-100 leading-tight ${fs.statsValue}`}>
+          {avgPrice.toLocaleString(undefined, { style: 'currency', currency: 'EUR', maximumFractionDigits: 1 })}
+        </p>
+      </div>
+    </div>
+  );
+};
+
 const CellarManager = ({ cellars, activeCellarId, onSelect, isOpen, onClose, onAdd, onDelete, onUpdate, t, fs }: any) => {
   const [isAdding, setIsAdding] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -1062,6 +1099,9 @@ const CellarManager = ({ cellars, activeCellarId, onSelect, isOpen, onClose, onA
           <button onClick={onClose} className="p-2 text-stone-400 hover:text-stone-600 dark:hover:text-stone-200 rounded-full bg-white dark:bg-stone-800 shadow-sm"><X size={20}/></button>
         </div>
         
+        {/* Global KPIs for All Cellars */}
+        {!isAdding && !editingId && !deletingId && <GlobalStatsBar cellars={cellars} t={t} fs={fs} />}
+
         <div className="flex-1 overflow-y-auto p-4 space-y-4 no-scrollbar">
           {!isAdding && !editingId && !deletingId ? (
             <>
@@ -1166,8 +1206,15 @@ const CellarSelector = ({ cellars, isOpen, onClose, onSelect, t, fs }: any) => {
   if (!isOpen) return null;
   return (
     <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-      <div className="relative bg-white dark:bg-stone-900 rounded-3xl w-full max-sm flex flex-col shadow-2xl animate-in zoom-in-95 duration-200">
-        <div className="p-4 border-b border-stone-100 dark:border-stone-800 flex justify-between items-center"><h2 className={`font-serif font-bold text-[var(--theme-primary)] dark:text-stone-100 ${fs.lg}`}>{t('switch_cellar')}</h2><button onClick={onClose} className="p-2 text-stone-400 rounded-full bg-stone-50 dark:bg-stone-800 shadow-sm"><X size={20}/></button></div>
+      <div className="relative bg-white dark:bg-stone-900 rounded-3xl w-full max-sm flex flex-col shadow-2xl animate-in zoom-in-95 duration-200 overflow-hidden">
+        <div className="p-4 border-b border-stone-100 dark:border-stone-800 flex justify-between items-center bg-white dark:bg-stone-800/50">
+          <h2 className={`font-serif font-bold text-[var(--theme-primary)] dark:text-stone-100 ${fs.lg}`}>{t('switch_cellar')}</h2>
+          <button onClick={onClose} className="p-2 text-stone-400 rounded-full bg-white dark:bg-stone-800 shadow-sm"><X size={20}/></button>
+        </div>
+        
+        {/* Global KPIs for All Cellars */}
+        <GlobalStatsBar cellars={cellars} t={t} fs={fs} />
+
         <div className="p-4 space-y-3 max-h-[60vh] overflow-y-auto no-scrollbar">{(cellars || []).map((c: Cellar) => (
           <div key={c.id} onClick={() => onSelect(c.id)} className="p-3 rounded-2xl border border-stone-100 dark:border-stone-700 bg-white dark:bg-stone-800 flex items-center gap-3 cursor-pointer hover:bg-[var(--theme-bg-soft)] dark:hover:bg-rose-900/10 transition-colors shadow-sm">
             <div className="w-12 h-12 rounded-full overflow-hidden flex-shrink-0 border-2 border-white dark:border-stone-600 shadow-sm bg-stone-100 dark:bg-stone-700">
