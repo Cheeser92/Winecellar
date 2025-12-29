@@ -1,11 +1,12 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { X, Search, RotateCcw, Eraser, Tag as TagIcon, LayoutGrid, Globe } from 'lucide-react';
-import { SearchFilters, Language, LocationData, AppFontSize } from '../types';
-import { COLORS, AGING_POTENTIALS, STRENGTHS } from '../constants';
+import { SearchFilters, Language, LocationData, AppFontSize, WineColor, AgingPotential } from '../types';
+import { COLORS, AGING_POTENTIALS, STRENGTHS, RATINGS } from '../constants';
 import { getTranslation } from '../translations';
 import { CountrySelect } from './CountrySelect';
 import { RegionSelect } from './RegionSelect';
+import { SuggestionInput } from './SuggestionInput';
 
 interface SearchModalProps {
   isOpen: boolean;
@@ -17,6 +18,11 @@ interface SearchModalProps {
   language: Language;
   isHistoryMode?: boolean;
   fontSize?: AppFontSize;
+  suggestions?: {
+    appellations: string[];
+    origins: string[];
+    purchasePlaces: string[];
+  };
 }
 
 export const SearchModal: React.FC<SearchModalProps> = ({ 
@@ -28,13 +34,19 @@ export const SearchModal: React.FC<SearchModalProps> = ({
   locationData,
   language, 
   isHistoryMode = false,
-  fontSize = 'medium'
+  fontSize = 'medium',
+  suggestions = { appellations: [], origins: [], purchasePlaces: [] }
 }) => {
-  const [filters, setFilters] = useState<SearchFilters>({
-    ...currentFilters,
-    searchScope: currentFilters.searchScope || 'current'
-  });
+  const [filters, setFilters] = useState<SearchFilters>(currentFilters);
+  
   const t = (key: any) => getTranslation(language, key);
+
+  // Synchronisation si les filtres changent de l'extérieur (reset)
+  useEffect(() => {
+    if (isOpen) {
+      setFilters(currentFilters);
+    }
+  }, [isOpen, currentFilters]);
 
   if (!isOpen) return null;
 
@@ -42,8 +54,12 @@ export const SearchModal: React.FC<SearchModalProps> = ({
     const { name, value } = e.target;
     setFilters(prev => ({
       ...prev,
-      [name]: value === '' ? undefined : (name === 'year' || name === 'recommendedYear' || name === 'strength' ? Number(value) : value)
+      [name]: value === '' ? undefined : (name === 'year' || name === 'recommendedYear' || name === 'strength' || name === 'consumptionRating' ? Number(value) : value)
     }));
+  };
+
+  const handleSuggestionChange = (name: string, value: string) => {
+    setFilters(prev => ({ ...prev, [name]: value === '' ? undefined : value }));
   };
 
   const toggleScope = (scope: 'current' | 'all') => {
@@ -72,7 +88,7 @@ export const SearchModal: React.FC<SearchModalProps> = ({
   };
 
   const handleSubmit = (e: React.FormEvent) => { e.preventDefault(); onSearch(filters); onClose(); };
-  const handleReset = () => { setFilters({ searchScope: 'current' }); onReset(); onClose(); };
+  const handleReset = () => { onReset(); onClose(); };
 
   const getFontSizeClasses = (size: AppFontSize) => {
     switch(size) {
@@ -85,7 +101,6 @@ export const SearchModal: React.FC<SearchModalProps> = ({
 
   const fs = getFontSizeClasses(fontSize as AppFontSize);
   
-  // Utilisation systématique de var(--theme-bg-soft) et var(--theme-border) pour les champs
   const inputClass = `mt-1 block w-full rounded-lg border-2 border-[var(--theme-border)] bg-[var(--theme-bg-soft)] dark:bg-stone-800 text-gray-900 dark:text-stone-100 shadow-sm focus:border-[var(--theme-primary)] focus:ring-[var(--theme-primary)]/20 h-11 pl-3 pr-10 transition-all outline-none ${fs.base}`;
   const labelClass = `block font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1 ${fs.label}`;
 
@@ -99,9 +114,17 @@ export const SearchModal: React.FC<SearchModalProps> = ({
   return (
     <div className="fixed inset-0 z-[150] flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
-      <div className="relative bg-white dark:bg-stone-900 rounded-2xl w-full max-w-md max-h-[90vh] flex flex-col shadow-2xl transition-colors duration-300">
+      <div className="relative bg-white dark:bg-stone-900 rounded-2xl w-full max-w-md max-h-[90vh] flex flex-col shadow-2xl transition-colors duration-300 overflow-hidden">
         <div className="flex justify-between items-center p-4 border-b border-gray-100 dark:border-stone-800 bg-white dark:bg-stone-800">
-          <h2 className={`font-serif font-bold text-gray-800 dark:text-gray-100 flex items-center gap-2 ${fs.xl}`}><Search size={20} className="text-[var(--theme-primary)] dark:text-rose-500"/>{t('search')}</h2>
+          <div className="flex flex-col">
+            <h2 className={`font-serif font-bold text-gray-800 dark:text-gray-100 flex items-center gap-2 ${fs.xl}`}>
+              <Search size={20} className="text-[var(--theme-primary)] dark:text-rose-500"/>
+              {t('search')}
+            </h2>
+            <span className="text-[10px] font-bold text-stone-400 uppercase tracking-widest px-1">
+              {isHistoryMode ? t('history') : t('cellar')}
+            </span>
+          </div>
           <button onClick={onClose} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 bg-gray-50 dark:bg-stone-800 p-2 rounded-full transition-colors"><X size={20} /></button>
         </div>
         
@@ -132,16 +155,52 @@ export const SearchModal: React.FC<SearchModalProps> = ({
           )}
 
           <div><label className={labelClass}>{t('name')}</label><div className="relative"><input type="text" name="name" value={filters.name || ''} onChange={handleChange} className={inputClass} placeholder={t('search_placeholder')} /><ClearButton onClick={() => resetField('name')} visible={!!filters.name} /></div></div>
-          <div><label className={labelClass}>{t('appellation')}</label><div className="relative"><input type="text" name="appellation" value={filters.appellation || ''} onChange={handleChange} className={inputClass} placeholder={t('placeholder_contains')} /><ClearButton onClick={() => resetField('appellation')} visible={!!filters.appellation} /></div></div>
+          
+          <div>
+            <label className={labelClass}>{t('appellation')}</label>
+            <SuggestionInput
+              value={filters.appellation || ''}
+              onChange={(val) => handleSuggestionChange('appellation', val)}
+              suggestions={suggestions.appellations}
+              placeholder={t('placeholder_contains')}
+              className={inputClass}
+              fontSize={fontSize}
+            />
+          </div>
+
           <div className="grid grid-cols-2 gap-4">
             <div><label className={labelClass}>{t('country')}</label><CountrySelect value={filters.country || ''} countries={locationData.countries} onChange={handleCountryChange} onClear={() => handleCountryChange('')} language={language} className={inputClass} fontSize={fontSize as AppFontSize} /></div>
             <div><label className={labelClass}>{t('region')}</label><RegionSelect value={filters.region || ''} country={filters.country || ''} regions={filters.country ? (locationData.regions[filters.country] || []) : []} onChange={handleRegionChange} onClear={() => handleRegionChange('')} language={language} className={inputClass} fontSize={fontSize as AppFontSize} /></div>
           </div>
+
           <div className="grid grid-cols-2 gap-4">
             <div><label className={labelClass}>{t('color')}</label><div className="relative"><select name="color" value={filters.color || ''} onChange={handleChange} className={inputClass}><option value="">{t('all')}</option>{COLORS.map(c => <option key={c} value={c}>{t(`color_${c}`)}</option>)}</select><ClearButton onClick={() => resetField('color')} visible={!!filters.color} /></div></div>
             <div><label className={labelClass}>{t('year')}</label><div className="relative"><input type="number" name="year" value={filters.year || ''} onChange={handleChange} className={inputClass} placeholder={t('placeholder_vintage')} /><ClearButton onClick={() => resetField('year')} visible={filters.year !== undefined} /></div></div>
           </div>
-          <div><label className={labelClass}>{t('origin')}</label><div className="relative"><input type="text" name="origin" value={filters.origin || ''} onChange={handleChange} className={inputClass} /><ClearButton onClick={() => resetField('origin')} visible={!!filters.origin} /></div></div>
+
+          <div>
+            <label className={labelClass}>{t('origin')}</label>
+            <SuggestionInput
+              value={filters.origin || ''}
+              onChange={(val) => handleSuggestionChange('origin', val)}
+              suggestions={suggestions.origins}
+              placeholder={t('placeholder_contains')}
+              className={inputClass}
+              fontSize={fontSize}
+            />
+          </div>
+
+          <div>
+            <label className={labelClass}>{t('purchase_place')}</label>
+            <SuggestionInput
+              value={filters.purchasePlace || ''}
+              onChange={(val) => handleSuggestionChange('purchasePlace', val)}
+              suggestions={suggestions.purchasePlaces}
+              placeholder={t('placeholder_contains')}
+              className={inputClass}
+              fontSize={fontSize}
+            />
+          </div>
           
           <div>
             <label className={labelClass}>{t('tag')}</label>
@@ -152,16 +211,38 @@ export const SearchModal: React.FC<SearchModalProps> = ({
           </div>
 
           <div className="grid grid-cols-2 gap-4">
-             { !isHistoryMode && (<div><label className={labelClass}>{t('recommended_year')}</label><div className="relative"><input type="number" name="recommendedYear" value={filters.recommendedYear || ''} onChange={handleChange} className={inputClass} placeholder={t('placeholder_drink_in')} /><ClearButton onClick={() => resetField('recommendedYear')} visible={filters.recommendedYear !== undefined} /></div></div>) }
-            <div className={isHistoryMode ? "col-span-2" : ""}>
+             { !isHistoryMode ? (
+                <>
+                  <div><label className={labelClass}>{t('recommended_year')}</label><div className="relative"><input type="number" name="recommendedYear" value={filters.recommendedYear || ''} onChange={handleChange} className={inputClass} placeholder={t('placeholder_drink_in')} /><ClearButton onClick={() => resetField('recommendedYear')} visible={filters.recommendedYear !== undefined} /></div></div>
+                  <div>
+                    <label className={labelClass}>{t('aging')}</label>
+                    <div className="relative"><select name="agingPotential" value={filters.agingPotential || ''} onChange={handleChange} className={inputClass}><option value="">{t('all')}</option>{AGING_POTENTIALS.map(a => <option key={a} value={a}>{t(`aging_${a}`)}</option>)}</select><ClearButton onClick={() => resetField('agingPotential')} visible={!!filters.agingPotential} /></div>
+                  </div>
+                </>
+             ) : (
+                <>
+                  <div>
+                    <label className={labelClass}>Note</label>
+                    <div className="relative">
+                      <select name="consumptionRating" value={filters.consumptionRating || ''} onChange={handleChange} className={inputClass}>
+                        <option value="">{t('all')}</option>
+                        {RATINGS.map(r => <option key={r} value={r}>{r} {r === 1 ? 'étoile' : 'étoiles'}</option>)}
+                      </select>
+                      <ClearButton onClick={() => resetField('consumptionRating')} visible={!!filters.consumptionRating} />
+                    </div>
+                  </div>
+                </>
+             )}
+          </div>
+
+          <div>
               <label className={labelClass}>{t('strength')}</label>
               <div className="relative"><select name="strength" value={filters.strength !== undefined ? filters.strength : ''} onChange={handleChange} className={inputClass}><option value="">{t('all')}</option>{STRENGTHS.map(s => <option key={s} value={s}>{s}%</option>)}</select><ClearButton onClick={() => resetField('strength')} visible={filters.strength !== undefined} /></div>
-            </div>
           </div>
-          { !isHistoryMode && (<div><label className={labelClass}>{t('aging')}</label><div className="relative"><select name="agingPotential" value={filters.agingPotential || ''} onChange={handleChange} className={inputClass}><option value="">{t('all')}</option>{AGING_POTENTIALS.map(a => <option key={a} value={a}>{t(`aging_${a}`)}</option>)}</select><ClearButton onClick={() => resetField('agingPotential')} visible={!!filters.agingPotential} /></div></div>) }
         </div>
-        <div className="p-4 border-t border-gray-100 dark:border-stone-800 flex gap-3 bg-white dark:bg-stone-900 rounded-b-2xl transition-colors">
-          <button onClick={handleReset} className="flex items-center justify-center gap-2 px-4 py-3 rounded-xl border border-gray-300 dark:border-stone-700 text-gray-600 dark:text-stone-300 font-medium hover:bg-white dark:hover:bg-stone-800 transition"><RotateCcw size={18} /></button>
+        
+        <div className="p-4 border-t border-gray-100 dark:border-stone-800 flex gap-3 bg-white dark:bg-stone-900 flex-shrink-0">
+          <button onClick={handleReset} className="flex items-center justify-center gap-2 px-4 py-3 rounded-xl border border-gray-300 dark:border-stone-700 text-gray-600 dark:text-stone-300 font-medium hover:bg-white dark:hover:bg-stone-800 transition" title={t('reset')}><RotateCcw size={18} /></button>
           <button onClick={handleSubmit} className={`flex-1 bg-[var(--theme-primary)] dark:bg-[var(--theme-primary-dark)] text-white font-bold py-3 px-6 rounded-xl shadow-lg hover:opacity-90 transition ${fs.base}`}>{t('search')}</button>
         </div>
       </div>

@@ -354,22 +354,64 @@ export const WineDetail: React.FC<WineDetailProps> = ({ wine, cellars, currentCe
             </div>
           </div>
 
-          <div className="pt-4 flex gap-3">
-               <button type="button" onClick={() => setShowDeleteModal(true)} className={`${isHistory ? 'flex-1 h-[56px]' : 'h-[56px] w-[56px] flex-none'} rounded-xl border border-red-200 dark:border-red-900/50 text-red-500 dark:text-red-400 bg-red-50 dark:bg-red-900/10 hover:bg-red-100 transition cursor-pointer flex items-center justify-center gap-2`}>
-                 <Trash2 size={20} />
-                 {isHistory && <span className="font-bold">{t('delete')}</span>}
-              </button>
-              {!isHistory && (
-                <>
-                <button type="button" onClick={() => handleTransferClick(false)} className="flex-none h-[56px] w-[56px] flex items-center justify-center rounded-xl border border-indigo-200 dark:border-indigo-900/50 text-indigo-500 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-900/10 hover:bg-indigo-100 transition cursor-pointer"><Copy size={20} /></button>
-                {cellars.length > 1 && (
-                  <button type="button" onClick={() => handleTransferClick(true)} className="flex-none h-[56px] w-[56px] flex items-center justify-center rounded-xl border border-orange-200 dark:border-orange-900/50 text-orange-500 dark:text-orange-400 bg-orange-50 dark:bg-indigo-900/10 hover:bg-indigo-100 transition cursor-pointer"><Move size={20} /></button>
-                )}
-                <button type="button" onClick={() => setShowConsumeModal(true)} className={`flex-1 flex items-center justify-center h-[56px] gap-2 bg-gradient-to-r from-[var(--theme-primary)] to-[var(--theme-primary-dark)] text-white font-bold px-6 rounded-xl shadow-lg shadow-[var(--theme-primary)]/20 hover:shadow-xl transition transform active:scale-95 cursor-pointer`}>
-                  <Check size={20} /><span>{t('consume_bottle')}</span>
+          <div className="pt-4 space-y-4">
+            {!isHistory ? (
+              <>
+                <div className="flex justify-center gap-4">
+                  {/* Copier */}
+                  <button 
+                    type="button" 
+                    onClick={() => handleTransferClick(false)} 
+                    className="h-[56px] w-[56px] flex items-center justify-center rounded-xl border border-indigo-200 dark:border-indigo-900/50 text-indigo-500 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-900/10 hover:bg-indigo-100 transition cursor-pointer shadow-sm active:scale-95"
+                    title={t('duplicate')}
+                  >
+                    <Copy size={20} />
+                  </button>
+                  
+                  {/* Déplacer */}
+                  {cellars.length > 1 && (
+                    <button 
+                      type="button" 
+                      onClick={() => handleTransferClick(true)} 
+                      className="h-[56px] w-[56px] flex items-center justify-center rounded-xl border border-orange-200 dark:border-orange-900/50 text-orange-500 dark:text-orange-400 bg-orange-50 dark:bg-orange-900/10 hover:bg-orange-100 transition cursor-pointer shadow-sm active:scale-95"
+                      title={t('transfer')}
+                    >
+                      <Move size={20} />
+                    </button>
+                  )}
+                  
+                  {/* Supprimer */}
+                  <button 
+                    type="button" 
+                    onClick={() => setShowDeleteModal(true)} 
+                    className="h-[56px] w-[56px] flex items-center justify-center rounded-xl border border-red-200 dark:border-red-900/50 text-red-500 dark:text-red-400 bg-red-50 dark:bg-red-900/10 hover:bg-red-100 transition cursor-pointer shadow-sm active:scale-95"
+                    title={t('delete')}
+                  >
+                    <Trash2 size={20} />
+                  </button>
+                </div>
+                
+                {/* Vin consommé */}
+                <button 
+                  type="button" 
+                  onClick={() => setShowConsumeModal(true)} 
+                  className="w-full flex items-center justify-center h-[56px] gap-2 bg-gradient-to-r from-[var(--theme-primary)] to-[var(--theme-primary-dark)] text-white font-bold px-6 rounded-xl shadow-lg shadow-[var(--theme-primary)]/20 hover:shadow-xl transition transform active:scale-95 cursor-pointer"
+                >
+                  <Check size={20} />
+                  <span>{t('consume_bottle')}</span>
                 </button>
-                </>
-              )}
+              </>
+            ) : (
+              /* History Delete */
+              <button 
+                type="button" 
+                onClick={() => setShowDeleteModal(true)} 
+                className="w-full h-[56px] rounded-xl border border-red-200 dark:border-red-900/50 text-red-500 dark:text-red-400 bg-red-50 dark:bg-red-900/10 hover:bg-red-100 transition cursor-pointer flex items-center justify-center gap-2 shadow-sm active:scale-95"
+              >
+                <Trash2 size={20} />
+                <span className="font-bold">{t('delete')}</span>
+              </button>
+            )}
           </div>
         </div>
       </div>

@@ -56,10 +56,12 @@ export interface SearchFilters {
   color?: string;
   year?: number;
   origin?: string;
+  purchasePlace?: string;
   recommendedYear?: number;
   strength?: number;
   agingPotential?: string;
   tag?: string;
+  consumptionRating?: number;
   searchScope?: 'current' | 'all';
 }
 
