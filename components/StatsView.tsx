@@ -1,12 +1,13 @@
 
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer, CartesianGrid, LabelList } from 'recharts';
-import { Wine, WineColor, Language, Theme, HistoryEntry, AppFontSize } from '../types';
+import { Wine, WineColor, Language, Theme, HistoryEntry, AppFontSize, Cellar } from '../types';
 import { getTranslation } from '../translations';
-import { ChevronDown, ChevronRight, RefreshCw } from 'lucide-react';
+import { ChevronDown, ChevronRight, RefreshCw, Layers } from 'lucide-react';
 
 interface StatsViewProps {
   wines: Wine[];
+  cellars: Cellar[];
   history: HistoryEntry[];
   activeCellarName: string;
   onSelectCellar: () => void;
@@ -32,12 +33,13 @@ const ChartContainer = ({ title, children, fontSizeClasses }: { title: string, c
   </div>
 );
 
-export const StatsView: React.FC<StatsViewProps> = ({ wines, history, activeCellarName, onSelectCellar, language, theme, fontSize = 'medium' }) => {
+export const StatsView: React.FC<StatsViewProps> = ({ wines, cellars, history, activeCellarName, onSelectCellar, language, theme, fontSize = 'medium' }) => {
   const t = (key: any) => getTranslation(language, key);
   const isDark = theme === 'dark';
 
   const [showCellarStats, setShowCellarStats] = useState(true);
   const [showHistoryStats, setShowHistoryStats] = useState(true);
+  const [statsScope, setStatsScope] = useState<'current' | 'all'>('current');
 
   const getFontSizeClasses = (size: AppFontSize) => {
     switch(size) {
@@ -53,30 +55,18 @@ export const StatsView: React.FC<StatsViewProps> = ({ wines, history, activeCell
 
   const fs = getFontSizeClasses(fontSize as AppFontSize);
 
-  // Common render helpers
-  const renderCustomLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, percent }: any) => {
-    const radius = innerRadius + (outerRadius - innerRadius) * 0.5;
-    const x = cx + radius * Math.cos(-midAngle * Math.PI / 180);
-    const y = cy + radius * Math.sin(-midAngle * Math.PI / 180);
-  
-    return percent > 0.05 ? (
-      <text x={x} y={y} fill="white" textAnchor={x > cx ? 'start' : 'end'} dominantBaseline="central" fontSize={fs.label} fontWeight="bold" style={{ textShadow: '0px 0px 3px rgba(0,0,0,0.5)' }}>
-        {`${(percent * 100).toFixed(0)}%`}
-      </text>
-    ) : null;
-  };
+  // Filtrage des données en fonction de la portée choisie
+  const displayWines = useMemo(() => {
+    if (statsScope === 'all') {
+      return cellars.flatMap(c => c.wines || []);
+    }
+    return wines;
+  }, [statsScope, wines, cellars]);
 
-  const tooltipStyle = {
-    backgroundColor: isDark ? '#1c1917' : '#fff',
-    borderColor: isDark ? '#292524' : '#fff',
-    borderRadius: '8px',
-    boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)',
-    color: isDark ? '#f5f5f4' : '#333',
-    fontSize: fs.tick
-  };
+  const currentContextName = statsScope === 'all' ? (language === 'fr' ? 'Toutes les caves' : 'All cellars') : activeCellarName;
 
   // --- CELLAR DATA PROCESSING ---
-  const cellarColorData = Object.entries(wines.reduce((acc, wine) => {
+  const cellarColorData = Object.entries(displayWines.reduce((acc, wine) => {
     const qty = Number(wine.quantity);
     acc[wine.color] = (acc[wine.color] || 0) + qty;
     return acc;
@@ -94,11 +84,11 @@ export const StatsView: React.FC<StatsViewProps> = ({ wines, history, activeCell
     return Object.values(rawData);
   };
 
-  const cellarRegionData = processStackedData(wines, 'region');
-  const cellarCountryData = processStackedData(wines, 'country');
+  const cellarRegionData = processStackedData(displayWines, 'region');
+  const cellarCountryData = processStackedData(displayWines, 'country');
 
   const processCellarYearData = () => {
-    const rawData = wines.reduce((acc, wine) => {
+    const rawData = displayWines.reduce((acc, wine) => {
       if (!wine.purchaseDate) return acc;
       const year = new Date(wine.purchaseDate).getFullYear().toString();
       if (!acc[year]) {
@@ -183,15 +173,51 @@ export const StatsView: React.FC<StatsViewProps> = ({ wines, history, activeCell
     </div>
   );
 
+  const renderCustomLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, percent }: any) => {
+    const radius = innerRadius + (outerRadius - innerRadius) * 0.5;
+    const x = cx + radius * Math.cos(-midAngle * Math.PI / 180);
+    const y = cy + radius * Math.sin(-midAngle * Math.PI / 180);
+  
+    return percent > 0.05 ? (
+      <text x={x} y={y} fill="white" textAnchor={x > cx ? 'start' : 'end'} dominantBaseline="central" fontSize={fs.label} fontWeight="bold" style={{ textShadow: '0px 0px 3px rgba(0,0,0,0.5)' }}>
+        {`${(percent * 100).toFixed(0)}%`}
+      </text>
+    ) : null;
+  };
+
+  const tooltipStyle = {
+    backgroundColor: isDark ? '#1c1917' : '#fff',
+    borderColor: isDark ? '#292524' : '#fff',
+    borderRadius: '8px',
+    boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)',
+    color: isDark ? '#f5f5f4' : '#333',
+    fontSize: fs.tick
+  };
+
   const legendText = (value: string) => t('color_' + value);
 
   return (
     <div className="pb-12">
-        {renderSectionHeader(`${t('section_cellar_stats')} (${activeCellarName})`, showCellarStats, () => setShowCellarStats(!showCellarStats), onSelectCellar)}
+        {renderSectionHeader(`${t('section_cellar_stats')} (${currentContextName})`, showCellarStats, () => setShowCellarStats(!showCellarStats), onSelectCellar)}
         
         {showCellarStats && (
             <div className="animate-in slide-in-from-top-2 fade-in duration-300">
-                {wines.length === 0 ? (
+                {/* Bouton de basculement de portée (Scope Selector) */}
+                <div className="mb-6 px-1">
+                  <button 
+                    onClick={() => setStatsScope(statsScope === 'current' ? 'all' : 'current')}
+                    className="w-full flex items-center justify-center gap-3 p-4 bg-[var(--theme-bg-soft)] dark:bg-stone-800 border-2 border-[var(--theme-border)] dark:border-stone-700 rounded-2xl shadow-sm text-[var(--theme-primary)] dark:text-rose-400 font-bold active:scale-[0.98] transition-all"
+                  >
+                    <Layers size={18} />
+                    <span className={fs.section}>
+                      {statsScope === 'current' 
+                        ? (language === 'fr' ? 'Afficher les données de toutes les caves' : 'Show data from all cellars')
+                        : (language === 'fr' ? `Afficher les données de la cave ${activeCellarName}` : `Show data from cellar ${activeCellarName}`)}
+                    </span>
+                  </button>
+                </div>
+
+                {displayWines.length === 0 ? (
                     <div className={`p-8 text-center text-stone-400 dark:text-stone-600 italic mb-6 ${fs.title}`}>{t('empty_cellar')}</div>
                 ) : (
                     <>

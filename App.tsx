@@ -767,7 +767,7 @@ function App() {
             <button onClick={() => setIsInfoOpen(true)} className="p-2 rounded-full bg-white dark:bg-stone-800 text-stone-400 shadow-sm"><Info size={22} /></button>
           </div>
         </div>
-        <StatsView wines={wines} history={history} activeCellarName={activeCellar.name} onSelectCellar={() => setIsCellarSelectorOpen(true)} language={settings.language} theme={settings.theme} fontSize={settings.fontSize} />
+        <StatsView wines={wines} cellars={cellars} history={history} activeCellarName={activeCellar.name} onSelectCellar={() => setIsCellarSelectorOpen(true)} language={settings.language} theme={settings.theme} fontSize={settings.fontSize} />
       </div>
     );
 
