@@ -1171,14 +1171,32 @@ const CellarManager = ({ cellars, activeCellarId, onSelect, isOpen, onClose, onA
           ) : (
             <div className="space-y-5 py-2 animate-in slide-in-from-right-2 duration-300">
               <div className="flex flex-col items-center gap-4">
-                <div onClick={() => fileInputRef.current?.click()} className="w-24 h-24 rounded-3xl bg-stone-100 dark:bg-stone-800 flex items-center justify-center border-2 border-dashed border-stone-300 dark:border-stone-600 overflow-hidden cursor-pointer relative">
-                  {image ? <img src={image} className="w-full h-full object-cover" alt="" /> : <Camera size={32} className="text-stone-300" />}
-                  <div className="absolute inset-0 bg-black/20 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity">
-                    <Pencil size={20} className="text-white" />
-                  </div>
+                <div 
+                  onClick={() => fileInputRef.current?.click()} 
+                  className="w-32 h-32 rounded-3xl bg-stone-100 dark:bg-stone-800 flex items-center justify-center border-2 border-dashed border-stone-300 dark:border-stone-600 overflow-hidden cursor-pointer relative group"
+                >
+                  {image ? (
+                    <div className="relative w-full h-full">
+                      <img src={image} className="w-full h-full object-cover" alt="" />
+                      <div className="absolute inset-0 bg-black/20 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                        <Pencil size={24} className="text-white" />
+                      </div>
+                      <button 
+                        type="button" 
+                        onClick={(e) => { e.stopPropagation(); setImage(null); }} 
+                        className="absolute top-1 right-1 bg-red-600 text-white p-1.5 rounded-full shadow-lg hover:bg-red-700 transition z-10"
+                      >
+                        <X size={14} />
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="text-center p-4">
+                      <Camera size={32} className="text-stone-300 mx-auto mb-1" />
+                      <p className="text-[10px] font-bold text-stone-400 uppercase tracking-widest leading-tight">{t('cellar_photo')}</p>
+                    </div>
+                  )}
                   <input type="file" ref={fileInputRef} onChange={handleImage} className="hidden" accept="image/*" />
                 </div>
-                <p className="text-[10px] font-bold text-stone-400 uppercase tracking-widest">{t('cellar_photo')}</p>
               </div>
               <div className="space-y-2">
                 <label className="text-xs font-bold text-stone-400 uppercase tracking-widest pl-1">{t('cellar_name')}</label>
