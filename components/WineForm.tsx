@@ -1,6 +1,6 @@
 
 import React, { useState, useRef, useEffect } from 'react';
-import { Camera, X, Minus, Plus, Calendar as CalendarIcon, Pencil, Loader2 } from 'lucide-react';
+import { Camera, X, Minus, Plus, Calendar as CalendarIcon, Pencil, Loader2, AlertCircle } from 'lucide-react';
 import { Wine, WineColor, AgingPotential, Language, LocationData, AppFontSize, HistoryEntry } from '../types';
 import { COLORS, AGING_POTENTIALS, STRENGTHS, RATINGS } from '../constants';
 import { getTranslation } from '../translations';
@@ -72,6 +72,7 @@ export const WineForm: React.FC<WineFormProps> = ({
   });
 
   const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [validationError, setValidationError] = useState<string | null>(null);
   const isEdit = !!initialData;
   const fileInputRef = useRef<HTMLInputElement>(null);
   const dateInputRef = useRef<HTMLInputElement>(null);
@@ -89,7 +90,8 @@ export const WineForm: React.FC<WineFormProps> = ({
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
-    
+    setValidationError(null); // Reset error on change
+
     // Le prix est géré en texte brut pour les décimales et le "vide"
     if (name === 'price') {
       setFormData(prev => ({ ...prev, [name]: value }));
@@ -105,6 +107,7 @@ export const WineForm: React.FC<WineFormProps> = ({
   };
 
   const handleSuggestionChange = (name: string, value: string) => {
+    setValidationError(null);
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
@@ -151,16 +154,23 @@ export const WineForm: React.FC<WineFormProps> = ({
     }
   };
 
-  const handleQuantityChange = (newQty: number) => setFormData(prev => ({ ...prev, quantity: Math.max(1, newQty) }));
+  const handleQuantityChange = (newQty: number) => {
+    setValidationError(null);
+    setFormData(prev => ({ ...prev, quantity: Math.max(1, newQty) }));
+  };
 
   const handleCountryChange = (newCountry: string) => {
+    setValidationError(null);
     const newRegions = locationData.regions[newCountry] || [];
     let newRegion = formData.region;
     if (!newRegions.includes(formData.region)) newRegion = '';
     setFormData(prev => ({ ...prev, country: newCountry, region: newRegion }));
   };
 
-  const handleRegionChange = (region: string) => setFormData(prev => ({ ...prev, region }));
+  const handleRegionChange = (region: string) => {
+    setValidationError(null);
+    setFormData(prev => ({ ...prev, region }));
+  };
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -177,6 +187,23 @@ export const WineForm: React.FC<WineFormProps> = ({
 
   const handleSubmit = (e: React.FormEvent) => { 
     e.preventDefault(); 
+    
+    // Validations demandées par l'utilisateur
+    if (!isHistoryMode) {
+      // 1. A boire en > Année du vin
+      if (formData.recommendedYear <= formData.year) {
+        setValidationError(t('error_recommended_year'));
+        return;
+      }
+
+      // 2. Date d'achat (année) >= Année du vin
+      const purchaseYear = new Date(formData.purchaseDate).getFullYear();
+      if (purchaseYear < formData.year) {
+        setValidationError(t('error_purchase_year'));
+        return;
+      }
+    }
+
     // On convertit le prix en nombre avant de sauvegarder, champ vide = 0
     const finalData = {
       ...formData,
@@ -441,6 +468,16 @@ export const WineForm: React.FC<WineFormProps> = ({
           <div>
             <label className={labelClass}>{t('tag')}</label>
             <textarea name="tag" value={formData.tag} onChange={handleChange} rows={2} className={textareaClass} placeholder={t('placeholder_tag')} />
+          </div>
+        </div>
+      )}
+
+      {validationError && (
+        <div className="bg-red-50 dark:bg-red-900/20 border-2 border-red-200 dark:border-red-900/30 p-4 rounded-xl flex items-start gap-3 animate-in fade-in slide-in-from-bottom-2 duration-300">
+          <AlertCircle className="text-red-500 flex-shrink-0 mt-0.5" size={20} />
+          <div className="flex flex-col">
+            <span className="font-bold text-red-900 dark:text-red-400 text-sm uppercase tracking-wide mb-1">{t('error_validation')}</span>
+            <span className={`text-red-700 dark:text-red-300 leading-tight ${fs.base}`}>{validationError}</span>
           </div>
         </div>
       )}

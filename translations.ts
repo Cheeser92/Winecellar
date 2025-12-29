@@ -203,7 +203,12 @@ export const translations = {
     country_already_exists: "Ce pays existe déjà.",
     region_already_exists: "Cette région existe déjà.",
     reverse_sort: "Inverser le tri",
-    global: "Global"
+    global: "Global",
+
+    // Error messages
+    error_validation: "Erreur de saisie",
+    error_recommended_year: "L'année idéale de consommation doit être strictement supérieure à l'année du vin.",
+    error_purchase_year: "L'année d'achat doit être supérieure ou égale à l'année du vin."
   },
   en: {
     app_title: "My Wine Cellar",
@@ -404,7 +409,12 @@ export const translations = {
     country_already_exists: "Country already exists.",
     region_already_exists: "Cette région existe déjà.",
     reverse_sort: "Reverse sort",
-    global: "Global"
+    global: "Global",
+
+    // Error messages
+    error_validation: "Input error",
+    error_recommended_year: "Ideal year of consumption must be strictly greater than the wine's vintage year.",
+    error_purchase_year: "Purchase year must be greater than or equal to the wine's vintage year."
   }
 };
 
