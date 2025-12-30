@@ -3,7 +3,7 @@ import { Language } from './types';
 
 export const translations = {
   fr: {
-    app_title: "Ma Cave à Vin",
+    app_title: "My Wine Cellar",
     cellar: "Cave",
     stats: "Statistiques",
     history: "Historique",
@@ -216,7 +216,7 @@ export const translations = {
     show_current_cellar_data: "Afficher les données de la cave {name}",
 
     // Info Modal
-    info_modal_developed_with: "Développé entièrement avec",
+    info_modal_developed_by: "Développé par",
     info_modal_contact_desc: "Un commentaire, une remarque, un remerciement ? Envoyez un message. Les demandes de modifications seront traitées en fonction de mon temps libre.",
     info_modal_contact_button: "Me contacter",
     info_modal_close: "Fermer"
@@ -433,7 +433,7 @@ export const translations = {
     show_current_cellar_data: "Show data from cellar {name}",
 
     // Info Modal
-    info_modal_developed_with: "Developed entirely with",
+    info_modal_developed_by: "Developed by",
     info_modal_contact_desc: "Any comments, feedback, or thanks? Send a message. Modification requests will be handled based on my free time.",
     info_modal_contact_button: "Contact me",
     info_modal_close: "Close"

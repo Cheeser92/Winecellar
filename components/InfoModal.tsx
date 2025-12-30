@@ -37,7 +37,7 @@ export const InfoModal: React.FC<InfoModalProps> = ({ isOpen, onClose, language,
         <h2 className={`font-serif font-bold text-stone-900 dark:text-stone-100 mb-1 ${fs.xl}`}>{t('app_title')}</h2>
         <p className={`font-bold text-stone-400 dark:text-stone-500 uppercase tracking-widest mb-4 ${fs.base}`}>v1.0 • 2025</p>
         <div className="space-y-4 mb-6">
-            <p className={`text-stone-600 dark:text-stone-400 leading-relaxed ${fs.lg}`}>{t('info_modal_developed_with')} <br/><span className="font-bold text-[var(--theme-primary)] dark:text-rose-400">Google AI Studio</span></p>
+            <p className={`text-stone-600 dark:text-stone-400 leading-relaxed ${fs.lg}`}>{t('info_modal_developed_by')}</p>
             <div className="flex items-center justify-center gap-2 text-stone-400 dark:text-stone-600"><div className="h-px w-8 bg-stone-200 dark:bg-stone-800"></div><Heart size={14} className="fill-current"/><div className="h-px w-8 bg-stone-200 dark:bg-stone-800"></div></div>
             <p className={`font-serif italic text-stone-800 dark:text-stone-200 font-bold ${fs.lg}`}>Cheeser92</p>
         </div>

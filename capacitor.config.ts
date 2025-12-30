@@ -1,8 +1,9 @@
+
 import { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
   appId: 'com.macaveavin.app',
-  appName: 'Ma Cave à Vin',
+  appName: 'My Wine Cellar',
   webDir: 'dist',
   server: {
     androidScheme: 'https'
