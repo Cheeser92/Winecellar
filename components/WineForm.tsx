@@ -1,6 +1,6 @@
 
 import React, { useState, useRef, useEffect } from 'react';
-import { Camera, X, Minus, Plus, Calendar as CalendarIcon, Pencil, Loader2, AlertCircle } from 'lucide-react';
+import { Camera, X, Minus, Plus, Calendar as CalendarIcon, Pencil, Loader2, AlertCircle, Tag as TagIcon, ChevronDown } from 'lucide-react';
 import { Wine, WineColor, AgingPotential, Language, LocationData, AppFontSize, HistoryEntry } from '../types';
 import { COLORS, AGING_POTENTIALS, STRENGTHS, RATINGS } from '../constants';
 import { getTranslation } from '../translations';
@@ -15,7 +15,9 @@ interface WineFormProps {
   initialData?: Partial<Wine> | Partial<HistoryEntry>;
   availableLocations: string[];
   locationData: LocationData;
+  globalTags?: string[];
   onOpenLocationManager: () => void;
+  onOpenTagManager: () => void;
   language: Language;
   isHistoryMode?: boolean;
   fontSize?: AppFontSize;
@@ -32,7 +34,9 @@ export const WineForm: React.FC<WineFormProps> = ({
   initialData, 
   availableLocations, 
   locationData,
+  globalTags = [],
   onOpenLocationManager,
+  onOpenTagManager,
   language, 
   isHistoryMode = false,
   fontSize = 'medium',
@@ -46,8 +50,6 @@ export const WineForm: React.FC<WineFormProps> = ({
     return `${day}/${month}/${year}`;
   };
 
-  // État étendu pour supporter les champs spécifiques à l'historique
-  // Note: On gère le prix comme une string dans le state du formulaire pour permettre la saisie fluide de décimales et le champ vide
   const [formData, setFormData] = useState<any>({
     name: initialData?.name || '',
     appellation: initialData?.appellation || '',
@@ -67,15 +69,18 @@ export const WineForm: React.FC<WineFormProps> = ({
     agingPotential: initialData?.agingPotential || AgingPotential.MOYENNE,
     image: initialData?.image || null,
     location: initialData?.location || availableLocations[0],
-    // Champs spécifiques Historique
     consumptionRating: (initialData as HistoryEntry)?.consumptionRating || 5,
   });
 
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [validationError, setValidationError] = useState<string | null>(null);
+  const [isTagDropdownOpen, setIsTagDropdownOpen] = useState(false);
+  const [tagSearchTerm, setTagSearchTerm] = useState('');
+  
   const isEdit = !!initialData;
   const fileInputRef = useRef<HTMLInputElement>(null);
   const dateInputRef = useRef<HTMLInputElement>(null);
+  const tagContainerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (isHistoryMode) return;
@@ -88,11 +93,20 @@ export const WineForm: React.FC<WineFormProps> = ({
     }
   }, [formData.year, formData.recommendedYear, isHistoryMode]);
 
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (tagContainerRef.current && !tagContainerRef.current.contains(event.target as Node)) {
+        setIsTagDropdownOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
-    setValidationError(null); // Reset error on change
+    setValidationError(null);
 
-    // Le prix est géré en texte brut pour les décimales et le "vide"
     if (name === 'price') {
       setFormData(prev => ({ ...prev, [name]: value }));
       return;
@@ -185,18 +199,36 @@ export const WineForm: React.FC<WineFormProps> = ({
     }
   };
 
+  const handleSelectTag = (selectedTag: string) => {
+    const currentTags = formData.tag ? formData.tag.split(',').map((t: string) => t.trim()) : [];
+    if (!currentTags.includes(selectedTag)) {
+      const newTagString = [...currentTags, selectedTag].join(', ');
+      setFormData(prev => ({ ...prev, tag: newTagString }));
+    }
+    setIsTagDropdownOpen(false);
+    setTagSearchTerm('');
+  };
+
+  // Fixed typo: changed HTMLInputChangeEvent to HTMLInputElement
+  const handleTagInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setFormData(prev => ({ ...prev, tag: value }));
+    
+    // Extraire le dernier mot pour la recherche si nécessaire
+    const parts = value.split(',');
+    const lastPart = parts[parts.length - 1].trim();
+    setTagSearchTerm(lastPart);
+  };
+
   const handleSubmit = (e: React.FormEvent) => { 
     e.preventDefault(); 
     
-    // Validations demandées par l'utilisateur
     if (!isHistoryMode) {
-      // 1. A boire en > Année du vin
       if (formData.recommendedYear <= formData.year) {
         setValidationError(t('error_recommended_year'));
         return;
       }
 
-      // 2. Date d'achat (année) >= Année du vin
       const purchaseYear = new Date(formData.purchaseDate).getFullYear();
       if (purchaseYear < formData.year) {
         setValidationError(t('error_purchase_year'));
@@ -204,7 +236,6 @@ export const WineForm: React.FC<WineFormProps> = ({
       }
     }
 
-    // On convertit le prix en nombre avant de sauvegarder, champ vide = 0
     const finalData = {
       ...formData,
       price: parseFloat(formData.price.replace(',', '.')) || 0
@@ -226,6 +257,11 @@ export const WineForm: React.FC<WineFormProps> = ({
   const requiredInputClass = `mt-1 block w-full rounded-lg border-2 border-[var(--theme-primary)] bg-[var(--theme-bg-soft)] dark:bg-stone-800 text-gray-900 dark:text-white shadow-sm focus:border-[var(--theme-primary)] focus:ring-[var(--theme-primary)]/20 h-11 px-3 transition-all ${fs.base}`;
   const textareaClass = `mt-1 block w-full rounded-lg border border-gray-300 dark:border-stone-700 bg-[var(--theme-bg-soft)] dark:bg-stone-800 text-gray-900 dark:text-white shadow-sm focus:border-[var(--theme-primary)] focus:ring-[var(--theme-primary)]/20 p-3 transition-all ${fs.base}`;
   const labelClass = `block font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1 ${fs.label}`;
+
+  const filteredTags = globalTags.filter(gt => {
+    if (!tagSearchTerm) return true;
+    return gt.toLowerCase().includes(tagSearchTerm.toLowerCase());
+  });
 
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-5 pb-24 p-4 bg-stone-100 dark:bg-black min-h-full transition-colors duration-300 relative">
@@ -420,10 +456,51 @@ export const WineForm: React.FC<WineFormProps> = ({
                 </select>
               </div>
             </div>
-            <div>
-                <label className={labelClass}>{t('tag')}</label>
-                <textarea name="tag" value={formData.tag} onChange={handleChange} rows={2} className={textareaClass} placeholder={t('placeholder_tag')} />
+            
+            {/* Champ Tag amélioré */}
+            <div className="relative" ref={tagContainerRef}>
+              <label className={labelClass}>{t('tag')}</label>
+              <div className="relative group">
+                <input 
+                  type="text" 
+                  name="tag" 
+                  value={formData.tag} 
+                  onChange={handleTagInputChange}
+                  onFocus={() => setIsTagDropdownOpen(true)}
+                  className={`${inputClass} pr-20`} 
+                  placeholder={t('placeholder_tag')} 
+                />
+                <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1.5">
+                  <button type="button" onClick={onOpenTagManager} className="p-1.5 text-stone-400 hover:text-[var(--theme-primary)] dark:hover:text-rose-400 transition-colors bg-stone-50 dark:bg-stone-900 rounded-md border border-stone-200 dark:border-stone-700">
+                    <Pencil size={14} />
+                  </button>
+                  <button 
+                    type="button" 
+                    onClick={() => setIsTagDropdownOpen(!isTagDropdownOpen)}
+                    className="text-stone-400 hover:text-stone-600 dark:hover:text-stone-200 transition-colors"
+                  >
+                    <ChevronDown size={18} />
+                  </button>
+                </div>
+              </div>
+              {isTagDropdownOpen && filteredTags.length > 0 && (
+                <div className="absolute z-[120] mt-1 w-full bg-white dark:bg-stone-800 border border-stone-200 dark:border-stone-700 rounded-xl shadow-2xl overflow-hidden animate-in fade-in slide-in-from-top-1 duration-200">
+                  <div className="max-h-48 overflow-y-auto no-scrollbar">
+                    {filteredTags.map((tag, idx) => (
+                      <button 
+                        key={idx} 
+                        type="button" 
+                        onClick={() => handleSelectTag(tag)}
+                        className={`w-full text-left px-4 py-3 hover:bg-[var(--theme-bg-soft)] dark:hover:bg-rose-900/20 transition-colors flex items-center justify-between ${fs.base} text-stone-700 dark:text-stone-300 border-b border-stone-50 dark:border-stone-700 last:border-0`}
+                      >
+                        {tag}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
+
             <div>
               <label className={labelClass}>{t('note')}</label>
               <textarea name="note" value={formData.note} onChange={handleChange} rows={3} className={textareaClass} placeholder={t('placeholder_note')} />
@@ -465,10 +542,50 @@ export const WineForm: React.FC<WineFormProps> = ({
             <label className={labelClass}>{t('personal_note')}</label>
             <textarea name="note" value={formData.note} onChange={handleChange} rows={6} className={textareaClass} placeholder={t('placeholder_note')}/>
           </div>
-          <div>
-            <label className={labelClass}>{t('tag')}</label>
-            <textarea name="tag" value={formData.tag} onChange={handleChange} rows={2} className={textareaClass} placeholder={t('placeholder_tag')} />
-          </div>
+          
+          {/* Tag en mode historique */}
+          <div className="relative" ref={tagContainerRef}>
+              <label className={labelClass}>{t('tag')}</label>
+              <div className="relative group">
+                <input 
+                  type="text" 
+                  name="tag" 
+                  value={formData.tag} 
+                  onChange={handleTagInputChange}
+                  onFocus={() => setIsTagDropdownOpen(true)}
+                  className={`${inputClass} pr-20`} 
+                  placeholder={t('placeholder_tag')} 
+                />
+                <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1.5">
+                  <button type="button" onClick={onOpenTagManager} className="p-1.5 text-stone-400 hover:text-[var(--theme-primary)] dark:hover:text-rose-400 transition-colors bg-stone-50 dark:bg-stone-900 rounded-md border border-stone-200 dark:border-stone-700">
+                    <Pencil size={14} />
+                  </button>
+                  <button 
+                    type="button" 
+                    onClick={() => setIsTagDropdownOpen(!isTagDropdownOpen)}
+                    className="text-stone-400 hover:text-stone-600 dark:hover:text-stone-200 transition-colors"
+                  >
+                    <ChevronDown size={18} />
+                  </button>
+                </div>
+              </div>
+              {isTagDropdownOpen && filteredTags.length > 0 && (
+                <div className="absolute z-[120] mt-1 w-full bg-white dark:bg-stone-800 border border-stone-200 dark:border-stone-700 rounded-xl shadow-2xl overflow-hidden animate-in fade-in slide-in-from-top-1 duration-200">
+                  <div className="max-h-48 overflow-y-auto no-scrollbar">
+                    {filteredTags.map((tag, idx) => (
+                      <button 
+                        key={idx} 
+                        type="button" 
+                        onClick={() => handleSelectTag(tag)}
+                        className={`w-full text-left px-4 py-3 hover:bg-[var(--theme-bg-soft)] dark:hover:bg-rose-900/20 transition-colors flex items-center justify-between ${fs.base} text-stone-700 dark:text-stone-300 border-b border-stone-50 dark:border-stone-700 last:border-0`}
+                      >
+                        {tag}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
         </div>
       )}
 

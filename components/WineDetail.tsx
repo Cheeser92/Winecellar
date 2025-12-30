@@ -395,7 +395,7 @@ export const WineDetail: React.FC<WineDetailProps> = ({ wine, cellars, currentCe
                 <button 
                   type="button" 
                   onClick={() => setShowConsumeModal(true)} 
-                  className="w-full flex items-center justify-center h-[56px] gap-2 bg-gradient-to-r from-[var(--theme-primary)] to-[var(--theme-primary-dark)] text-white font-bold px-6 rounded-xl shadow-lg shadow-[var(--theme-primary)]/20 hover:shadow-xl transition transform active:scale-95 cursor-pointer"
+                  className="w-full flex items-center justify-center h-[56px] gap-2 bg-[var(--theme-primary)] text-white font-bold px-6 rounded-xl shadow-lg shadow-[var(--theme-primary)]/20 hover:bg-[var(--theme-primary-dark)] transition transform active:scale-95 cursor-pointer"
                 >
                   <Check size={20} />
                   <span>{t('consume_bottle')}</span>

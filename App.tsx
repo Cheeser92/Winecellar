@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect, useRef, useMemo } from 'react';
-import { Plus, LayoutGrid, History, Wine as WineIcon, Search, ChevronDown, ChevronRight, Calculator, Coins, Hash, PieChart, Settings as SettingsIcon, Info, Clock, Calendar, ArrowRight, X, Trash2, ChevronsRight, Warehouse, Pencil, Camera, RefreshCw, Star, AlertTriangle, Eye, ArrowUpDown, MapPin, Globe, Loader2, Maximize2 } from 'lucide-react';
+import { Plus, LayoutGrid, History, Wine as WineIcon, Search, ChevronDown, ChevronRight, Calculator, Coins, Hash, PieChart, Settings as SettingsIcon, Info, Clock, Calendar, ArrowRight, X, Trash2, ChevronsRight, Warehouse, Pencil, Camera, RefreshCw, Star, AlertTriangle, Eye, ArrowUpDown, MapPin, Globe, Loader2, Maximize2, Tag as TagIcon } from 'lucide-react';
 import { Wine, HistoryEntry, WineColor, SearchFilters, AppSettings, BackupData, AppFontSize, LocationData, Cellar, ColorTheme, ImageCompression } from './types';
 import { WineForm } from './components/WineForm';
 import { WineDetail } from './components/WineDetail';
@@ -9,6 +9,7 @@ import { StatsView } from './components/StatsView';
 import { SettingsModal } from './components/SettingsModal';
 import { InfoModal } from './components/InfoModal';
 import { LocationManagerModal } from './components/LocationManagerModal';
+import { TagManagerModal } from './components/TagManagerModal';
 import { getTranslation, translations } from './translations';
 import { COUNTRIES_FR, COUNTRIES_EN, REGIONS_BY_COUNTRY_FR, REGIONS_BY_COUNTRY_EN } from './constants';
 
@@ -126,6 +127,7 @@ function App() {
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isInfoOpen, setIsInfoOpen] = useState(false);
   const [isLocationManagerOpen, setIsLocationManagerOpen] = useState(false);
+  const [isTagManagerOpen, setIsTagManagerOpen] = useState(false);
   const [isCellarManagerOpen, setIsCellarManagerOpen] = useState(false);
   const [isCellarSelectorOpen, setIsCellarSelectorOpen] = useState(false);
   const [isQuantityModalOpen, setIsQuantityModalOpen] = useState(false);
@@ -193,6 +195,14 @@ function App() {
     };
   });
 
+  const [globalTags, setGlobalTags] = useState<string[]>(() => {
+    try {
+      const saved = localStorage.getItem('my-wine-cellar-tags');
+      if (saved) return JSON.parse(saved);
+    } catch {}
+    return ['Cadeau', 'Garde', 'Soirée', 'Excellent', 'À boire'].sort();
+  });
+
   // Suggestions calculées sur TOUS les vins (toutes les caves + historique)
   const suggestions = useMemo(() => {
     const allWines = [...cellars.flatMap(c => c.wines || []), ...globalHistory];
@@ -238,8 +248,9 @@ function App() {
       localStorage.setItem('active-cellar-id', activeCellarId);
       localStorage.setItem('global-wine-history-v3', JSON.stringify(globalHistory));
       localStorage.setItem('my-wine-cellar-locations', JSON.stringify(locationData));
+      localStorage.setItem('my-wine-cellar-tags', JSON.stringify(globalTags));
     } catch (e) { console.error("Storage error", e); }
-  }, [cellars, activeCellarId, globalHistory, locationData]);
+  }, [cellars, activeCellarId, globalHistory, locationData, globalTags]);
 
   const updateActiveCellar = (updates: Partial<Cellar>) => {
     setCellars(prev => prev.map(c => {
@@ -408,7 +419,14 @@ function App() {
       if (filters.origin && !item.origin?.toLowerCase().includes(filters.origin.toLowerCase())) return false;
       if (filters.purchasePlace && !item.purchasePlace?.toLowerCase().includes(filters.purchasePlace.toLowerCase())) return false;
       if (filters.strength !== undefined && item.strength !== filters.strength) return false;
-      if (filters.tag && !item.tag?.toLowerCase().includes(filters.tag.toLowerCase())) return false;
+      
+      // Nouvelle logique multi-tags (ET : doit contenir tous les tags sélectionnés)
+      if (filters.tag) {
+        const filterTags = filters.tag.split(',').map(t => t.trim().toLowerCase()).filter(t => t !== '');
+        const itemTags = item.tag ? item.tag.toLowerCase() : '';
+        // Le vin doit contenir TOUS les tags du filtre
+        if (!filterTags.every(ft => itemTags.includes(ft))) return false;
+      }
       
       if (!isHistoryList) {
         if (filters.recommendedYear !== undefined && item.recommendedYear !== filters.recommendedYear) return false;
@@ -545,6 +563,13 @@ function App() {
     const offsiteLabel = t('off_site');
     updateActiveCellar({ wines: wines.map(w => w.location === shelfName ? { ...w, location: offsiteLabel } : w) });
     setShelfToDelete(null);
+  };
+
+  const handleAddCellar = async (name: string, image: string | null) => {
+    const compressedImage = image ? await compressImage(image, 'strong') : null;
+    const newCellar: Cellar = { id: Date.now().toString(), name, image: compressedImage, wines: [], settings: { ...DEFAULT_SETTINGS, language: settings.language, theme: settings.theme, fontSize: settings.fontSize, colorTheme: settings.colorTheme, imageCompression: 'strong' } };
+    setCellars(prev => [...prev, newCellar]);
+    setActiveCellarId(newCellar.id);
   };
 
   const getColorTheme = (color: WineColor) => {
@@ -741,16 +766,9 @@ function App() {
     );
   };
 
-  const handleAddCellar = async (name: string, image: string | null) => {
-    const compressedImage = image ? await compressImage(image, 'strong') : null;
-    const newCellar: Cellar = { id: Date.now().toString(), name, image: compressedImage, wines: [], settings: { ...DEFAULT_SETTINGS, language: settings.language, theme: settings.theme, fontSize: settings.fontSize, colorTheme: settings.colorTheme, imageCompression: 'strong' } };
-    setCellars(prev => [...prev, newCellar]);
-    setActiveCellarId(newCellar.id);
-  };
-
   const renderContent = () => {
-    if (view === 'add') return <WineForm onSave={handleAddWine} onCancel={() => setView('list')} availableLocations={availableLocations} locationData={locationData} onOpenLocationManager={() => setIsLocationManagerOpen(true)} language={settings.language} fontSize={settings.fontSize} suggestions={suggestions} />;
-    if (view === 'edit' && selectedWine) return <WineForm initialData={selectedWine} onSave={handleEditWine} onCancel={() => setView('detail')} availableLocations={availableLocations} locationData={locationData} onOpenLocationManager={() => setIsLocationManagerOpen(true)} language={settings.language} isHistoryMode={activeTab === 'history'} fontSize={settings.fontSize} suggestions={suggestions} />;
+    if (view === 'add') return <WineForm onSave={handleAddWine} onCancel={() => setView('list')} availableLocations={availableLocations} locationData={locationData} globalTags={globalTags} onOpenLocationManager={() => setIsLocationManagerOpen(true)} onOpenTagManager={() => setIsTagManagerOpen(true)} language={settings.language} fontSize={settings.fontSize} suggestions={suggestions} />;
+    if (view === 'edit' && selectedWine) return <WineForm initialData={selectedWine} onSave={handleEditWine} onCancel={() => setView('detail')} availableLocations={availableLocations} locationData={locationData} globalTags={globalTags} onOpenLocationManager={() => setIsLocationManagerOpen(true)} onOpenTagManager={() => setIsTagManagerOpen(true)} language={settings.language} isHistoryMode={activeTab === 'history'} fontSize={settings.fontSize} suggestions={suggestions} />;
     if (view === 'detail' && selectedWine) return <WineDetail wine={selectedWine} cellars={cellars} currentCellarId={activeCellarId} onBack={() => setView('list')} onConsume={activeTab === 'history' ? undefined : handleConsumeWine} onDelete={activeTab === 'history' ? handleDeleteHistory : handleDeleteWine} onEdit={() => setView('edit')} onTransfer={handleTransferWine} onUpdateImage={activeTab === 'history' ? undefined : async (img) => { const compressed = await compressImage(img, 'strong'); updateActiveCellar({ wines: wines.map(x => x.id === selectedWine.id ? { ...x, image: compressed } : x) }); }} onEnlargeImage={setLargeImage} availableLocations={availableLocations} isHistory={activeTab === 'history'} language={settings.language} fontSize={settings.fontSize} />;
     
     if (activeTab === 'stats') return (
@@ -935,13 +953,14 @@ function App() {
           currentFilters={activeTab === 'history' ? historySearchFilters : cellarSearchFilters} 
           onReset={() => activeTab === 'history' ? setHistorySearchFilters({}) : setCellarSearchFilters({})} 
           locationData={locationData} 
+          globalTags={globalTags}
           language={settings.language} 
           isHistoryMode={activeTab === 'history'} 
           fontSize={settings.fontSize}
           suggestions={suggestions}
         />
 
-        <SettingsModal isOpen={isSettingsOpen} onClose={() => setIsSettingsOpen(false)} settings={settings} onUpdateSettings={handleUpdateSettings} onExport={() => { const backup: BackupData = { cellars, activeCellarId, locations: locationData, globalHistory: globalHistory, timestamp: new Date().toISOString() }; const blob = new Blob([JSON.stringify(backup, null, 2)], { type: 'application/json' }); const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = `wine_cellar_backup_${new Date().toISOString().split('T')[0]}.json`; a.click(); URL.revokeObjectURL(url); }} onImport={async (data: BackupData) => { 
+        <SettingsModal isOpen={isSettingsOpen} onClose={() => setIsSettingsOpen(false)} settings={settings} onUpdateSettings={handleUpdateSettings} onExport={() => { const backup: BackupData = { cellars, activeCellarId, locations: locationData, globalHistory: globalHistory, globalTags: globalTags, timestamp: new Date().toISOString() }; const blob = new Blob([JSON.stringify(backup, null, 2)], { type: 'application/json' }); const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = `wine_cellar_backup_${new Date().toISOString().split('T')[0]}.json`; a.click(); URL.revokeObjectURL(url); }} onImport={async (data: BackupData) => { 
           if (!data.cellars || !Array.isArray(data.cellars)) {
             alert(t('import_error'));
             return;
@@ -969,6 +988,7 @@ function App() {
           const newActiveId = (data.activeCellarId && data.cellars.some(c => c.id === data.activeCellarId)) ? data.activeCellarId : data.cellars[0].id;
           const newLocations = data.locations || locationData;
           const newHistory = data.globalHistory || [];
+          const newTags = data.globalTags || globalTags;
 
           try {
             // LIBÉRATION DE L'ESPACE : Suppression explicite des anciennes clés
@@ -976,12 +996,14 @@ function App() {
             localStorage.removeItem('active-cellar-id');
             localStorage.removeItem('my-wine-cellar-locations');
             localStorage.removeItem('global-wine-history-v3');
+            localStorage.removeItem('my-wine-cellar-tags');
 
             // SAUVEGARDE SYNCHRONE FORCÉE DES NOUVELLES DONNÉES
             localStorage.setItem('my-wine-cellars-v3', JSON.stringify(newCellars));
             localStorage.setItem('active-cellar-id', newActiveId);
             localStorage.setItem('my-wine-cellar-locations', JSON.stringify(newLocations));
             localStorage.setItem('global-wine-history-v3', JSON.stringify(newHistory));
+            localStorage.setItem('my-wine-cellar-tags', JSON.stringify(newTags));
 
             setBatchProgress(null);
             alert(t('import_success'));
@@ -998,6 +1020,7 @@ function App() {
                   localStorage.setItem('active-cellar-id', newActiveId);
                   localStorage.setItem('my-wine-cellar-locations', JSON.stringify(newLocations));
                   localStorage.setItem('global-wine-history-v3', JSON.stringify(newHistory));
+                  localStorage.setItem('my-wine-cellar-tags', JSON.stringify(newTags));
                   alert(t('import_success'));
                   window.location.reload();
                 } catch (retryErr) {
@@ -1011,6 +1034,7 @@ function App() {
         }} fontSize={settings.fontSize} />
         <InfoModal isOpen={isInfoOpen} onClose={() => setIsInfoOpen(false)} language={settings.language} fontSize={settings.fontSize} />
         <LocationManagerModal isOpen={isLocationManagerOpen} onClose={() => setIsLocationManagerOpen(false)} language={settings.language} locationData={locationData} onUpdateLocationData={setLocationData} fontSize={settings.fontSize} />
+        <TagManagerModal isOpen={isTagManagerOpen} onClose={() => setIsTagManagerOpen(false)} language={settings.language} tags={globalTags} onUpdateTags={setGlobalTags} fontSize={settings.fontSize} />
         {renderFloatingList(isQuantityModalOpen, () => setIsQuantityModalOpen(false), t('priority_consumption'), wines, 'consumption')}
         {renderFloatingList(isCostModalOpen, () => setIsCostModalOpen(false), activeTab === 'history' ? t('history_value') : t('top_value_wines'), activeTab === 'history' ? history : wines, 'cost')}
         {renderFloatingList(isHistoryQuantityModalOpen, () => setIsHistoryQuantityModalOpen(false), t('most_consumed_wines'), history, 'most_consumed')}
@@ -1030,189 +1054,121 @@ function App() {
   );
 }
 
-const GlobalStatsBar = ({ cellars, t, fs }: { cellars: Cellar[], t: any, fs: any }) => {
-  const allWines = useMemo(() => cellars.flatMap(c => c.wines || []), [cellars]);
-  const totalBottles = useMemo(() => allWines.reduce((acc, w) => acc + (w.quantity || 0), 0), [allWines]);
-  const totalCost = useMemo(() => allWines.reduce((acc, w) => acc + ((w.price || 0) * (w.quantity || 0)), 0), [allWines]);
-  const avgPrice = totalBottles > 0 ? totalCost / totalBottles : 0;
+// Added missing CellarManager and CellarSelector components to fix the find name errors.
 
-  return (
-    <div className="grid grid-cols-3 gap-1.5 px-4 pt-4 pb-2">
-      <div className="bg-white dark:bg-stone-800 p-2 rounded-xl shadow-sm border border-stone-100 dark:border-stone-700 flex flex-col items-center justify-center">
-        <div className="flex items-center gap-1 text-stone-400 dark:text-stone-500 mb-0.5">
-          <Hash size={10}/>
-          <span className="text-[9px] uppercase font-bold tracking-wide">{t('bottles')}</span>
-        </div>
-        <p className={`font-bold text-stone-800 dark:text-stone-100 leading-tight ${fs.statsValue}`}>{totalBottles}</p>
-      </div>
-      <div className="bg-white dark:bg-stone-800 p-2 rounded-xl shadow-sm border border-stone-100 dark:border-stone-700 flex flex-col items-center justify-center">
-        <div className="flex items-center gap-1 text-stone-400 dark:text-stone-500 mb-0.5">
-          <Coins size={10}/>
-          <span className="text-[9px] uppercase font-bold tracking-wide">{t('total_cost')}</span>
-        </div>
-        <p className={`font-bold text-stone-800 dark:text-stone-100 leading-tight ${fs.statsValue}`}>
-          {totalCost.toLocaleString(undefined, { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 })}
-        </p>
-      </div>
-      <div className="bg-white dark:bg-stone-800 p-2 rounded-xl shadow-sm border border-stone-100 dark:border-stone-700 flex flex-col items-center justify-center">
-        <div className="flex items-center gap-1 text-stone-400 dark:text-stone-500 mb-0.5">
-          <Calculator size={10}/>
-          <span className="text-[9px] uppercase font-bold tracking-wide">{t('avg_price')}</span>
-        </div>
-        <p className={`font-bold text-stone-800 dark:text-stone-100 leading-tight ${fs.statsValue}`}>
-          {avgPrice.toLocaleString(undefined, { style: 'currency', currency: 'EUR', maximumFractionDigits: 1 })}
-        </p>
-      </div>
-    </div>
-  );
-};
+interface CellarManagerProps {
+  cellars: Cellar[];
+  activeCellarId: string;
+  onSelect: (id: string) => void;
+  isOpen: boolean;
+  onClose: () => void;
+  onAdd: (name: string, image: string | null) => void;
+  onDelete: (id: string) => void;
+  onUpdate: (id: string, name: string, image: string | null) => void;
+  t: (key: string) => string;
+  fs: any;
+}
 
-const CellarManager = ({ cellars, activeCellarId, onSelect, isOpen, onClose, onAdd, onDelete, onUpdate, t, fs }: any) => {
+const CellarManager: React.FC<CellarManagerProps> = ({ cellars, activeCellarId, onSelect, isOpen, onClose, onAdd, onDelete, onUpdate, t, fs }) => {
   const [isAdding, setIsAdding] = useState(false);
-  const [editingId, setEditingId] = useState<string | null>(null);
-  const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [editingCellarId, setEditingCellarId] = useState<string | null>(null);
   const [name, setName] = useState('');
   const [image, setImage] = useState<string | null>(null);
-  const [destroyBottles, setDestroyBottles] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
-
-  const reset = () => { setIsAdding(false); setEditingId(null); setDeletingId(null); setName(''); setImage(null); setDestroyBottles(false); };
-
-  useEffect(() => { if (isOpen) reset(); }, [isOpen]);
 
   if (!isOpen) return null;
 
-  const handleSave = () => { if (editingId) onUpdate(editingId, name, image); else onAdd(name, image); reset(); };
-  const handleImage = (e: any) => { const file = e.target.files?.[0]; if (file) { const reader = new FileReader(); reader.onload = (ev) => setImage(ev.target?.result as string); reader.readAsDataURL(file); } };
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => setImage(reader.result as string);
+      reader.readAsDataURL(file);
+    }
+  };
 
-  const cellarToProcess = deletingId ? cellars.find((c: any) => c.id === deletingId) : null;
-  const wineStock = cellarToProcess?.wines?.reduce((acc: number, w: Wine) => acc + (w.quantity || 0), 0) || 0;
-  const hasItems = wineStock > 0;
+  const handleAdd = () => {
+    onAdd(name, image);
+    setIsAdding(false);
+    setName('');
+    setImage(null);
+  };
+
+  const handleUpdate = () => {
+    if (editingCellarId) {
+      onUpdate(editingCellarId, name, image);
+      setEditingCellarId(null);
+      setName('');
+      setImage(null);
+    }
+  };
 
   return (
-    <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-      <div className="relative bg-white dark:bg-stone-900 rounded-3xl w-full max-w-sm flex flex-col shadow-2xl max-h-[85vh] overflow-hidden">
-        <div className="p-4 border-b border-stone-100 dark:border-stone-800 flex justify-between items-center bg-stone-50 dark:bg-stone-800/50">
-          <h2 className={`font-serif font-bold text-[var(--theme-primary)] dark:text-stone-100 ${fs.lg}`}>
-            {deletingId ? t('delete_cellar_title') : (isAdding ? t('new_cellar') : (editingId ? t('edit_cellar') : t('manage_cellars')))}
-          </h2>
-          <button onClick={onClose} className="p-2 text-stone-400 hover:text-stone-600 dark:hover:text-stone-200 rounded-full bg-white dark:bg-stone-800 shadow-sm"><X size={20}/></button>
+    <div className="fixed inset-0 z-[200] flex items-center justify-center p-4">
+      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
+      <div className="relative bg-white dark:bg-stone-900 rounded-2xl w-full max-w-sm shadow-2xl overflow-hidden flex flex-col max-h-[85vh] animate-in zoom-in-95 duration-200">
+        <div className="p-4 border-b border-stone-100 dark:border-stone-800 flex justify-between items-center bg-white dark:bg-stone-800/50">
+          <h2 className={`font-serif font-bold text-stone-900 dark:text-stone-100 ${fs.header}`}>{t('manage_cellars')}</h2>
+          <button onClick={onClose} className="text-stone-400 hover:text-stone-600 dark:hover:text-stone-200 bg-stone-100 dark:bg-stone-800 p-2 rounded-full transition-colors"><X size={20}/></button>
         </div>
-        
-        {/* Global KPIs for All Cellars */}
-        {!isAdding && !editingId && !deletingId && <GlobalStatsBar cellars={cellars} t={t} fs={fs} />}
-
-        <div className="flex-1 overflow-y-auto p-4 space-y-4 no-scrollbar">
-          {!isAdding && !editingId && !deletingId ? (
+        <div className="p-6 overflow-y-auto space-y-4 no-scrollbar pb-10">
+          {isAdding || editingCellarId ? (
+            <div className="space-y-4 animate-in slide-in-from-top-2 duration-200">
+              <div 
+                onClick={() => fileInputRef.current?.click()}
+                className="w-full h-40 border-2 border-dashed border-stone-200 dark:border-stone-700 rounded-xl flex items-center justify-center overflow-hidden bg-stone-50 dark:bg-stone-800/50 cursor-pointer relative group"
+              >
+                {image ? (
+                  <>
+                    <img src={image} className="w-full h-full object-cover" alt="" />
+                    <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity"><Pencil className="text-white" size={24}/></div>
+                  </>
+                ) : (
+                  <div className="text-center">
+                    <Camera className="mx-auto text-stone-300 mb-2" size={32}/>
+                    <span className={`text-stone-400 font-medium ${fs.base}`}>{t('cellar_photo')}</span>
+                  </div>
+                )}
+                <input type="file" ref={fileInputRef} className="hidden" accept="image/*" onChange={handleImageChange} />
+              </div>
+              <input 
+                type="text" 
+                value={name} 
+                onChange={(e) => setName(e.target.value)} 
+                placeholder={t('cellar_name')} 
+                className={`w-full bg-white dark:bg-stone-800 border-2 border-stone-200 dark:border-stone-700 rounded-xl px-4 py-3 shadow-sm focus:border-[var(--theme-primary)] outline-none transition-all ${fs.base}`} 
+              />
+              <div className="flex gap-2">
+                <button onClick={() => { setIsAdding(false); setEditingCellarId(null); setName(''); setImage(null); }} className={`flex-1 py-3 rounded-xl border border-stone-200 text-stone-600 font-bold ${fs.base}`}>{t('cancel')}</button>
+                <button onClick={isAdding ? handleAdd : handleUpdate} disabled={!name.trim()} className={`flex-1 py-3 rounded-xl bg-[var(--theme-primary)] text-white font-bold shadow-lg disabled:opacity-50 ${fs.base}`}>{t('confirm')}</button>
+              </div>
+            </div>
+          ) : (
             <>
-              <button onClick={() => setIsAdding(true)} className="w-full py-4 px-6 rounded-2xl bg-[var(--theme-primary)] text-white font-bold flex items-center justify-center gap-2 shadow-lg active:scale-95 transition-all"><Plus size={20}/> {t('new_cellar')}</button>
+              <button onClick={() => { setIsAdding(true); setName(''); setImage(null); }} className={`w-full flex items-center justify-center gap-2 p-4 border-2 border-dashed border-stone-200 dark:border-stone-700 text-[var(--theme-primary)] font-bold rounded-2xl hover:bg-[var(--theme-bg-soft)] transition-colors mb-4 ${fs.base}`}>
+                <Plus size={20}/>
+                {t('new_cellar')}
+              </button>
               <div className="space-y-3">
-                {(cellars || []).map((c: Cellar) => (
-                  <div key={c.id} className={`p-3 rounded-2xl border transition-all flex items-center gap-3 ${c.id === activeCellarId ? 'bg-[var(--theme-bg-soft)] border-[var(--theme-border)] shadow-md ring-1 ring-[var(--theme-border)]' : 'bg-white dark:bg-stone-800 border-stone-100 dark:border-stone-700 shadow-sm'}`}>
-                    <div onClick={() => onSelect(c.id)} className="w-12 h-12 rounded-full overflow-hidden flex-shrink-0 border-2 border-white dark:border-stone-600 shadow-sm bg-stone-100 dark:bg-stone-700 cursor-pointer">
-                      {c.image ? <img src={c.image} className="w-full h-full object-cover" alt="" /> : <Warehouse size={20} className="m-auto mt-3 text-stone-400" />}
+                {cellars.map(c => (
+                  <div key={c.id} className={`flex items-center gap-3 p-3 rounded-2xl border ${c.id === activeCellarId ? 'border-[var(--theme-primary)] bg-[var(--theme-bg-soft)]' : 'border-stone-100 dark:border-stone-800 bg-white dark:bg-stone-800/50'}`}>
+                    <div className="w-12 h-12 rounded-xl bg-stone-100 dark:bg-stone-700 flex-shrink-0 overflow-hidden border border-stone-200" onClick={() => onSelect(c.id)}>
+                      {c.image ? <img src={c.image} className="w-full h-full object-cover" /> : <Warehouse className="m-auto mt-3 text-stone-300" size={20}/>}
                     </div>
-                    <div onClick={() => onSelect(c.id)} className="flex-1 min-w-0 cursor-pointer">
+                    <div className="flex-1 min-w-0" onClick={() => onSelect(c.id)}>
                       <p className={`font-bold text-stone-800 dark:text-stone-100 truncate ${fs.base}`}>{c.name}</p>
-                      <p className="text-[10px] font-bold text-stone-400 uppercase tracking-widest">
-                        {(c.wines || []).reduce((acc, w) => acc + (w.quantity || 0), 0)} {t('bottles')}
-                      </p>
+                      <p className={`text-stone-400 text-[10px] uppercase font-bold tracking-widest`}>{c.wines.length} {t('bottles')}</p>
                     </div>
-                    <div className="flex items-center gap-0.5">
-                      <button onClick={() => onSelect(c.id)} className={`p-2 rounded-full transition-colors ${c.id === activeCellarId ? 'text-[var(--theme-primary)] bg-[var(--theme-bg-soft)]' : 'text-stone-400 hover:bg-stone-100'}`}><Eye size={18}/></button>
-                      <button onClick={() => { setEditingId(c.id); setName(c.name); setImage(c.image); }} className={`p-2 text-stone-400 hover:text-[var(--theme-primary)] dark:hover:text-rose-400 transition-colors`}><Pencil size={18}/></button>
+                    <div className="flex gap-1">
+                      <button onClick={() => { setEditingCellarId(c.id); setName(c.name); setImage(c.image); }} className="p-2 text-stone-400 hover:text-[var(--theme-primary)] transition-colors"><Pencil size={18}/></button>
                       {cellars.length > 1 && (
-                        <button onClick={() => { setDeletingId(c.id); setDestroyBottles(false); }} className="p-2 text-stone-400 hover:text-red-600 transition-colors"><Trash2 size={18}/></button>
+                        <button onClick={() => onDelete(c.id)} className="p-2 text-stone-400 hover:text-red-500 transition-colors"><Trash2 size={18}/></button>
                       )}
                     </div>
                   </div>
                 ))}
               </div>
             </>
-          ) : deletingId ? (
-            <div className="space-y-6 py-2 animate-in slide-in-from-right-2 duration-300">
-              <div className="bg-red-50 dark:bg-red-900/10 p-5 rounded-2xl border border-red-100 dark:border-red-900/30 flex flex-col items-center text-center">
-                <div className="w-16 h-16 bg-red-100 dark:bg-red-900/30 rounded-full flex items-center justify-center mb-4 text-red-600 dark:text-red-400">
-                  <AlertTriangle size={32} />
-                </div>
-                <h3 className={`font-bold text-red-900 dark:text-red-300 mb-1 ${fs.lg}`}>{t('delete_cellar_title')}</h3>
-                <p className={`text-red-700 dark:text-red-400 font-bold ${fs.base}`}>{t('delete_cellar_warning')}</p>
-                
-                {hasItems && (
-                  <div className="mt-4 w-full">
-                    <div className="bg-white/50 dark:bg-black/20 p-3 rounded-xl border border-red-100 dark:border-red-900/20">
-                      <p className="text-[10px] uppercase font-bold text-stone-400 tracking-wider">{t('remaining_bottles')}</p>
-                      <p className={`font-bold text-red-700 dark:text-red-300 ${fs.lg}`}>{wineStock} {t('bottles').toLowerCase()}</p>
-                    </div>
-                  </div>
-                )}
-              </div>
-
-              {hasItems ? (
-                <div className="space-y-4">
-                  <div className="flex items-center gap-3 bg-stone-50 dark:bg-stone-800 p-3 rounded-xl border border-stone-100 dark:border-stone-700">
-                    <input type="checkbox" id="destroy-confirm" checked={destroyBottles} onChange={(e) => setDestroyBottles(e.target.checked)} className="w-5 h-5 rounded border-stone-300 text-red-600 focus:ring-red-500" />
-                    <label htmlFor="destroy-confirm" className={`text-stone-700 dark:text-stone-300 font-bold leading-tight ${fs.base}`}>
-                      {t('destroy_bottles_confirm')}
-                    </label>
-                  </div>
-                  <SwipeSlider disabled={!destroyBottles} label={t('swipe_to_confirm')} onConfirm={() => { onDelete(deletingId); reset(); }} fontSizeClass={fs.sm} />
-                </div>
-              ) : (
-                <div className="space-y-4">
-                  <SwipeSlider label={t('swipe_to_confirm')} onConfirm={() => { onDelete(deletingId); reset(); }} fontSizeClass={fs.sm} />
-                </div>
-              )}
-
-              <button onClick={reset} className={`w-full py-4 font-bold text-stone-400 hover:text-stone-600 transition-colors ${fs.base}`}>
-                {t('cancel')}
-              </button>
-            </div>
-          ) : (
-            <div className="space-y-5 py-2 animate-in slide-in-from-right-2 duration-300">
-              <div className="flex flex-col items-center gap-4">
-                <div 
-                  onClick={() => fileInputRef.current?.click()} 
-                  className="w-32 h-32 rounded-3xl bg-stone-100 dark:bg-stone-800 flex items-center justify-center border-2 border-dashed border-stone-300 dark:border-stone-600 overflow-hidden cursor-pointer relative group"
-                >
-                  {image ? (
-                    <div className="relative w-full h-full">
-                      <img src={image} className="w-full h-full object-cover" alt="" />
-                      <div className="absolute inset-0 bg-black/20 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                        <Pencil size={24} className="text-white" />
-                      </div>
-                      <button 
-                        type="button" 
-                        onClick={(e) => { e.stopPropagation(); setImage(null); }} 
-                        className="absolute top-1 right-1 bg-red-600 text-white p-1.5 rounded-full shadow-lg hover:bg-red-700 transition z-10"
-                      >
-                        <X size={14} />
-                      </button>
-                    </div>
-                  ) : (
-                    <div className="text-center p-4">
-                      <Camera size={32} className="text-stone-300 mx-auto mb-1" />
-                      <p className="text-[10px] font-bold text-stone-400 uppercase tracking-widest leading-tight">{t('cellar_photo')}</p>
-                    </div>
-                  )}
-                  <input type="file" ref={fileInputRef} onChange={handleImage} className="hidden" accept="image/*" />
-                </div>
-              </div>
-              <div className="space-y-2">
-                <label className="text-xs font-bold text-stone-400 uppercase tracking-widest pl-1">{t('cellar_name')}</label>
-                <input 
-                  autoFocus 
-                  value={name} 
-                  onChange={(e) => setName(e.target.value)} 
-                  placeholder={t('default_cellar_name')} 
-                  className={`w-full p-4 rounded-2xl bg-[var(--theme-bg-soft)] dark:bg-stone-800 border-2 border-[var(--theme-border)] focus:border-[var(--theme-primary)] outline-none focus:ring-2 focus:ring-[var(--theme-primary)]/20 text-stone-800 dark:text-stone-100 transition-all ${fs.base}`} 
-                />
-              </div>
-              <div className="flex gap-3 pt-4 border-t border-stone-100 dark:border-stone-800">
-                <button onClick={reset} className="flex-1 py-4 font-bold text-stone-400 hover:text-stone-600 transition-colors">{t('cancel')}</button>
-                <button onClick={handleSave} disabled={!name.trim()} className={`flex-1 py-4 rounded-2xl bg-[var(--theme-primary)] text-white font-bold shadow-lg active:scale-95 transition-all disabled:opacity-50`}>{t('save')}</button>
-              </div>
-            </div>
           )}
         </div>
       </div>
@@ -1220,33 +1176,40 @@ const CellarManager = ({ cellars, activeCellarId, onSelect, isOpen, onClose, onA
   );
 };
 
-const CellarSelector = ({ cellars, isOpen, onClose, onSelect, t, fs }: any) => {
+interface CellarSelectorProps {
+  cellars: Cellar[];
+  isOpen: boolean;
+  onClose: () => void;
+  onSelect: (id: string) => void;
+  t: (key: string) => string;
+  fs: any;
+}
+
+const CellarSelector: React.FC<CellarSelectorProps> = ({ cellars, isOpen, onClose, onSelect, t, fs }) => {
   if (!isOpen) return null;
   return (
-    <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-      <div className="relative bg-white dark:bg-stone-900 rounded-3xl w-full max-sm flex flex-col shadow-2xl animate-in zoom-in-95 duration-200 overflow-hidden">
+    <div className="fixed inset-0 z-[200] flex items-center justify-center p-4">
+      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
+      <div className="relative bg-white dark:bg-stone-900 rounded-3xl w-full max-w-sm shadow-2xl overflow-hidden flex flex-col max-h-[85vh] animate-in zoom-in-95 duration-200">
         <div className="p-4 border-b border-stone-100 dark:border-stone-800 flex justify-between items-center bg-white dark:bg-stone-800/50">
-          <h2 className={`font-serif font-bold text-[var(--theme-primary)] dark:text-stone-100 ${fs.lg}`}>{t('switch_cellar')}</h2>
-          <button onClick={onClose} className="p-2 text-stone-400 rounded-full bg-white dark:bg-stone-800 shadow-sm"><X size={20}/></button>
+          <h2 className={`font-serif font-bold text-stone-900 dark:text-stone-100 ${fs.header}`}>{t('switch_cellar')}</h2>
+          <button onClick={onClose} className="text-stone-400 hover:text-stone-600 dark:hover:text-stone-200 rounded-full bg-white dark:bg-stone-800 shadow-sm transition-colors"><X size={20}/></button>
         </div>
-        
-        {/* Global KPIs for All Cellars */}
-        <GlobalStatsBar cellars={cellars} t={t} fs={fs} />
-
-        <div className="p-4 space-y-3 max-h-[60vh] overflow-y-auto no-scrollbar">{(cellars || []).map((c: Cellar) => (
-          <div key={c.id} onClick={() => onSelect(c.id)} className="p-3 rounded-2xl border border-stone-100 dark:border-stone-700 bg-white dark:bg-stone-800 flex items-center gap-3 cursor-pointer hover:bg-[var(--theme-bg-soft)] dark:hover:bg-rose-900/10 transition-colors shadow-sm">
-            <div className="w-12 h-12 rounded-full overflow-hidden flex-shrink-0 border-2 border-white dark:border-stone-600 shadow-sm bg-stone-100 dark:bg-stone-700">
-              {c.image ? <img src={c.image} className="w-full h-full object-cover" alt="" /> : <Warehouse size={20} className="m-auto mt-3 text-stone-400" />}
-            </div>
-            <div className="flex-1 min-w-0">
-              <p className={`font-bold text-stone-800 dark:text-stone-100 truncate ${fs.base}`}>{c.name}</p>
-              <p className="text-[10px] font-bold text-stone-400 uppercase tracking-widest">
-                {(c.wines || []).reduce((acc, w) => acc + (w.quantity || 0), 0)} {t('bottles')}
-              </p>
-            </div>
-            <ArrowRight size={18} className="text-stone-300" />
-          </div>
-        ))}</div>
+        <div className="p-6 overflow-y-auto no-scrollbar grid grid-cols-2 gap-4">
+          {cellars.map(c => (
+            <button 
+              key={c.id} 
+              onClick={() => onSelect(c.id)}
+              className="flex flex-col items-center p-4 rounded-2xl bg-stone-50 dark:bg-stone-800 border border-stone-100 dark:border-stone-700 hover:border-[var(--theme-primary)] transition-all active:scale-95 group"
+            >
+              <div className="w-20 h-20 rounded-2xl bg-white dark:bg-stone-700 flex items-center justify-center overflow-hidden border border-stone-100 dark:border-stone-600 shadow-sm mb-3">
+                {c.image ? <img src={c.image} className="w-full h-full object-cover" /> : <Warehouse size={32} className="text-stone-300 group-hover:text-[var(--theme-primary)] transition-colors"/>}
+              </div>
+              <span className={`font-bold text-stone-800 dark:text-stone-100 truncate w-full text-center ${fs.base}`}>{c.name}</span>
+              <span className={`text-[10px] font-bold text-stone-400 uppercase tracking-widest mt-1`}>{c.wines.length} {t('bottles')}</span>
+            </button>
+          ))}
+        </div>
       </div>
     </div>
   );

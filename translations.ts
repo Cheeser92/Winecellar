@@ -88,7 +88,7 @@ export const translations = {
     price: "Prix unitaire",
     strength: "Intensité (%)",
     aging: "Durée de garde",
-    tag: "Tag",
+    tag: "Tags",
     note: "Note (Description)",
     location: "Emplacement",
     image: "Image",
@@ -205,6 +205,15 @@ export const translations = {
     reverse_sort: "Inverser le tri",
     global: "Global",
     all_cellars: "Toutes les caves",
+
+    // Tags Management
+    manage_tags: "Gérer les Tags",
+    add_tag: "Ajouter un tag",
+    tag_added: "Tag ajouté !",
+    new_tag_placeholder: "Nom du tag...",
+    tag_already_exists: "Ce tag existe déjà.",
+    edit_tag: "Modifier le tag",
+    no_tags_listed: "Aucun tag répertorié",
 
     // Error messages
     error_validation: "Erreur de saisie",
@@ -422,6 +431,15 @@ export const translations = {
     reverse_sort: "Reverse sort",
     global: "Global",
     all_cellars: "All Cellars",
+
+    // Tags Management
+    manage_tags: "Manage Tags",
+    add_tag: "Add tag",
+    tag_added: "Tag added!",
+    new_tag_placeholder: "Tag name...",
+    tag_already_exists: "Tag already exists.",
+    edit_tag: "Edit tag",
+    no_tags_listed: "No tags listed",
 
     // Error messages
     error_validation: "Input error",

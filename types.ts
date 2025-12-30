@@ -98,5 +98,6 @@ export interface BackupData {
   activeCellarId: string;
   globalHistory?: HistoryEntry[];
   locations?: LocationData;
+  globalTags?: string[];
   timestamp: string;
 }
